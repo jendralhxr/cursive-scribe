@@ -37,8 +37,8 @@ for i in range(contour_length):
 #cv.imshow('a', image_gray)
 #cv.imshow('b', image_thresh)
 #cv.imshow('c', image_thin)
-render= cv.cvtColor(image_thin, cv.COLOR_GRAY2BGR)
-render= cv.bitwise_or(render, overlay)
+#render= cv.cvtColor(image_thin, cv.COLOR_GRAY2BGR)
+render= cv.bitwise_or(image, overlay)
 cv.imwrite(sys.argv[2], render)
 
 #cv.imshow('c', render)

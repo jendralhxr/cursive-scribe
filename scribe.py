@@ -32,7 +32,7 @@ contour_length= arr.shape[1]
 for i in range(contour_length):
     x= arr[0,i,0,0];
     y= arr[0,i,0,1];
-    cv.circle(overlay, (x,y), 4, (0,int(COLOR_MAX - i*COLOR_RANGE/contour_length),0), -1)
+    cv.circle(overlay, (x,y), 2, (0,int(COLOR_MAX - i*COLOR_RANGE/contour_length),0), -1)
 
 #cv.imshow('a', image_gray)
 #cv.imshow('b', image_thresh)

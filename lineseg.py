@@ -16,15 +16,16 @@ width= image.shape[1]
 key=0
 
 
-PROMINENCE= 80
+PROMINENCE= 60
+
+image_gray= cv.cvtColor(cv.bitwise_not(image), cv.COLOR_BGR2GRAY)
+#ret, image_thresh1 = cv.threshold(image_gray, 0, 240, cv.THRESH_TRIANGLE) # other thresholding method may also work
+ret, image_thr = cv.threshold(image_gray, 0, 240, cv.THRESH_OTSU) # other thresholding method may also work
+width=image_gray.shape[1]
+height=image_gray.shape[0]
+
 
 while (key!=27 and key!=ord('q') ):
-    image_gray= cv.cvtColor(cv.bitwise_not(image), cv.COLOR_BGR2GRAY)
-    #ret, image_thresh1 = cv.threshold(image_gray, 0, 240, cv.THRESH_TRIANGLE) # other thresholding method may also work
-    ret, image_thr = cv.threshold(image_gray, 0, 240, cv.THRESH_OTSU) # other thresholding method may also work
-    width=image_gray.shape[1]
-    height=image_gray.shape[0]
-
     band_left = np.zeros(height, dtype=np.uint16)
     band_right = np.zeros(height, dtype=np.uint16)
     
@@ -34,9 +35,9 @@ while (key!=27 and key!=ord('q') ):
     
     for j in range(height):
         for i in range(BAND):
-            if current.item(j,width-BAND-i):
+            if current.item(j,700-BAND-i):
                 band_left[j]= band_left[j]+1
-            if current.item(j,width-1-i):
+            if current.item(j,700-i):
                 band_right[j]= band_right[j]+1
         #print("{}:{} -- {}".format(j, band_left[j], band_right[j]))
 
@@ -50,8 +51,8 @@ while (key!=27 and key!=ord('q') ):
         #for i in peaks_left:
         #    if ((i-j)<SKEW_MAX) and ((i-j)>=0):
                 #print()
-        #print(j,i)
-        cv.line(cue, (0,j), (width-1,j), (0,255,0), 1) 
+        print(j)
+        cv.line(cue, (0,j), (width-1,j), (0,255,0), 2) 
 
     if key==ord('a'):
         PROMINENCE = PROMINENCE -1

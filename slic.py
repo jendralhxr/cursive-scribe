@@ -13,10 +13,7 @@ image_gray= cv.cvtColor(cv.bitwise_not(image), cv.COLOR_BGR2GRAY)
 ret, image_thr = cv.threshold(image_gray, 0, 240, cv.THRESH_OTSU) # other thresholding method may also work
 
 space= 16
-
 key= 32;
-
-    
 
 while (key!=27 and key!=ord('q') ):
 
@@ -24,6 +21,7 @@ while (key!=27 and key!=ord('q') ):
     cv_slic.iterate()
     mask= cv_slic.getLabelContourMask()
     render = cv.cvtColor(image_thr, cv.COLOR_GRAY2BGR)
+    render = 
     render[:,:,1]= mask
 
     cv.imshow("show", render)

@@ -9,20 +9,39 @@ image = cv.imread(filename)
 height= image.shape[0]
 width= image.shape[1]
 image_gray= cv.cvtColor(cv.bitwise_not(image), cv.COLOR_BGR2GRAY)
-ret, image_thr = cv.threshold(image_gray, 0, 240, cv.THRESH_OTSU) # other thresholding method may also work
+
+ret, image_thr = cv.threshold(image_gray, 0, 120, cv.THRESH_OTSU) # other thresholding method may also work
+render = cv.cvtColor(image_thr, cv.COLOR_GRAY2BGR)
 
 space= 8
 key= 32;
 
 while (key!=27 and key!=ord('q') ):
 
-    cv_slic = cv.ximgproc.createband_rightSLIC(image_thr,algorithm = cv.ximgproc.SLICO, region_size = space)
-    cv_slic.iterate()
-    mask= cv_slic.getLabelContourMask()
-    render = cv.cvtColor(image_thr, cv.COLOR_GRAY2BGR)
-    render = 
-    render[:,:,1]= mask
+    slic = cv.ximgproc.createSuperpixelSLIC(image_thr,algorithm = cv.ximgproc.SLICO, region_size = space)
+    slic.iterate()
+    mask= slic.getLabelContourMask()
+    num_slic = slic.getNumberOfSuperpixels()
+    lbls = slic.getLabels()
 
+    render = cv.cvtColor(image_thr, cv.COLOR_GRAY2BGR)
+    for cls_lbl in range(num_slic):
+        fst_cls = np.argwhere(lbls==cls_lbl)
+        x, y = fst_cls[:, 0], fst_cls[:, 1]
+        c = (x.mean(), y.mean())
+        cx= int(c[1])
+        cy= int(c[0])
+        if (image_thr.item(cy,cx) != 0):
+            render.itemset((cy,cx,1), 255)
+            #print(f'{cls_lbl} point at: ({int(c[1])}, {int(c[0])})')
+        else:
+            render.itemset((cy,cx,2), 255)
+            #print(f'{cls_lbl} void at: ({int(c[1])}, {int(c[0])})')
+        
+    #render = cv.cvtColor(image_thr, cv.COLOR_GRAY2BGR)
+
+    mask2 = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
+    render= cv.bitwise_or(render, mask2)
     cv.imshow("show", render)
     #cv.imshow("mask", mask)
     if key==ord('a'):
@@ -34,18 +53,7 @@ while (key!=27 and key!=ord('q') ):
     if key==ord('s'):
         cv.imwrite(str(space)+".png", render)
         print("save")
-     
     key = cv.waitKey(1) & 0xff
 
-
-num_slic = slic.getNumberOfSuperpixels()
-lbls = slic.getLabels()
-for cls_lbl in range(num_slic):
-    fst_cls = np.argwhere(lbls==cls_lbl)
-    x, y = fst_cls[:, 0], fst_cls[:, 1]
-    c = (x.mean(), y.mean())
-    print(f'Label {cls_lbl} is at: ({int(c[0])}, {int(c[1])})')
-    
-    
 cv.imshow("show", render)
-key = cv.waitKey(0) & 0xff
+cv.waitKey(-1)

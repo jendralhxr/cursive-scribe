@@ -51,4 +51,4 @@ cv.imwrite('3.png', image_thin)
 key = cv.waitKey(0) & 0xff
 if key==27:
     quit()
-    
+

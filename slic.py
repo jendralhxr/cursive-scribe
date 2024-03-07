@@ -37,21 +37,30 @@ mask= slic.getLabelContourMask()
 num_slic = slic.getNumberOfSuperpixels()
 lbls = slic.getLabels()
 
+render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 moments = [np.zeros((1, 2)) for _ in range(num_slic)]
 # tabulating the superpixel labels
 for j in range(height):
     for i in range(width):
         if cue.item(j,i)!=0:
             moments[lbls[j,i]] = np.append(moments[lbls[j,i]], np.array([[i,j]]), axis=0)
+            render.itemset((j,i,0), 255-(10*(lbls[j,i]%12)))
+            
 
-render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
+isi=0
 # non-void superpixel
 for n in range(num_slic):
     if ( len(moments[n])>1):
-        cx= int( np.average(moments[n][:,0]) )
-        cy= int( np.average(moments[n][:,1]) )
+        #cx= int( np.mean(moments[n][:,0]) )
+        #cy= int( np.mean(moments[n][:,1]) )
+        cx= int(moments[n][:,0][-1])
+        cy= int(moments[n][:,1][-1])
         render.itemset((cy,cx,1), 255)
         print(f'point{n} at ({cx},{cy})')
+        isi= isi+1
+ 
+cv.imshow("show", render)
+key = cv.waitKey(0) & 0xff
 
 # for cls_lbl in range(num_slic):
 #     fst_cls = np.argwhere(lbls==cls_lbl)

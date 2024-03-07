@@ -51,8 +51,9 @@ isi=0
 # non-void superpixel
 for n in range(num_slic):
     if ( len(moments[n])>1):
-        #cx= int( np.mean(moments[n][:,0]) )
-        #cy= int( np.mean(moments[n][:,1]) )
+        cx= int( np.mean(moments[n][1:,0]) )
+        cy= int( np.mean(moments[n][1:,1]) )
+        render.itemset((cy,cx,2), 255)
         cx= int(moments[n][:,0][-1])
         cy= int(moments[n][:,1][-1])
         render.itemset((cy,cx,1), 255)

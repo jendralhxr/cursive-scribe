@@ -39,7 +39,7 @@ import matplotlib.pyplot as plt
 G = nx.Graph()
 
 # Add nodes
-G.add_nodes_from([1, 2, 3, 4, 5, 6, 7])
+G.add_nodes_from([1, 2, 3, 4, 5, 6, 7, 8, 9])
 
 # Add edges with weights
 G.add_edge(1, 2, weight=1)
@@ -50,6 +50,9 @@ G.add_edge(4, 5, weight=1)
 G.add_edge(4, 6, weight=1)
 G.add_edge(5, 6, weight=1)
 G.add_edge(6, 7, weight=1)
+
+G.remove_edge(1, 2)
+# find shortest part 
 
 
 # Find the shortest path between nodes 1 and 5

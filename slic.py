@@ -25,15 +25,15 @@ num_histogram_bins = 5
 double_step = False
 
 #slic = cv.ximgproc.createSuperpixelSEEDS(cue.shape[1], cue.shape[0], 1, num_superpixels, num_levels, prior, num_histogram_bins, double_step)
-#lic.iterate(cue, num_iterations=4)
+#slic.iterate(cue, num_iterations=4)
 
-slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = space)
+#slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = space)
 #slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLIC, region_size = space)
 #slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.MSLIC, region_size = space)
 #slic = cv.ximgproc.createSuperpixelLSC(cue, region_size = space)
 slic.iterate()
 
-mask= slic.getLabelContourMask()
+#mask= slic.getLabelContourMask()
 num_slic = slic.getNumberOfSuperpixels()
 lbls = slic.getLabels()
 
@@ -44,24 +44,27 @@ for j in range(height):
     for i in range(width):
         if cue.item(j,i)!=0:
             moments[lbls[j,i]] = np.append(moments[lbls[j,i]], np.array([[i,j]]), axis=0)
-            render.itemset((j,i,0), 255-(10*(lbls[j,i]%12)))
+            render.itemset((j,i,0), 120-(10*(lbls[j,i]%6)))
             
 
 isi=0
 # non-void superpixel
 for n in range(num_slic):
     if ( len(moments[n])>1):
-        cx= int( np.mean(moments[n][1:,0]) )
-        cy= int( np.mean(moments[n][1:,1]) )
-        render.itemset((cy,cx,2), 255)
+        cx= int(moments[n][:,0][1])
+        cy= int(moments[n][:,1][1])
+        render.itemset((cy,cx,0), 255)
         cx= int(moments[n][:,0][-1])
         cy= int(moments[n][:,1][-1])
         render.itemset((cy,cx,1), 255)
-        print(f'point{n} at ({cx},{cy})')
+        cx= int( np.mean(moments[n][1:,0]) )
+        cy= int( np.mean(moments[n][1:,1]) )
+        render.itemset((cy,cx,2), 255)
+        #print(f'point{n} at ({cx},{cy})')
         isi= isi+1
  
-cv.imshow("show", render)
-key = cv.waitKey(0) & 0xff
+#cv.imshow("show", render)
+#key = cv.waitKey(0) & 0xff
 
 # for cls_lbl in range(num_slic):
 #     fst_cls = np.argwhere(lbls==cls_lbl)
@@ -77,12 +80,12 @@ key = cv.waitKey(0) & 0xff
 # #     #     render.itemset((cy,cx,2), 255)
 # #     #     print(f'{cls_lbl} void at: ({int(c[1])}, {int(c[0])})')
     
-render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
-mask2 = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
-render= cv.bitwise_or(render, mask2)
+#render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
+#mask2 = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
+#render= cv.bitwise_or(render, mask2)
 cv.imwrite(sys.argv[2], render)
 print(f'save to: {sys.argv[2]}')
 #cv.imshow("mask", mask)
-cv.imshow("show", render)
-key = cv.waitKey(0) & 0xff
+#cv.imshow("show", render)
+#key = cv.waitKey(0) & 0xff
 

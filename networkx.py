@@ -75,4 +75,38 @@ nx.draw_networkx_edges(G, pos, edgelist=path_edges, width=4, alpha=0.5, edge_col
 plt.title("Shortest Path in the Graph")
 plt.show()
 
+# this ends us being a scratchpad 
+
+G = nx.Graph()
+G.add_edge(1,2,color='r',weight=2)
+G.add_edge(2,3,color='b',weight=4)
+G.add_edge(3,4,color='g',weight=6)
+
+pos = nx.circular_layout(G)
+
+edges = G.edges()
+colors = [G[u][v]['color'] for u,v in edges]
+weights = [G[u][v]['weight'] for u,v in edges]
+
+nx.draw(G, pos, edges=edges, edge_color=colors, width=weights)
+
+
+# '#%02x%02x%02x' % (B,G,R)
+
+
+G = nx.Graph()
+G.add_edge(0,1,color='#FF0000',weight=10)
+G.add_edge(1,2,color='#00FF00',weight=20)
+G.add_edge(2,0,color='#0000FF',weight=30)
+
+colors = nx.get_edge_attributes(G,'color').values()
+weights = nx.get_edge_attributes(G,'weight').values()
+
+pos = nx.circular_layout(G)
+nx.draw(G, pos, 
+        edge_color=colors, 
+        width=list(weights),
+        with_labels=True,
+        node_color='orange')
+
 

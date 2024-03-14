@@ -3,6 +3,46 @@
 import numpy as np
 import cv2 as cv
 import sys
+import networkx as nx
+import matplotlib.pyplot as plt
+
+
+# freeman code going anti-clockwise like trigonometrics angle
+"""
+3   2   1
+  \ | /
+4 ------0
+  / | \
+5   6   7
+"""
+phi= 1.6180339887498948482
+
+def freeman(x, y):
+    if (x==0):
+        x=-1e-9 # biased to the left as the text progresses leftward
+    if (y==0):
+        y=1e-9
+    if (abs(x/y)<phi) and (abs(y/x)<phi): # corner angles
+        if   (x>0) and (y>0):
+            return(1)
+        elif (x<0) and (y>0):
+            return(3)
+        elif (x<0) and (y<0):
+            return(5)
+        elif (x>0) and (y<0):
+            return(7)
+    else: # square angles
+        if   (x>0) and (abs(x)>abs(y)):
+            return(int(0))
+        elif (y>0) and (abs(y)>abs(x)):
+            return(2)
+        elif (x<0) and (abs(x)>abs(y)):
+            return(4)
+        elif (y<0) and (abs(y)>abs(x)):
+            return(6)
+        
+
+######## main routine
 
 filename= sys.argv[1]
 image = cv.imread(filename)
@@ -27,7 +67,7 @@ double_step = False
 #slic = cv.ximgproc.createSuperpixelSEEDS(cue.shape[1], cue.shape[0], 1, num_superpixels, num_levels, prior, num_histogram_bins, double_step)
 #slic.iterate(cue, num_iterations=4)
 
-#slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = space)
+slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = space)
 #slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLIC, region_size = space)
 #slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.MSLIC, region_size = space)
 #slic = cv.ximgproc.createSuperpixelLSC(cue, region_size = space)
@@ -62,23 +102,10 @@ for n in range(num_slic):
         render.itemset((cy,cx,2), 255)
         #print(f'point{n} at ({cx},{cy})')
         isi= isi+1
- 
+
+#print(isi)
 #cv.imshow("show", render)
 #key = cv.waitKey(0) & 0xff
-
-# for cls_lbl in range(num_slic):
-#     fst_cls = np.argwhere(lbls==cls_lbl)
-#     x, y = fst_cls[:, 0], fst_cls[:, 1]
-#     c = (x.mean(), y.mean())
-#     print(f'{cls_lbl}:{len(c)}')
-#     # cx= int(c[1])
-#     # cy= int(c[0])
-#     # if (cue.item(cy,cx) != 0):
-#     #     render.itemset((cy,cx,1), 255)
-#     #     print(f'{cls_lbl} point at: ({int(c[1])}, {int(c[0])})')
-# #     # else:
-# #     #     render.itemset((cy,cx,2), 255)
-# #     #     print(f'{cls_lbl} void at: ({int(c[1])}, {int(c[0])})')
     
 #render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 #mask2 = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)

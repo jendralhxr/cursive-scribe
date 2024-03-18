@@ -4,11 +4,10 @@ import numpy as np
 import cv2 as cv
 import sys
 import networkx as nx
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import math
-import os
-
-
+#import os
+import pickle
 
 # freeman code going anti-clockwise like trigonometrics angle
 """
@@ -90,11 +89,11 @@ for j in range(height):
             render.itemset((j,i,0), 120-(10*(lbls[j,i]%6)))
             
 
-scribe= nx.Graph()
+scribe= nx.Graph() # start anew, just in case
 isi=0
-# non-void superpixel
+# valid superpixel
 for n in range(num_slic):
-    if ( len(moments[n])>1):
+    if ( len(moments[n])>3): # remove spurious superpixel with area less than 2 px 
         #cx= int(moments[n][:,0][1])
         #cy= int(moments[n][:,1][1])
         #render.itemset((cy,cx,0), 255) # first elem
@@ -104,17 +103,18 @@ for n in range(num_slic):
         cx= int( np.mean(moments[n][1:,0]) )
         cy= int( np.mean(moments[n][1:,1]) )
         render.itemset((cy,cx,2), 255) # last elem
-        scribe.add_node(int(isi), label=int(lbls[cy,cx]), area=(len(moments[n])-1), x=cx, y=cy)
+        scribe.add_node(int(isi), label=int(lbls[cy,cx]), area=(len(moments[n])-1), pos=(cx,-cy) )
         #print(f'point{n} at ({cx},{cy})')
         isi= isi+1
-#nx.draw(scribe, pos=nx.random_layout(scribe), with_labels=True)
 
-cx= nx.get_node_attributes(scribe, 'x')
-cy= nx.get_node_attributes(scribe, 'y')
-area= nx.get_node_attributes(scribe, 'area')
-
-# find the shortest distance between nodes
-scribe.remove_edges_from(dict(scribe.edges))
+# establish edges from the shortest distance between nodes
+scribe.remove_edges_from(scribe.edges) # start anew, just in case
+temp= nx.get_node_attributes(scribe, 'pos')
+cx=[]
+cy=[]
+for key, value in temp.items():
+    cx.append(value[0])
+    cy.append(-value[1])
 for m in range(isi):
     distance= 1e3
     orig= 0
@@ -128,25 +128,40 @@ for m in range(isi):
             distance= temp
             #print(f'edge between {orig} and {dest}')
     # establish the edges if not already exist between closest a pair of nodes
-    if (scribe.has_edge(orig, dest)==False) and (orig!=dest):
+    if (scribe.has_edge(orig,dest)==False) and (orig!=dest):
         if (cue.item( int((cy[dest]+cy[orig])/2) ,int((cx[dest]+cx[orig])/2))!=0):
             fill='#00FF00' # in-stroke, RGB
-            print(f'stroke between {orig} and {dest}')
+            #print(f'stroke between {orig} and {dest}')
         else:
             fill='#0000FF' # void: article, harakat, or tashkeel RGB
-            print(f'tashkeel between {orig} and {dest}')
-        scribe.add_edge(orig,dest,color=fill, weight=1e1/distance, code=freeman(cx[m]-cx[n], cy[m]-cy[n]))
-            
-# draw the graph
-colors = nx.get_edge_attributes(scribe,'color').values()
-weights = nx.get_edge_attributes(scribe,'weight').values()
+            #print(f'tashkeel between {orig} and {dest}')
+            # additional check for 2 or 6 freeman code (straight up- and downward)
+        
+        scribe.add_edge(orig, dest, color=fill, weight=1e1/distance, code=freeman(cx[m]-cx[n], cy[m]-cy[n]))
 
-nx.draw(scribe, pos=nx.spring_layout(scribe), 
-        edge_color=colors, 
-        width=list(weights),
+# re-fetch the attributes from drawing
+# nodes
+positions = nx.get_node_attributes(scribe,'pos')
+area= np.array(list(nx.get_node_attributes(scribe, 'area').values()))
+# edges
+colors = nx.get_edge_attributes(scribe,'color').values()
+weights = np.array(list(nx.get_edge_attributes(scribe,'weight').values()))
+
+nx.draw(scribe, 
+        # nodes' param
+        pos=positions, 
         with_labels=True, node_color='orange',
-        node_size=60,font_size=6
+        node_size=area*20,
+        # edges' param
+        edge_color=colors, 
+        width=weights,
+        font_size=6
         )
+
+# save graph object to file
+pickle.dump(scribe, open(sys.argv[3], 'wb'))
+#scribe = pickle.load(open(sys.argv[3], 'rb'))
+
 
 #print(isi)
 #cv.imshow("show", render)

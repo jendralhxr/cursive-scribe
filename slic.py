@@ -4,7 +4,7 @@ import numpy as np
 import cv2 as cv
 import sys
 import networkx as nx
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import math
 #import os
 import pickle
@@ -116,29 +116,50 @@ for key, value in temp.items():
     cx.append(value[0])
     cy.append(-value[1])
 for m in range(isi):
-    distance= 1e3
+    distance= 1e3 # distance to closest neighboring keypoints
+    distance_ud= 1e3 # distance to closer vertical neighbor 
     orig= 0
     dest= 0
+    orig_ud= 0
+    dest_ud= 0
+    # the search
     for n in range(m+1, isi):
         # find shortest distance
-        temp= math.sqrt( math.pow(cx[m]-cx[n],2) + math.pow(cy[m]-cy[n],2) )
-        if (temp<distance):
+        vane= freeman(cx[m]-cx[n], cy[m]-cy[n])
+        tdist= math.sqrt( math.pow(cx[m]-cx[n],2) + math.pow(cy[m]-cy[n],2) )
+        if (tdist<distance):
             orig= m
             dest= n
-            distance= temp
+            distance= tdist
+        if (tdist<distance_ud) and ((vane==2) or (vane==6)):
+            orig_ud= m
+            dest_ud= n
+            distance_ud= tdist
             #print(f'edge between {orig} and {dest}')
+    # the assignment
     # establish the edges if not already exist between closest a pair of nodes
-    if (scribe.has_edge(orig,dest)==False) and (orig!=dest):
-        if (cue.item( int((cy[dest]+cy[orig])/2) ,int((cx[dest]+cx[orig])/2))!=0):
-            fill='#00FF00' # in-stroke, RGB
+    if (scribe.has_edge(orig,dest)==False) and (scribe.has_edge(dest,orig)==False) and (orig!=dest): # 1 px smear in the main stroke 
+        if     (cue.item( int((cy[dest]+cy[orig])/2)    ,int((cx[dest]+cx[orig])/2))    !=0) \
+            or (cue.item( int((cy[dest]+cy[orig])/2+1)  ,int((cx[dest]+cx[orig])/2))    !=0) \
+            or (cue.item( int((cy[dest]+cy[orig])/2+1)  ,int((cx[dest]+cx[orig])/2+1))  !=0) \
+            or (cue.item( int((cy[dest]+cy[orig])/2)    ,int((cx[dest]+cx[orig])/2+1))  !=0) \
+            or (cue.item( int((cy[dest]+cy[orig])/2-1)  ,int((cx[dest]+cx[orig])/2+1))  !=0) \
+            or (cue.item( int((cy[dest]+cy[orig])/2-1)  ,int((cx[dest]+cx[orig])/2))    !=0) \
+            or (cue.item( int((cy[dest]+cy[orig])/2-1)  ,int((cx[dest]+cx[orig])/2-1))  !=0) \
+            or (cue.item( int((cy[dest]+cy[orig])/2)    ,int((cx[dest]+cx[orig])/2-1))  !=0) \
+            or (cue.item( int((cy[dest]+cy[orig])/2+1)  ,int((cx[dest]+cx[orig])/2-1))  !=0):
+            fill='#00FF00' # green in-stroke, RGB
+            scribe.add_edge(orig, dest, color=fill, weight=1e1/distance, code=vane)
             #print(f'stroke between {orig} and {dest}')
         else:
-            fill='#0000FF' # void: article, harakat, or tashkeel RGB
-            #print(f'tashkeel between {orig} and {dest}')
+            # jumps over the void
             # additional check for 2 or 6 freeman code (straight up- and downward)
+            fill='#0000FF' # blue void: article, harakat, or tashkeel RGB
+            scribe.add_edge(orig_ud, dest_ud, color=fill, weight=1e1/distance_ud, code=vane)
+            #print(f'tashkeel between {orig} and {dest}')
+            
         
-        scribe.add_edge(orig, dest, color=fill, weight=1e1/distance, code=freeman(cx[m]-cx[n], cy[m]-cy[n]))
-
+        
 # re-fetch the attributes from drawing
 # nodes
 positions = nx.get_node_attributes(scribe,'pos')
@@ -151,21 +172,22 @@ nx.draw(scribe,
         # nodes' param
         pos=positions, 
         with_labels=True, node_color='orange',
-        node_size=area*20,
+        node_size=area*25,
         # edges' param
         edge_color=colors, 
-        width=weights,
-        font_size=6
+        width=weights*4,
+        font_size=8
         )
 
 # save graph object to file
 pickle.dump(scribe, open(sys.argv[3], 'wb'))
 #scribe = pickle.load(open(sys.argv[3], 'rb'))
 
+render= cv.cvtColor(render, cv.COLOR_BGR2RGB)
+plt.imshow(render) 
+
 
 #print(isi)
-#cv.imshow("show", render)
-#key = cv.waitKey(0) & 0xff
     
 #render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 #mask2 = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)

@@ -119,6 +119,7 @@ distance = np.full(isi, 1e6)
 dest = np.full(isi, -1, dtype=int)
 distance_ud = np.full(isi, 1e6)
 dest_ud = np.full(isi, -1, dtype=int)
+bends= []
 
 # establish edges from the shortest distance between nodes, forward check
 for m in range(isi):
@@ -128,13 +129,14 @@ for m in range(isi):
         if (m!=n):
             vane= freeman(cx[m]-cx[n], cy[m]-cy[n])
             tdist= math.sqrt( math.pow(cx[m]-cx[n],2) + math.pow(cy[m]-cy[n],2) )
-            if (tdist<distance[m]) and (dest[n]!=m):
+            if (tdist<distance[m]) and (dest[m]!=n) and (dest[n]!=m):
                 dest[m]= n
                 distance[m]= tdist
-            if (tdist<distance_ud[m]) and (dest_ud[n]!=m) and ((vane==2) or (vane==6)):
+            if (tdist<distance_ud[m]) and (dest_ud[m]!=n) and (dest_ud[n]!=m)\
+                and ((vane==2) or (vane==6)):
                 dest_ud[m]= n
                 distance_ud[m]= tdist
-    # the assignment
+    # the assignment, the nearest neighbor
     if (dest[m]!=m):
         midx= int((cx[dest[m]]+cx[m])/2)
         midy= int((cy[dest[m]]+cy[m])/2)
@@ -157,7 +159,7 @@ for m in range(isi):
             kernel= kernel+1
         if (cue.item( midy+1,midx-1) !=0):
             kernel= kernel+1
-            
+        # the nearest vertical neighbor    
         midx= int((cx[dest_ud[m]]+cx[m])/2)
         midy= int((cy[dest_ud[m]]+cy[m])/2)
         kernel_ud=0
@@ -182,14 +184,48 @@ for m in range(isi):
         #print(f'{m}: {dest[m]}/{distance[m]}:{kernel} {dest_ud[m]}/{distance_ud[m]}:{kernel_ud}')        
         if (dest[m]==dest_ud[m]):
             print(f"need more branch at {m}")
+            bends.append(m)
         
         scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane)
-        if (kernel>2):
+        if (kernel>pow(phi,2)):
             scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m], code=vane)
-        if (kernel_ud>2):
+        if (kernel_ud>pow(phi,2)):
             scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m], code=vane)
         
-        
+bdist= 1e6
+bdest= -1
+# additional edges missing from the O(n^2) search
+for m in bends:
+    for n in range(isi):
+        if (m!=n) and (n!=dest[m]) and (m!=dest[n]):
+            vane= freeman(cx[m]-cx[n], cy[m]-cy[n])
+            tdist= math.sqrt( math.pow(cx[m]-cx[n],2) + math.pow(cy[m]-cy[n],2) )
+            midx= int((cx[dest[m]]+cx[m])/2)
+            midy= int((cy[dest[m]]+cy[m])/2)
+            kernel=0
+            if (cue.item( midy  ,midx  ) !=0):
+                kernel= kernel+1
+            if (cue.item( midy+1,midx  ) !=0):
+               kernel= kernel+1
+            if (cue.item( midy+1,midx+1) !=0):
+                kernel= kernel+1
+            if (cue.item( midy  ,midx+1) !=0):
+                kernel= kernel+1
+            if (cue.item( midy-1,midx+1) !=0):
+                kernel= kernel+1
+            if (cue.item( midy-1,midx  ) !=0):
+                kernel= kernel+1
+            if (cue.item( midy-1,midx-1) !=0):
+               kernel= kernel+1
+            if (cue.item( midy  ,midx-1) !=0):
+                kernel= kernel+1
+            if (cue.item( midy+1,midx-1) !=0):
+                kernel= kernel+1
+            if (tdist<bdist) and (kernel>pow(phi,2)):
+                bdist= tdist
+                bdest= n
+    scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist, code=vane)
+            
 #scribe.number_of_edges()            
 
 # re-fetch the attributes from drawing

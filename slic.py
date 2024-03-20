@@ -179,7 +179,9 @@ for m in range(isi):
             kernel_ud= kernel_ud+1
         if (cue.item( midy+1,midx-1) !=0):
             kernel_ud= kernel_ud+1    
-        print(f'{m}: {dest[m]}/{distance[m]}:{kernel} {dest_ud[m]}/{distance_ud[m]}:{kernel_ud}')        
+        #print(f'{m}: {dest[m]}/{distance[m]}:{kernel} {dest_ud[m]}/{distance_ud[m]}:{kernel_ud}')        
+        if (dest[m]==dest_ud[m]):
+            print(f"need more branch at {m}")
         
         scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane)
         if (kernel>2):

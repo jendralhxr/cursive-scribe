@@ -1,4 +1,4 @@
-# USAGE: python -u scribe.py IMAGE_INPUT 
+# USAGE: python -u scribe.py IMAGE_INPUT GRAPHNETWORK
 # TODO: inter-character and inter-word space
 #       subgraphs matching
 #       associating diactritics with the main character stroke

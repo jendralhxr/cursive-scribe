@@ -1,4 +1,8 @@
 # USAGE: python -u scribe.py IMAGE_INPUT 
+# TODO: inter-character and inter-word space
+#       subgraphs matching
+#       associating diactritics with the main character stroke
+#       actually typing back the characters
 
 import numpy as np
 import cv2 as cv
@@ -127,8 +131,8 @@ for m in range(isi):
     for n in range(isi):
         # find shortest distance
         if (m!=n):
-            vane= freeman(cx[m]-cx[n], cy[m]-cy[n])
-            tdist= math.sqrt( math.pow(cx[m]-cx[n],2) + math.pow(cy[m]-cy[n],2) )
+            vane= freeman(cx[n]-cx[m], cy[n]-cy[m])
+            tdist= math.sqrt( math.pow(cx[n]-cx[m],2) + math.pow(cy[n]-cy[m],2) )
             if (tdist<distance[m]) and (dest[m]!=n) and (dest[n]!=m):
                 dest[m]= n
                 distance[m]= tdist
@@ -183,25 +187,25 @@ for m in range(isi):
             kernel_ud= kernel_ud+1    
         #print(f'{m}: {dest[m]}/{distance[m]}:{kernel} {dest_ud[m]}/{distance_ud[m]}:{kernel_ud}')        
         if (dest[m]==dest_ud[m]):
-            print(f"need more branch at {m}")
+            #print(f"need more branch at {m}")
             bends.append(m)
         
         scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane)
-        if (kernel>pow(phi,2)):
+        if (kernel>pow(phi,2)) and (distance[m]<pow(phi,2)*SPACE):
             scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m], code=vane)
-        if (kernel_ud>pow(phi,2)):
+        if (kernel_ud>pow(phi,2)) and (distance_ud[m]<pow(phi,2)*SPACE):
             scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m], code=vane)
         
-bdist= 1e6
-bdest= -1
 # additional edges missing from the O(n^2) search
 for m in bends:
+    bdist= 1e6
+    bdest= -1
     for n in range(isi):
         if (m!=n) and (n!=dest[m]) and (m!=dest[n]):
-            vane= freeman(cx[m]-cx[n], cy[m]-cy[n])
-            tdist= math.sqrt( math.pow(cx[m]-cx[n],2) + math.pow(cy[m]-cy[n],2) )
-            midx= int((cx[dest[m]]+cx[m])/2)
-            midy= int((cy[dest[m]]+cy[m])/2)
+            vane= freeman(cx[n]-cx[m], cy[n]-cy[m])
+            tdist= math.sqrt( math.pow(cx[n]-cx[m],2) + math.pow(cy[n]-cy[m],2) )
+            midx= int((cx[m]+cx[n])/2)
+            midy= int((cy[m]+cy[n])/2)
             kernel=0
             if (cue.item( midy  ,midx  ) !=0):
                 kernel= kernel+1
@@ -221,11 +225,12 @@ for m in bends:
                 kernel= kernel+1
             if (cue.item( midy+1,midx-1) !=0):
                 kernel= kernel+1
-            if (tdist<bdist) and (kernel>pow(phi,2)):
+            if (tdist<bdist):
                 bdist= tdist
                 bdest= n
-    scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist, code=vane)
-            
+    if (bdest!=-1) and kernel:
+        scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist, code=vane)
+        #print(f"{m}-{bdest} {bdist} {vane} {kernel}")    
 #scribe.number_of_edges()            
 
 # re-fetch the attributes from drawing
@@ -252,17 +257,6 @@ pickle.dump(scribe, open(sys.argv[3], 'wb'))
 #scribe = pickle.load(open(sys.argv[3], 'rb'))
 
 render= cv.cvtColor(render, cv.COLOR_BGR2RGB)
-plt.imshow(render) 
-
-
-#print(isi)
-    
-#render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
-#mask2 = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
-#render= cv.bitwise_or(render, mask2)
+#plt.imshow(render) 
+plt.axis("off")
 cv.imwrite(sys.argv[2], render)
-print(f'save to: {sys.argv[2]}')
-#cv.imshow("mask", mask)
-#cv.imshow("show", render)
-#key = cv.waitKey(0) & 0xff
-

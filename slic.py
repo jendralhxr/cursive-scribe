@@ -61,7 +61,6 @@ render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 
 # LSC and SLIC 
 SPACE= 3
-key= 32;
 
 # SEEDS parameters
 num_superpixels = 5000
@@ -190,10 +189,13 @@ for m in range(isi):
             #print(f"need more branch at {m}")
             bends.append(m)
         
-        scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane)
-        if (kernel>pow(phi,2)) and (distance[m]<pow(phi,2)*SPACE):
+        # diacritics connector
+        if (dest_ud[m]!=-1):
+            scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane)
+        # main stroke
+        if (kernel>pow(phi,2)) and (distance[m]<pow(phi,2)*SPACE) and (dest[m]!=-1):
             scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m], code=vane)
-        if (kernel_ud>pow(phi,2)) and (distance_ud[m]<pow(phi,2)*SPACE):
+        if (kernel_ud>pow(phi,2)) and (distance_ud[m]<pow(phi,2)*SPACE) and dest_ud[m]!=-1:
             scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m], code=vane)
         
 # additional edges missing from the O(n^2) search
@@ -228,7 +230,7 @@ for m in bends:
             if (tdist<bdist):
                 bdist= tdist
                 bdest= n
-    if (bdest!=-1) and kernel:
+    if (bdest!=-1) and (kernel>pow(phi,2)) and (bdist<pow(phi,2)*SPACE):
         scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist, code=vane)
         #print(f"{m}-{bdest} {bdist} {vane} {kernel}")    
 #scribe.number_of_edges()            
@@ -241,6 +243,7 @@ area= np.array(list(nx.get_node_attributes(scribe, 'area').values()))
 colors = nx.get_edge_attributes(scribe,'color').values()
 weights = np.array(list(nx.get_edge_attributes(scribe,'weight').values()))
 
+plt.figure(figsize=(width/12,height/12)) 
 nx.draw(scribe, 
         # nodes' param
         pos=positions, 
@@ -251,12 +254,13 @@ nx.draw(scribe,
         edge_color=colors, 
         width=weights*2,
         )
+plt.savefig(sys.argv[3], bbox_inches='tight')
 
 # save graph object to file
-pickle.dump(scribe, open(sys.argv[3], 'wb'))
-#scribe = pickle.load(open(sys.argv[3], 'rb'))
+pickle.dump(scribe, open(sys.argv[4], 'wb'))
+#scribe = pickle.load(open(sys.argv[4], 'rb'))
 
 render= cv.cvtColor(render, cv.COLOR_BGR2RGB)
 #plt.imshow(render) 
-plt.axis("off")
+#plt.axis("off")
 cv.imwrite(sys.argv[2], render)

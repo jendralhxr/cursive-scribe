@@ -193,9 +193,9 @@ for m in range(isi):
         if (dest_ud[m]!=-1):
             scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane)
         # main stroke
-        if (kernel>pow(phi,2)) and (distance[m]<pow(phi,2)*SPACE) and (dest[m]!=-1):
+        if (cue.item(midy,midx)!=0) and (kernel>pow(phi,2)) and (distance[m]<pow(phi,2)*SPACE) and (dest[m]!=-1):
             scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m], code=vane)
-        if (kernel_ud>pow(phi,2)) and (distance_ud[m]<pow(phi,2)*SPACE) and dest_ud[m]!=-1:
+        if (cue.item(midy,midx)!=0) and (kernel_ud>pow(phi,2)) and (distance_ud[m]<pow(phi,2)*SPACE) and dest_ud[m]!=-1:
             scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m], code=vane)
         
 # additional edges missing from the O(n^2) search
@@ -254,13 +254,24 @@ nx.draw(scribe,
         edge_color=colors, 
         width=weights*2,
         )
-plt.savefig(sys.argv[3], bbox_inches='tight')
+plt.savefig("test.png", bbox_inches='tight')
+#plt.savefig(sys.argv[3], bbox_inches='tight')
 
 # save graph object to file
 pickle.dump(scribe, open(sys.argv[4], 'wb'))
 #scribe = pickle.load(open(sys.argv[4], 'rb'))
 
+"""
+# the artistic rendition
+overlay= cv.imread(sys.argv[3])
+overlay= cv.cvtColor(overlay, cv.COLOR_RGB2BGR)
+canvas= cv.bitwise_not(image)
+canvas = cv.resize(canvas, (overlay.shape[1], overlay.shape[0]))
+blend  = cv.addWeighted(canvas, 0.5, overlay, 0.5, 0)
+plt.imshow(blend) 
+"""
+
 render= cv.cvtColor(render, cv.COLOR_BGR2RGB)
-#plt.imshow(render) 
+plt.imshow(render) 
 #plt.axis("off")
 cv.imwrite(sys.argv[2], render)

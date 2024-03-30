@@ -163,6 +163,7 @@ plt.show()
 import random
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
+import time
 
 # Function to connect points within a bucket
 def connect_points(bucket):
@@ -176,7 +177,7 @@ def connect_points(bucket):
     return lines
 
 # Generate 40 random points
-random_points = [(random.randint(0, 100), random.randint(0, 100)) for _ in range(100)]
+random_points = [(random.randint(0, 100), random.randint(0, 100)) for _ in range(40)]
 
 # Define a threshold for horizontal alignment
 horizontal_threshold = 0.5  # Adjust this value based on your requirement
@@ -201,6 +202,9 @@ plt.figure(figsize=(8, 6))
 for point in random_points:
     plt.scatter(point[0], point[1], color='blue')
 
+# Start the timer
+start_time = time.time()
+
 # Create a pool of worker processes
 with Pool() as pool:
     # Parallelize the task of connecting points within each bucket
@@ -211,8 +215,16 @@ with Pool() as pool:
         for line in bucket_lines:
             plt.plot([point[0] for point in line], [point[1] for point in line], color='green')
 
+# Stop the timer
+end_time = time.time()
+
+# Calculate and print the execution time
+execution_time = end_time - start_time
+print("Execution Time:", execution_time, "seconds")
+
 plt.xlabel('X')
 plt.ylabel('Y')
 plt.title('Points with Lines Connecting Close Horizontal Alignment (±0.5)')
 plt.grid(True)
 plt.show()
+

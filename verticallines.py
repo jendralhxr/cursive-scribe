@@ -106,6 +106,7 @@ plt.grid(True)
 plt.show()
 """
 
+"""
 #sweep with bucket
 import random
 import matplotlib.pyplot as plt
@@ -151,6 +152,64 @@ for bucket in buckets:
             # If the horizontal distance is within the threshold, draw a line
             if abs(x2 - x1) < horizontal_threshold:
                 plt.plot([x1, x2], [y1, y2], color='green')
+
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.title('Points with Lines Connecting Close Horizontal Alignment (±0.5)')
+plt.grid(True)
+plt.show()
+"""
+
+import random
+import matplotlib.pyplot as plt
+from multiprocessing import Pool
+
+# Function to connect points within a bucket
+def connect_points(bucket):
+    lines = []
+    for i in range(len(bucket)):
+        x1, y1 = bucket[i]
+        for j in range(i + 1, len(bucket)):
+            x2, y2 = bucket[j]
+            if abs(x2 - x1) < horizontal_threshold:
+                lines.append([(x1, y1), (x2, y2)])
+    return lines
+
+# Generate 40 random points
+random_points = [(random.randint(0, 100), random.randint(0, 100)) for _ in range(100)]
+
+# Define a threshold for horizontal alignment
+horizontal_threshold = 0.5  # Adjust this value based on your requirement
+
+# Sort the points based on x-coordinate
+random_points.sort()
+
+# Define the number of buckets and bucket width
+num_buckets = 10
+bucket_width = 100 / num_buckets
+
+# Initialize buckets
+buckets = [[] for _ in range(num_buckets)]
+
+# Assign points to buckets
+for point in random_points:
+    bucket_index = min(int(point[0] / bucket_width), num_buckets - 1)
+    buckets[bucket_index].append(point)
+
+# Plot all points
+plt.figure(figsize=(8, 6))
+for point in random_points:
+    plt.scatter(point[0], point[1], color='blue')
+
+# Create a pool of worker processes
+with Pool() as pool:
+    # Parallelize the task of connecting points within each bucket
+    lines = pool.map(connect_points, buckets)
+    
+    # Plot the lines connecting the points
+    for bucket_lines in lines:
+        for line in bucket_lines:
+            plt.plot([point[0] for point in line], [point[1] for point in line], color='green')
 
 plt.xlabel('X')
 plt.ylabel('Y')

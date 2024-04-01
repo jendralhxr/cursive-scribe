@@ -60,7 +60,7 @@ ret, cue = cv.threshold(image_gray, 0, 120, cv.THRESH_OTSU) # other thresholding
 render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 
 # LSC and SLIC 
-SPACE= 3
+SLIC_SPACE= 3
 
 # SEEDS parameters
 num_superpixels = 5000
@@ -72,10 +72,10 @@ double_step = False
 #slic = cv.ximgproc.createSuperpixelSEEDS(cue.shape[1], cue.shape[0], 1, num_superpixels, num_levels, prior, num_histogram_bins, double_step)
 #slic.iterate(cue, num_iterations=4)
 
-slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = SPACE)
-#slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLIC, region_size = SPACE)
-#slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.MSLIC, region_size = SPACE)
-#slic = cv.ximgproc.createSuperpixelLSC(cue, region_size = SPACE)
+slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = SLIC_SPACE)
+#slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLIC, region_size = SLIC_SPACE)
+#slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.MSLIC, region_size = SLIC_SPACE)
+#slic = cv.ximgproc.createSuperpixelLSC(cue, region_size = SLIC_SPACE)
 slic.iterate()
 
 #mask= slic.getLabelContourMask()
@@ -83,20 +83,26 @@ num_slic = slic.getNumberOfSuperpixels()
 lbls = slic.getLabels()
 
 render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
+
 moments = [np.zeros((1, 2)) for _ in range(num_slic)]
+moments_void = [np.zeros((1, 2)) for _ in range(num_slic)]
 # tabulating the superpixel labels
 for j in range(height):
     for i in range(width):
         if cue.item(j,i)!=0:
             moments[lbls[j,i]] = np.append(moments[lbls[j,i]], np.array([[i,j]]), axis=0)
             render.itemset((j,i,0), 120-(10*(lbls[j,i]%6)))
-            
+        else:
+            moments_void[lbls[j,i]] = np.append(moments_void[lbls[j,i]], np.array([[i,j]]), axis=0)
 
 scribe= nx.Graph() # start anew, just in case
+spaces= nx.Graph() # start anew, just in case
 isi=0
+kosong=0
+voids=[]
 # valid superpixel
 for n in range(num_slic):
-    if ( len(moments[n])>SPACE): # remove spurious superpixel with area less than 2 px 
+    if ( len(moments[n])>SLIC_SPACE): # remove spurious superpixel with area less than 2 px 
         #cx= int(moments[n][:,0][1]) # first elem
         #cy= int(moments[n][:,1][1])
         #render.itemset((cy,cx,0), 255) 
@@ -109,6 +115,56 @@ for n in range(num_slic):
         scribe.add_node(int(isi), label=int(lbls[cy,cx]), area=(len(moments[n])-1), pos=(cx,-cy) )
         #print(f'point{n} at ({cx},{cy})')
         isi= isi+1
+    else:
+        cx= int( np.mean(moments_void[n][1:,0]) ) # centroid
+        cy= int( np.mean(moments_void[n][1:,1]) )
+        voids.append( (cx,cy) )
+        spaces.add_node(int(kosong), area=0, pos=(cx,-cy) )
+        kosong= kosong+1
+
+voids.sort()        
+spaces.remove_edges_from(spaces.edges) # start anew, just in case
+for m in range(kosong):
+    for n in range(kosong):
+        if (m!=n):
+            if (abs(voids[n][0]-voids[m][0]) > SLIC_SPACE*pow(phi,2)):
+                break
+            elif (abs(voids[n][1]-voids[m][1]) > SLIC_SPACE*pow(phi,2)):
+                break
+            vane= freeman(voids[n][0]-voids[m][0], voids[n][1]-voids[m][1])
+            if (vane==2) or (vane==6):
+                print(f'{m}-{n} ({voids[m][0]},{voids[m][1]}) to ({voids[n][0]},{voids[n][1]})')
+                spaces.add_edge(m, n, color='#FF0000')
+
+# re-fetch the attributes from drawing
+# nodes
+positions = nx.get_node_attributes(spaces,'pos')
+colors = nx.get_edge_attributes(spaces,'color').values()
+
+plt.figure(figsize=(width/12,height/12)) 
+nx.draw(spaces, 
+        # nodes' param
+        pos=positions,
+        node_size=1,
+        #font_size=8,
+        # edges' param
+        edge_color=colors, 
+        width=1,
+        )
+
+"""
+nx.draw(scribe, 
+        # nodes' param
+        pos=positions, 
+        with_labels=True, node_color='orange',
+        node_size=area*25,
+        font_size=8,
+        # edges' param
+        edge_color=colors, 
+        width=weights*2,
+        )
+"""
+
 
 temp= nx.get_node_attributes(scribe, 'pos')
 cx=[]
@@ -117,6 +173,7 @@ for key, value in temp.items():
     cx.append(value[0])
     cy.append(-value[1])
 
+# stroke and diacritics edges
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 distance = np.full(isi, 1e6)
 dest = np.full(isi, -1, dtype=int)
@@ -193,9 +250,9 @@ for m in range(isi):
         if (dest_ud[m]!=-1):
             scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane, kernel=kernel_ud)
         # main stroke
-        if (kernel>pow(phi,3)) and (distance[m]<pow(phi,2)*SPACE) and (dest[m]!=-1):
+        if (kernel>pow(phi,3)) and (distance[m]<pow(phi,2)*SLIC_SPACE) and (dest[m]!=-1):
             scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
-        if (kernel_ud>pow(phi,3)) and (distance_ud[m]<pow(phi,2)*SPACE) and dest_ud[m]!=-1:
+        if (kernel_ud>pow(phi,3)) and (distance_ud[m]<pow(phi,2)*SLIC_SPACE) and dest_ud[m]!=-1:
             scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
         
 # additional edges missing from the O(n^2) search
@@ -230,7 +287,7 @@ for m in bends:
             if (tdist<bdist):
                 bdist= tdist
                 bdest= n
-    if (bdest!=-1) and (kernel>pow(phi,3)) and (bdist<pow(phi,2)*SPACE):
+    if (bdest!=-1) and (kernel>pow(phi,3)) and (bdist<pow(phi,2)*SLIC_SPACE):
         scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist, code=vane, kernel=kernel)
         #print(f"{m}-{bdest} {bdist} {vane} {kernel}")    
 #scribe.number_of_edges()            

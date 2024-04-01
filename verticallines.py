@@ -177,16 +177,16 @@ def connect_points(bucket):
     return lines
 
 # Generate 40 random points
-random_points = [(random.randint(0, 100), random.randint(0, 100)) for _ in range(40)]
+random_points = [(random.randint(0, 100), random.randint(0, 100)) for _ in range(1000)]
 
 # Define a threshold for horizontal alignment
-horizontal_threshold = 0.5  # Adjust this value based on your requirement
+horizontal_threshold = 1  # Adjust this value based on your requirement
 
 # Sort the points based on x-coordinate
 random_points.sort()
 
 # Define the number of buckets and bucket width
-num_buckets = 10
+num_buckets = 1
 bucket_width = 100 / num_buckets
 
 # Initialize buckets

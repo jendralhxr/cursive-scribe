@@ -1,4 +1,4 @@
-""" bubble
+# bubble
 import random
 import matplotlib.pyplot as plt
 
@@ -26,9 +26,9 @@ plt.ylabel('Y')
 plt.title('Points with Lines Connecting Close Horizontal Alignment (±0.5)')
 plt.grid(True)
 plt.show()
-"""
+#
 
-""" sorted
+# sorted
 import random
 import matplotlib.pyplot as plt
 
@@ -65,9 +65,9 @@ plt.ylabel('Y')
 plt.title('Points with Lines Connecting Close Horizontal Alignment (±0.5)')
 plt.grid(True)
 plt.show()
-"""
+#
 
-""" sweep line
+# sweep line
 import random
 import matplotlib.pyplot as plt
 
@@ -104,9 +104,9 @@ plt.ylabel('Y')
 plt.title('Points with Lines Connecting Close Horizontal Alignment (±0.5)')
 plt.grid(True)
 plt.show()
-"""
+#
 
-"""
+#
 #sweep with bucket
 import random
 import matplotlib.pyplot as plt
@@ -158,7 +158,7 @@ plt.ylabel('Y')
 plt.title('Points with Lines Connecting Close Horizontal Alignment (±0.5)')
 plt.grid(True)
 plt.show()
-"""
+#
 
 import random
 import matplotlib.pyplot as plt

@@ -122,49 +122,34 @@ for n in range(num_slic):
         spaces.add_node(int(kosong), area=0, pos=(cx,-cy) )
         kosong= kosong+1
 
-voids.sort()        
 spaces.remove_edges_from(spaces.edges) # start anew, just in case
 for m in range(kosong):
-    for n in range(kosong):
-        if (m!=n):
-            if (abs(voids[n][0]-voids[m][0]) > SLIC_SPACE*pow(phi,2)):
-                break
-            elif (abs(voids[n][1]-voids[m][1]) > SLIC_SPACE*pow(phi,2)):
-                break
-            vane= freeman(voids[n][0]-voids[m][0], voids[n][1]-voids[m][1])
-            if (vane==2) or (vane==6):
-                print(f'{m}-{n} ({voids[m][0]},{voids[m][1]}) to ({voids[n][0]},{voids[n][1]})')
-                spaces.add_edge(m, n, color='#FF0000')
+    for n in range(m+1, kosong):
+        if (abs(voids[n][1]-voids[m][1]) > SLIC_SPACE*pow(phi,2)):
+            break
+        vane= freeman(voids[n][0]-voids[m][0], voids[n][1]-voids[m][1])
+        dist= math.sqrt( math.pow(voids[n][0]-voids[m][0],2) + math.pow(voids[n][1]-voids[m][1],2) )
+        if (dist<SLIC_SPACE*phi) and ((vane==2) or (vane==6)):
+            #print(f'jadi {m}-{n}:{vane}:{dist} ({voids[m][0]},{voids[m][1]}) to ({voids[n][0]},{voids[n][1]})')
+            spaces.add_edge(m, n, color='#FF0000')
+            break
 
-# re-fetch the attributes from drawing
-# nodes
+# TODO: select the longest chain of edges
+
+"""
 positions = nx.get_node_attributes(spaces,'pos')
 colors = nx.get_edge_attributes(spaces,'color').values()
-
-plt.figure(figsize=(width/12,height/12)) 
+plt.figure(figsize=(width/6,height/6)) 
 nx.draw(spaces, 
         # nodes' param
         pos=positions,
-        node_size=1,
-        #font_size=8,
+        node_size=1, #with_labels=True,
+        font_size=8,
         # edges' param
         edge_color=colors, 
         width=1,
         )
-
 """
-nx.draw(scribe, 
-        # nodes' param
-        pos=positions, 
-        with_labels=True, node_color='orange',
-        node_size=area*25,
-        font_size=8,
-        # edges' param
-        edge_color=colors, 
-        width=weights*2,
-        )
-"""
-
 
 temp= nx.get_node_attributes(scribe, 'pos')
 cx=[]

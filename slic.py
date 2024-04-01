@@ -134,7 +134,7 @@ for m in range(kosong):
             spaces.add_edge(m, n, color='#FF0000')
             break
 
-# TODO: select the longest chain of edges
+# TODO: select the longest chain of edges and delete the rest
 
 """
 positions = nx.get_node_attributes(spaces,'pos')
@@ -235,9 +235,11 @@ for m in range(isi):
         if (dest_ud[m]!=-1):
             scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane, kernel=kernel_ud)
         # main stroke
-        if (kernel>pow(phi,3)) and (distance[m]<pow(phi,2)*SLIC_SPACE) and (dest[m]!=-1):
+        if ((kernel>pow(phi,3)) or ((kernel>pow(phi,2)) and cue.item(midy,midx))) and \
+            (distance[m]<pow(phi,2)*SLIC_SPACE) and (dest[m]!=-1):
             scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
-        if (kernel_ud>pow(phi,3)) and (distance_ud[m]<pow(phi,2)*SLIC_SPACE) and dest_ud[m]!=-1:
+        if ((kernel_ud>pow(phi,3)) or ((kernel_ud>pow(phi,2)) and cue.item(midy,midx))) and \
+            (distance_ud[m]<pow(phi,2)*SLIC_SPACE) and dest_ud[m]!=-1:
             scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
         
 # additional edges missing from the O(n^2) search
@@ -272,7 +274,8 @@ for m in bends:
             if (tdist<bdist):
                 bdist= tdist
                 bdest= n
-    if (bdest!=-1) and (kernel>pow(phi,3)) and (bdist<pow(phi,2)*SLIC_SPACE):
+    if (bdest!=-1) and (bdist<pow(phi,2)*SLIC_SPACE) and\
+        ((kernel>pow(phi,3)) or ((kernel>pow(phi,2)) and cue.item(midy,midx))):
         scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist, code=vane, kernel=kernel)
         #print(f"{m}-{bdest} {bdist} {vane} {kernel}")    
 #scribe.number_of_edges()            

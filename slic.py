@@ -46,31 +46,27 @@ def freeman(x, y):
         elif (y<0) and (abs(y)>abs(x)):
             return(6)
 
-def delete_long_paths(G, threshold, start_nodes, end_nodes):
-    # List to store edges to be removed
+def delete_long_paths(graph, threshold):
     edges_to_remove = []
-    
-    
     # start and end nodes should be defined more automagicadynamically
     # to accomodate whitespaces just above/blow the main stroke
-    # Iterate over all pairs of start and end nodes
-    for start_node in start_nodes:
-        for end_node in end_nodes:
-            if start_node != end_node:
+    for m in range(kosong):
+        for n in range(m+1,kosong):
+            if m != n:
                 # Find all simple paths between start and end nodes
-                paths = nx.all_simple_paths(G, start_node, end_node)
-                for path in paths:
-                    # Check if the length of the path exceeds the threshold
-                    if len(path) > threshold:
-                        # Add edges forming the path to the list
-                        edges_to_remove.extend(zip(path[:-1], path[1:]))
+                if ((voids[n][0]-voids[m][0])<SLIC_SPACE*phi) and\
+                   ((voids[n][1]-voids[m][1])>SLIC_SPACE*phi*4):
+                    paths = nx.all_simple_paths(graph, m, n)
+                    for path in paths:
+                        if len(path) > threshold:
+                            edges_to_remove.extend(zip(path[:-1], path[1:]))
+        
+    for u, v in edges_to_remove: # remove the edges
+        if graph.has_edge(u, v):
+            graph.remove_edge(u, v)
     
-    for u, v in edges_to_remove:     # remove the edges
-        if G.has_edge(u, v):
-            G.remove_edge(u, v)
-    
-    isolated_nodes = list(nx.isolates(G)) # remove the nodes
-    G.remove_nodes_from(isolated_nodes)
+    isolated_nodes = list(nx.isolates(graph)) # remove the nodes
+    graph.remove_nodes_from(isolated_nodes)
 
 
 def graph_difference(G1, G2):
@@ -215,13 +211,11 @@ for m in range(kosong):
             spaces.add_edge(m, n, color='#FF0000', weight=1)
             break
 
-source_nodes= list(range(0, (int(width/SLIC_SPACE)+1) ))
-target_nodes= list(range (list(spaces.nodes())[-1]-source_nodes[-1],\
-                   list(spaces.nodes())[-1]+1))
 hops= int(height/SLIC_SPACE/phi) # taking into account the top and bottom blank space
 spaces_old= spaces.copy()
-#spaces= spaces_old.copy()
-delete_long_paths(spaces, hops, source_nodes, target_nodes)
+
+spaces= spaces_old.copy()
+delete_long_paths(spaces, hops)
 spaces_diff= graph_difference(spaces_old, spaces)
 draw_graph1(spaces_diff)
 

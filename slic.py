@@ -1,6 +1,5 @@
 # USAGE: python -u scribe.py IMAGE_INPUT GRAPHNETWORK
-# TODO: inter-character and inter-word space
-#       subgraphs matching
+# TODO: subgraphs matching
 #       associating diactritics with the main character stroke
 #       actually typing back the characters
 
@@ -51,6 +50,9 @@ def delete_long_paths(G, threshold, start_nodes, end_nodes):
     # List to store edges to be removed
     edges_to_remove = []
     
+    
+    # start and end nodes should be defined more automagicadynamically
+    # to accomodate whitespaces just above/blow the main stroke
     # Iterate over all pairs of start and end nodes
     for start_node in start_nodes:
         for end_node in end_nodes:
@@ -62,9 +64,11 @@ def delete_long_paths(G, threshold, start_nodes, end_nodes):
                     if len(path) > threshold:
                         # Add edges forming the path to the list
                         edges_to_remove.extend(zip(path[:-1], path[1:]))
+    
     for u, v in edges_to_remove:     # remove the edges
         if G.has_edge(u, v):
             G.remove_edge(u, v)
+    
     isolated_nodes = list(nx.isolates(G)) # remove the nodes
     G.remove_nodes_from(isolated_nodes)
 
@@ -211,7 +215,6 @@ for m in range(kosong):
             spaces.add_edge(m, n, color='#FF0000', weight=1)
             break
 
-# TODO: select the longest chain of edges and delete the rest
 source_nodes= list(range(0, (int(width/SLIC_SPACE)+1) ))
 target_nodes= list(range (list(spaces.nodes())[-1]-source_nodes[-1],\
                    list(spaces.nodes())[-1]+1))
@@ -354,6 +357,7 @@ for m in bends:
 
 spaces_diff= remap_node(spaces_diff)
 merged = nx.compose(scribe,spaces_diff)
+merged.remove_node(0)
 draw_graph2(merged)
 
 draw_graph2(scribe)

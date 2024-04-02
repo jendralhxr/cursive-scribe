@@ -46,7 +46,84 @@ def freeman(x, y):
             return(4)
         elif (y<0) and (abs(y)>abs(x)):
             return(6)
-        
+
+def delete_long_paths(G, threshold, start_nodes, end_nodes):
+    # List to store edges to be removed
+    edges_to_remove = []
+    
+    # Iterate over all pairs of start and end nodes
+    for start_node in start_nodes:
+        for end_node in end_nodes:
+            if start_node != end_node:
+                # Find all simple paths between start and end nodes
+                paths = nx.all_simple_paths(G, start_node, end_node)
+                for path in paths:
+                    # Check if the length of the path exceeds the threshold
+                    if len(path) > threshold:
+                        # Add edges forming the path to the list
+                        edges_to_remove.extend(zip(path[:-1], path[1:]))
+    for u, v in edges_to_remove:     # remove the edges
+        if G.has_edge(u, v):
+            G.remove_edge(u, v)
+    isolated_nodes = list(nx.isolates(G)) # remove the nodes
+    G.remove_nodes_from(isolated_nodes)
+
+
+def graph_difference(G1, G2):
+    diff_graph = nx.Graph()
+    nodes_added = G1.nodes() - G2.nodes()
+    for node in nodes_added:
+        diff_graph.add_node(node, **G1.nodes[node])
+    nodes_removed = G2.nodes() - G1.nodes()
+    for node in nodes_removed:
+        diff_graph.add_node(node, **G2.nodes[node])
+    edges_added = G1.edges() - G2.edges()
+    for edge in edges_added:
+        diff_graph.add_edge(edge[0], edge[1], **G1[edge[0]][edge[1]])
+    edges_removed = G2.edges() - G1.edges()
+    for edge in edges_removed:
+        diff_graph.add_edge(edge[0], edge[1], **G2[edge[0]][edge[1]])
+    return diff_graph
+
+
+def draw_graph1(graph):
+    positions = nx.get_node_attributes(graph,'pos')
+    colors = nx.get_edge_attributes(graph,'color').values()
+    plt.figure(figsize=(width/12,height/12)) 
+    nx.draw(graph, 
+            # nodes' param
+            pos=positions,
+            node_size=1, with_labels=True,
+            font_size=8,
+            # edges' param
+            edge_color=colors, 
+            width=1,
+            )
+
+
+def draw_graph2(graph):
+    positions = nx.get_node_attributes(graph,'pos')
+    area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
+    # edges
+    colors = nx.get_edge_attributes(graph,'color').values()
+    weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
+    
+    plt.figure(figsize=(width/12,height/12)) 
+    nx.draw(graph, 
+            # nodes' param
+            pos=positions, 
+            with_labels=True, node_color='orange',
+            node_size=area*25,
+            font_size=8,
+            # edges' param
+            edge_color=colors, 
+            width=weights*2,
+            )
+
+def remap_node(G):
+    mapping = {node: node*-1 for node in G.nodes()}
+    G = nx.relabel_nodes(G, mapping)
+    return G
 
 ######## main routine
 
@@ -131,67 +208,21 @@ for m in range(kosong):
         dist= math.sqrt( math.pow(voids[n][0]-voids[m][0],2) + math.pow(voids[n][1]-voids[m][1],2) )
         if (dist<SLIC_SPACE*phi) and ((vane==2) or (vane==6)):
             #print(f'jadi {m}-{n}:{vane}:{dist} ({voids[m][0]},{voids[m][1]}) to ({voids[n][0]},{voids[n][1]})')
-            spaces.add_edge(m, n, color='#FF0000')
+            spaces.add_edge(m, n, color='#FF0000', weight=1)
             break
-
-def remove_short_paths(G, threshold, source_nodes, target_nodes):
-    # Identify all simple paths and their lengths
-    all_paths = []
-    for source in source_nodes:
-        for target in target_nodes:
-            if source != target:
-                paths = nx.all_simple_paths(G, source, target)
-                all_paths.extend(paths)
-    
-    # Group paths by their start and end nodes
-    paths_by_start_end = {}
-    for path in all_paths:
-        start, end = path[0], path[-1]
-        if (start, end) not in paths_by_start_end:
-            paths_by_start_end[(start, end)] = []
-        paths_by_start_end[(start, end)].append(path)
-    
-    # Keep only the longest path for each start-end pair
-    longest_paths = [max(paths, key=len) for paths in paths_by_start_end.values()]
-    
-    # Remove short paths while preserving the longer branches
-    edges_to_remove = []
-    for path in longest_paths:
-        for u, v in zip(path[:-1], path[1:]):
-            if G.has_edge(u, v):
-                edges_to_remove.append((u, v))
-    
-    for u, v in edges_to_remove:
-        G.remove_edge(u, v)
-    
-    # Remove isolated nodes
-    isolated_nodes = list(nx.isolates(G))
-    G.remove_nodes_from(isolated_nodes)
 
 # TODO: select the longest chain of edges and delete the rest
 source_nodes= list(range(0, (int(width/SLIC_SPACE)+1) ))
 target_nodes= list(range (list(spaces.nodes())[-1]-source_nodes[-1],\
                    list(spaces.nodes())[-1]+1))
-hops= int(height/SLIC_SPACE)-1
-remove_short_paths(spaces, hops, source_nodes, target_nodes)    
+hops= int(height/SLIC_SPACE/phi) # taking into account the top and bottom blank space
+spaces_old= spaces.copy()
+#spaces= spaces_old.copy()
+delete_long_paths(spaces, hops, source_nodes, target_nodes)
+spaces_diff= graph_difference(spaces_old, spaces)
+draw_graph1(spaces_diff)
 
-
-
-    
-    
-positions = nx.get_node_attributes(spaces,'pos')
-colors = nx.get_edge_attributes(spaces,'color').values()
-plt.figure(figsize=(width/6,height/6)) 
-nx.draw(spaces, 
-        # nodes' param
-        pos=positions,
-        node_size=1, with_labels=True,
-        font_size=8,
-        # edges' param
-        edge_color=colors, 
-        width=1,
-        )
-
+# the main stroke
 temp= nx.get_node_attributes(scribe, 'pos')
 cx=[]
 cy=[]
@@ -321,25 +352,11 @@ for m in bends:
         #print(f"{m}-{bdest} {bdist} {vane} {kernel}")    
 #scribe.number_of_edges()            
 
-# re-fetch the attributes from drawing
-# nodes
-positions = nx.get_node_attributes(scribe,'pos')
-area= np.array(list(nx.get_node_attributes(scribe, 'area').values()))
-# edges
-colors = nx.get_edge_attributes(scribe,'color').values()
-weights = np.array(list(nx.get_edge_attributes(scribe,'weight').values()))
+spaces_diff= remap_node(spaces_diff)
+merged = nx.compose(scribe,spaces_diff)
+draw_graph2(merged)
 
-plt.figure(figsize=(width/12,height/12)) 
-nx.draw(scribe, 
-        # nodes' param
-        pos=positions, 
-        with_labels=True, node_color='orange',
-        node_size=area*25,
-        font_size=8,
-        # edges' param
-        edge_color=colors, 
-        width=weights*2,
-        )
+draw_graph2(scribe)
 plt.savefig("test.png", bbox_inches='tight')
 #plt.savefig(sys.argv[3], bbox_inches='tight')
 

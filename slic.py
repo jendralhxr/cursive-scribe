@@ -217,6 +217,8 @@ spaces_old= spaces.copy()
 delete_long_paths(spaces, hops)
 spaces_diff= graph_difference(spaces_old, spaces)
 spaces_diff.remove_node(list(spaces_diff.nodes())[-1]) # why the 1 elem artifact from differencing
+spaces_diff.remove_nodes_from(list(nx.isolates(spaces_diff)))
+
 draw_graph1(spaces_diff)
 
 # the main stroke

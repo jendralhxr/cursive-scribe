@@ -213,10 +213,10 @@ for m in range(kosong):
 
 hops= int(height/SLIC_SPACE/phi) # taking into account the top and bottom blank space
 spaces_old= spaces.copy()
-
-spaces= spaces_old.copy()
+#spaces= spaces_old.copy()
 delete_long_paths(spaces, hops)
 spaces_diff= graph_difference(spaces_old, spaces)
+spaces_diff.remove_node(list(spaces_diff.nodes())[-1]) # why the 1 elem artifact from differencing
 draw_graph1(spaces_diff)
 
 # the main stroke
@@ -308,7 +308,7 @@ for m in range(isi):
             (distance[m]<pow(phi,2)*SLIC_SPACE) and (dest[m]!=-1):
             scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
         if ((kernel_ud>pow(phi,3)) or ((kernel_ud>pow(phi,2)) and cue.item(midy,midx))) and \
-            (distance_ud[m]<pow(phi,2)*SLIC_SPACE) and dest_ud[m]!=-1:
+            (distance_ud[m]<pow(phi,2)*SLIC_SPACE) and (dest_ud[m]!=-1):
             scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
         
 # additional edges missing from the O(n^2) search

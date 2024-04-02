@@ -134,22 +134,63 @@ for m in range(kosong):
             spaces.add_edge(m, n, color='#FF0000')
             break
 
-# TODO: select the longest chain of edges and delete the rest
+def remove_short_paths(G, threshold, source_nodes, target_nodes):
+    # Identify all simple paths and their lengths
+    all_paths = []
+    for source in source_nodes:
+        for target in target_nodes:
+            if source != target:
+                paths = nx.all_simple_paths(G, source, target)
+                all_paths.extend(paths)
+    
+    # Group paths by their start and end nodes
+    paths_by_start_end = {}
+    for path in all_paths:
+        start, end = path[0], path[-1]
+        if (start, end) not in paths_by_start_end:
+            paths_by_start_end[(start, end)] = []
+        paths_by_start_end[(start, end)].append(path)
+    
+    # Keep only the longest path for each start-end pair
+    longest_paths = [max(paths, key=len) for paths in paths_by_start_end.values()]
+    
+    # Remove short paths while preserving the longer branches
+    edges_to_remove = []
+    for path in longest_paths:
+        for u, v in zip(path[:-1], path[1:]):
+            if G.has_edge(u, v):
+                edges_to_remove.append((u, v))
+    
+    for u, v in edges_to_remove:
+        G.remove_edge(u, v)
+    
+    # Remove isolated nodes
+    isolated_nodes = list(nx.isolates(G))
+    G.remove_nodes_from(isolated_nodes)
 
-"""
+# TODO: select the longest chain of edges and delete the rest
+source_nodes= list(range(0, (int(width/SLIC_SPACE)+1) ))
+target_nodes= list(range (list(spaces.nodes())[-1]-source_nodes[-1],\
+                   list(spaces.nodes())[-1]+1))
+hops= int(height/SLIC_SPACE)-1
+remove_short_paths(spaces, hops, source_nodes, target_nodes)    
+
+
+
+    
+    
 positions = nx.get_node_attributes(spaces,'pos')
 colors = nx.get_edge_attributes(spaces,'color').values()
 plt.figure(figsize=(width/6,height/6)) 
 nx.draw(spaces, 
         # nodes' param
         pos=positions,
-        node_size=1, #with_labels=True,
+        node_size=1, with_labels=True,
         font_size=8,
         # edges' param
         edge_color=colors, 
         width=1,
         )
-"""
 
 temp= nx.get_node_attributes(scribe, 'pos')
 cx=[]

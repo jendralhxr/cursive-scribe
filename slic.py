@@ -85,6 +85,10 @@ def graph_difference(G1, G2):
         diff_graph.add_edge(edge[0], edge[1], **G2[edge[0]][edge[1]])
     return diff_graph
 
+def graph_sanity(target, source):
+    for i in list(target.nodes()):
+        if (len(target.nodes[i]['pos'])==0):
+            target.nodes[i].update(source.nodes[i])
 
 def draw_graph1(graph):
     positions = nx.get_node_attributes(graph,'pos')
@@ -93,7 +97,7 @@ def draw_graph1(graph):
     nx.draw(graph, 
             # nodes' param
             pos=positions,
-            node_size=1, with_labels=True,
+            node_size=0, with_labels=True,
             font_size=8,
             # edges' param
             edge_color=colors, 
@@ -102,6 +106,7 @@ def draw_graph1(graph):
 
 
 def draw_graph2(graph):
+    # nodes
     positions = nx.get_node_attributes(graph,'pos')
     area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
     # edges
@@ -199,6 +204,7 @@ for n in range(num_slic):
         spaces.add_node(int(kosong), area=0, pos=(cx,-cy) )
         kosong= kosong+1
 
+# defining the 'spaces'
 spaces.remove_edges_from(spaces.edges) # start anew, just in case
 for m in range(kosong):
     for n in range(m+1, kosong):
@@ -216,7 +222,7 @@ spaces_old= spaces.copy()
 #spaces= spaces_old.copy()
 delete_long_paths(spaces, hops)
 spaces_diff= graph_difference(spaces_old, spaces)
-spaces_diff.remove_node(list(spaces_diff.nodes())[-1]) # why the 1 elem artifact from differencing
+graph_sanity(spaces_diff, spaces) # anticipating leaky/lost nodes properties
 spaces_diff.remove_nodes_from(list(nx.isolates(spaces_diff)))
 
 draw_graph1(spaces_diff)

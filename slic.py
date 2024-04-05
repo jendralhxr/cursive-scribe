@@ -60,11 +60,9 @@ def delete_long_paths(graph, threshold):
                     for path in paths:
                         if len(path) > threshold:
                             edges_to_remove.extend(zip(path[:-1], path[1:]))
-        
     for u, v in edges_to_remove: # remove the edges
         if graph.has_edge(u, v):
             graph.remove_edge(u, v)
-    
     isolated_nodes = list(nx.isolates(graph)) # remove the nodes
     graph.remove_nodes_from(isolated_nodes)
 
@@ -87,7 +85,7 @@ def graph_difference(G1, G2):
 
 def graph_sanity(target, source):
     for i in list(target.nodes()):
-        if (len(target.nodes[i]['pos'])==0):
+        if (len(target.nodes[i])==0):
             target.nodes[i].update(source.nodes[i])
 
 def draw_graph1(graph):
@@ -112,7 +110,6 @@ def draw_graph2(graph):
     # edges
     colors = nx.get_edge_attributes(graph,'color').values()
     weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
-    
     plt.figure(figsize=(width/12,height/12)) 
     nx.draw(graph, 
             # nodes' param
@@ -137,35 +134,35 @@ image = cv.imread(filename)
 height= image.shape[0]
 width= image.shape[1]
 image_gray= cv.cvtColor(cv.bitwise_not(image), cv.COLOR_BGR2GRAY)
-
 ret, cue = cv.threshold(image_gray, 0, 120, cv.THRESH_OTSU) # other thresholding method may also work
 render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 
-# LSC and SLIC 
-SLIC_SPACE= 3
 
+"""
 # SEEDS parameters
 num_superpixels = 5000
 num_levels = 4
 prior = 2
 num_histogram_bins = 5
 double_step = False
+"""
 
+# LSC and SLIC 
+SLIC_SPACE= 3
 #slic = cv.ximgproc.createSuperpixelSEEDS(cue.shape[1], cue.shape[0], 1, num_superpixels, num_levels, prior, num_histogram_bins, double_step)
 #slic.iterate(cue, num_iterations=4)
-
 slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = SLIC_SPACE)
 #slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLIC, region_size = SLIC_SPACE)
 #slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.MSLIC, region_size = SLIC_SPACE)
 #slic = cv.ximgproc.createSuperpixelLSC(cue, region_size = SLIC_SPACE)
 slic.iterate()
-
 #mask= slic.getLabelContourMask()
 num_slic = slic.getNumberOfSuperpixels()
 lbls = slic.getLabels()
 
 render = cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 
+# moments calculation for each superpixels, either voids or filled (in-stroke)
 moments = [np.zeros((1, 2)) for _ in range(num_slic)]
 moments_void = [np.zeros((1, 2)) for _ in range(num_slic)]
 # tabulating the superpixel labels
@@ -177,11 +174,13 @@ for j in range(height):
         else:
             moments_void[lbls[j,i]] = np.append(moments_void[lbls[j,i]], np.array([[i,j]]), axis=0)
 
+# generating nodes
 scribe= nx.Graph() # start anew, just in case
 spaces= nx.Graph() # start anew, just in case
 isi=0
 kosong=0
 voids=[]
+
 # valid superpixel
 for n in range(num_slic):
     if ( len(moments[n])>SLIC_SPACE): # remove spurious superpixel with area less than 2 px 
@@ -204,7 +203,7 @@ for n in range(num_slic):
         spaces.add_node(int(kosong), area=0, pos=(cx,-cy) )
         kosong= kosong+1
 
-# defining the 'spaces'
+# defining the 'spaces' edges
 spaces.remove_edges_from(spaces.edges) # start anew, just in case
 for m in range(kosong):
     for n in range(m+1, kosong):
@@ -217,6 +216,7 @@ for m in range(kosong):
             spaces.add_edge(m, n, color='#FF0000', weight=1)
             break
 
+# substracing the longs ones from the spaces' edges
 hops= int(height/SLIC_SPACE/phi) # taking into account the top and bottom blank space
 spaces_old= spaces.copy()
 #spaces= spaces_old.copy()
@@ -224,17 +224,15 @@ delete_long_paths(spaces, hops)
 spaces_diff= graph_difference(spaces_old, spaces)
 graph_sanity(spaces_diff, spaces) # anticipating leaky/lost nodes properties
 spaces_diff.remove_nodes_from(list(nx.isolates(spaces_diff)))
+#draw_graph1(spaces_diff)
 
-draw_graph1(spaces_diff)
-
-# the main stroke
+# the stroke, I kinda want to refactor this like the spaces' nodes too :D
 temp= nx.get_node_attributes(scribe, 'pos')
 cx=[]
 cy=[]
 for key, value in temp.items():
     cx.append(value[0])
     cy.append(-value[1])
-
 # stroke and diacritics edges
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 distance = np.full(isi, 1e6)
@@ -244,6 +242,7 @@ dest_ud = np.full(isi, -1, dtype=int)
 bends= []
 
 # establish edges from the shortest distance between nodes, forward check
+# O(n^2) complexity
 for m in range(isi):
     # the search
     for n in range(isi):
@@ -312,10 +311,10 @@ for m in range(isi):
         if (dest_ud[m]!=-1):
             scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane, kernel=kernel_ud)
         # main stroke
-        if ((kernel>pow(phi,3)) or ((kernel>pow(phi,2)) and cue.item(midy,midx))) and \
+        if ((kernel>pow(phi,2)) or ((kernel>pow(phi,1)) and cue.item(midy,midx))) and \
             (distance[m]<pow(phi,2)*SLIC_SPACE) and (dest[m]!=-1):
             scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
-        if ((kernel_ud>pow(phi,3)) or ((kernel_ud>pow(phi,2)) and cue.item(midy,midx))) and \
+        if ((kernel_ud>pow(phi,2)) or ((kernel_ud>pow(phi,1)) and cue.item(midy,midx))) and \
             (distance_ud[m]<pow(phi,2)*SLIC_SPACE) and (dest_ud[m]!=-1):
             scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
         
@@ -352,19 +351,19 @@ for m in bends:
                 bdist= tdist
                 bdest= n
     if (bdest!=-1) and (bdist<pow(phi,2)*SLIC_SPACE) and\
-        ((kernel>pow(phi,3)) or ((kernel>pow(phi,2)) and cue.item(midy,midx))):
+        ((kernel>pow(phi,2)) or ((kernel>pow(phi,1)) and cue.item(midy,midx))):
         scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist, code=vane, kernel=kernel)
         #print(f"{m}-{bdest} {bdist} {vane} {kernel}")    
 #scribe.number_of_edges()            
 
+# resulting graph
 spaces_diff= remap_node(spaces_diff)
 merged = nx.compose(scribe,spaces_diff)
 merged.remove_node(0)
+#draw_graph2(scribe)
 draw_graph2(merged)
-
-draw_graph2(scribe)
-plt.savefig("test.png", bbox_inches='tight')
-#plt.savefig(sys.argv[3], bbox_inches='tight')
+#plt.savefig("test.png", bbox_inches='tight')
+plt.savefig(sys.argv[3], bbox_inches='tight')
 
 # save graph object to file
 pickle.dump(scribe, open(sys.argv[4], 'wb'))
@@ -380,6 +379,7 @@ blend  = cv.addWeighted(canvas, 0.5, overlay, 0.5, 0)
 plt.imshow(blend) 
 """
 
+# keypoints bitmap
 render= cv.cvtColor(render, cv.COLOR_BGR2RGB)
 plt.imshow(render) 
 #plt.axis("off")

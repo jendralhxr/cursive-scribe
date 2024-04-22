@@ -193,7 +193,7 @@ for n in range(num_slic):
         cx= int( np.mean(moments[n][1:,0]) ) # centroid
         cy= int( np.mean(moments[n][1:,1]) )
         render.itemset((cy,cx,1), 255) 
-        scribe.add_node(int(isi), label=int(lbls[cy,cx]), area=(len(moments[n])-1), pos=(cx,-cy) )
+        scribe.add_node(int(isi), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos=(cx,-cy) )
         #print(f'point{n} at ({cx},{cy})')
         isi= isi+1
     else:
@@ -309,14 +309,14 @@ for m in range(isi):
         
         # diacritics connector
         if (dest_ud[m]!=-1):
-            scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2, code=vane, kernel=kernel_ud)
+            scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2/SLIC_SPACE, code=vane, kernel=kernel_ud)
         # main stroke
         if ((kernel>pow(phi,2)) or ((kernel>pow(phi,1)) and cue.item(midy,midx))) and \
             (distance[m]<pow(phi,2)*SLIC_SPACE) and (dest[m]!=-1):
-            scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
+            scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m]/SLIC_SPACE, code=vane, kernel=kernel)
         if ((kernel_ud>pow(phi,2)) or ((kernel_ud>pow(phi,1)) and cue.item(midy,midx))) and \
             (distance_ud[m]<pow(phi,2)*SLIC_SPACE) and (dest_ud[m]!=-1):
-            scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m], code=vane, kernel=kernel)
+            scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m]/SLIC_SPACE, code=vane, kernel=kernel)
         
 # additional edges missing from the O(n^2) search
 for m in bends:
@@ -352,7 +352,7 @@ for m in bends:
                 bdest= n
     if (bdest!=-1) and (bdist<pow(phi,2)*SLIC_SPACE) and\
         ((kernel>pow(phi,2)) or ((kernel>pow(phi,1)) and cue.item(midy,midx))):
-        scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist, code=vane, kernel=kernel)
+        scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist/SLIC_SPACE, code=vane, kernel=kernel)
         #print(f"{m}-{bdest} {bdist} {vane} {kernel}")    
 #scribe.number_of_edges()            
 

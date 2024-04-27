@@ -9,7 +9,7 @@ import sys
 import networkx as nx
 import matplotlib.pyplot as plt
 import math
-#import os
+import os
 import pickle
 
 # freeman code going anti-clockwise like trigonometrics angle

@@ -10,37 +10,54 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load the image in grayscale
-image = cv2.imread('sbk.png', cv2.IMREAD_COLOR)
+filename= 'sifatline.png'
+image = cv2.imread(filename, cv2.IMREAD_COLOR)
 image=  cv2.bitwise_not(image)
 
 height= image.shape[0]
 width= image.shape[1]
 
 image_gray= cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-
-_, thresholded = cv2.threshold(image_gray, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+_, thresholded = cv2.threshold(image_gray, 0, 1, cv2.THRESH_OTSU)
 
 # Calculate histogram
-num_cols = thresholded.shape[1]
-column_indices = np.arange(num_cols)  # Generate array of column indices
-histogram = np.sum(thresholded, axis=0)  # Sum along columns to get histogram
+column_indices = np.arange(width)  # Generate array of column indices
+row_indices= np.arange(height)
+histogram_x = np.sum(thresholded, axis=0)  # Sum along columns to get histogram
+histogram_y = np.sum(thresholded, axis=1)  # Sum along columns to get histogram
+
 
 SLIC_SPACE= 3
+phi= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
-for i in range(width):
-    if (histogram[i]<SLIC_SPACE):
+# spaces, horizontal
+render= image.copy()
+for i in range(width-1, -1, -1):
+    if (histogram_x[i]<=SLIC_SPACE):
         for j in range(height):
-            image.itemset((j,i,2), 255)
-
-image= cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-plt.imshow(image) 
-
-
-
+            render.itemset((j,i,2), 240)
+    elif  (histogram_x[i]<phi*SLIC_SPACE):
+        for j in range(height):
+            render.itemset((j,i,2), 80)
+    
+render= cv2.cvtColor(render, cv2.COLOR_BGR2RGB)
+plt.figure(dpi=300)
+plt.imshow(render) 
 # Plot the histogram
-plt.plot(column_indices, histogram)
-plt.title('Histogram of Grayscale Image After Otsu Thresholding Along X-Axis')
+plt.plot(column_indices, histogram_x)
+#plt.title('Histogram of Grayscale Image After Otsu Thresholding Along X-Axis')
 plt.xlabel('Column Index')
 plt.ylabel('Number of Pixels')
+plt.show()
+
+# 
+plt.figure(dpi=300)
+render= image.copy()
+#render= cv2.cvtColor(render, cv2.COLOR_BGR2RGB)
+render= cv2.cvtColor(render[:,:,2], cv2.COLOR_GRAY2RGB)
+plt.imshow(render) 
+plt.plot(histogram_y, row_indices)
+#plt.title('Histogram of Grayscale Image After Otsu Thresholding Along X-Axis')
+plt.xlabel('Row Index')
+plt.ylabel('count')
 plt.show()

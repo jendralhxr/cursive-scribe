@@ -9,6 +9,11 @@ import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+SLIC_SPACE= 3
+phi= 1.6180339887498948482 # ppl says this is a beautiful number :)
+
+
 # Load the image in grayscale
 filename= 'sifatline.png'
 image = cv.imread(filename, cv.IMREAD_COLOR)
@@ -28,21 +33,30 @@ def rottrap(img, angle):
     M = cv.getRotationMatrix2D(center, angle, 1.0)
     dst = cv.warpAffine(img, M, (width,height))
     hist= np.sum(dst, axis=1)  # Sum along columns to get histogram
-    return np.trapz(hist)
+    return (np.trapz(hist))
 
+def rottrap_img(img, angle):
+    M = cv.getRotationMatrix2D(center, angle, 1.0)
+    dst = cv.warpAffine(img, M, (width,height))
+    hist= np.sum(dst, axis=1)  # Sum along columns to get histogram
+    plt.figure(dpi=300)
+    plt.imshow(dst)
+    print(np.trapz(hist))
+ 
 # find optimal orientation, ternary search
-left, right = -1, 1  # Define the range to search within
+left, right = -pow(phi,3), pow(phi,3)  # Define the range to search within
 epsilon = 1e-6  # Define the desired precision
 while abs(right - left) > epsilon:
     mid1 = left + (right - left) / 3
     mid2 = right - (right - left) / 3
     if rottrap(thresholded, mid1) < rottrap(thresholded, mid2):
-        right = mid2
-    else:
         left = mid1
+    else:
+        right = mid2
 # found it
-min_orient = (left + right) / 2
-M = cv.getRotationMatrix2D(center, min_orient, 1.0)
+orient = (left + right) / 2
+print(orient)
+M = cv.getRotationMatrix2D(center, orient, 1.0)
 thresholded = cv.warpAffine(thresholded, M, (width,height))
 
 # Calculate histogram
@@ -51,12 +65,9 @@ row_indices= np.arange(height)
 histogram_x = np.sum(thresholded, axis=0)  # Sum along columns to get histogram
 histogram_y = np.sum(thresholded, axis=1)  # Sum along columns to get histogram
 
-SLIC_SPACE= 3
-phi= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
 # line segments
 plt.figure(dpi=300)
-#render= thresholded.copy()
 #render= cv.cvtColor(render, cv.COLOR_BGR2RGB)
 #render= cv.cvtColor(render[:,:,CHANNEL], cv.COLOR_GRAY2RGB)
 _, renderbw = cv.threshold(thresholded, 0, 240, cv.THRESH_BINARY)
@@ -101,26 +112,24 @@ while (valleys[m]<=max(valleys) and (m+n)<len(valleys)):
     bot=valleys[m+n]
     if (bot-top)>step:
         linecrop= renderbw[top:bot,:]
-       #  lwidth= linecrop.shape[0]
-       #  lheight= linecrop.shape[1]
-       #  lcenter= (int(lwidth/2), int(lheight/2))
-       #  # correct the line orientation
-       #  left, right = -phi, phi  # Define the range to search within
-       #  epsilon = 1e-6  # Define the desired precision
-       #  while abs(right - left) > epsilon:
-       #      mid1 = left + (right - left) / 3
-       #      mid2 = right - (right - left) / 3
-       #      if rottrap(linecrop, mid1) < rottrap(linecrop, mid2):
-       #          right = mid2
-       #      else:
-       #          left = mid1
-       #  # found it
-       #  min_orient = (left + right) / 2
-       #  print(min_orient)
-       #  M = cv.getRotationMatrix2D(lcenter, min_orient, 1.0)
-       #  linecrop= cv.warpAffine(linecrop, M, (lheight,lwidth))
-       # # _,linecrop= cv.threshold(linecrop, 0, 240, cv.THRESH_OTSU)
-
+        lwidth= linecrop.shape[0]
+        lheight= linecrop.shape[1]
+        lcenter= (int(lwidth/2), int(lheight/2))
+        # correct the line orientation
+        left, right = -pow(phi,4), pow(phi,4)  # Define the range to search within
+        epsilon = 1e-6  # Define the desired precision
+        while abs(right - left) > epsilon:
+            mid1 = left + (right - left) / 3
+            mid2 = right - (right - left) / 3
+            if rottrap(linecrop, mid1) < rottrap(linecrop, mid2):
+                left= mid1
+            else:
+                right= mid2
+        # found it
+        orient = (left + right) / 2
+        M = cv.getRotationMatrix2D(lcenter, orient, 1.0)
+        linecrop= cv.warpAffine(linecrop, M, (lheight,lwidth))
+        
         plt.figure(dpi=300)
         plt.imshow(linecrop)
         m=m+n

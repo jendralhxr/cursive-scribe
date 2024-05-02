@@ -21,10 +21,10 @@ image=  cv.bitwise_not(image)
 
 height= image.shape[0]
 width= image.shape[1]
-center=(width/2, height/2)
+center = (width/2, height/2) 
 
 CHANNEL= 2
-image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+#image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
 #_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_OTSU)
 _, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
@@ -36,14 +36,20 @@ def rottrap(img, angle):
     return (np.trapz(hist))
 
 def rottrap_img(img, angle):
+    height= img.shape[0]
+    width= img.shape[1]
+    center = (width/2, height/2) 
     M = cv.getRotationMatrix2D(center, angle, 1.0)
     dst = cv.warpAffine(img, M, (width,height))
     hist= np.sum(dst, axis=1)  # Sum along columns to get histogram
     plt.figure(dpi=300)
     plt.imshow(dst)
     print(np.trapz(hist))
+    return(dst)
  
-# find optimal orientation, ternary search
+# find optimal page orientation, ternary search 
+# page orientation usually wants to MAXIMIZE 
+#  the area under the histogram curve
 left, right = -pow(phi,3), pow(phi,3)  # Define the range to search within
 epsilon = 1e-6  # Define the desired precision
 while abs(right - left) > epsilon:
@@ -65,7 +71,6 @@ row_indices= np.arange(height)
 histogram_x = np.sum(thresholded, axis=0)  # Sum along columns to get histogram
 histogram_y = np.sum(thresholded, axis=1)  # Sum along columns to get histogram
 
-
 # line segments
 plt.figure(dpi=300)
 #render= cv.cvtColor(render, cv.COLOR_BGR2RGB)
@@ -78,7 +83,6 @@ plt.plot(histogram_y, row_indices)
 plt.xlabel('Row Index')
 plt.ylabel('count')
 plt.show()
-
 
 def find_peaks_valleys(hst):
     peaks = []
@@ -96,6 +100,7 @@ from scipy.ndimage import gaussian_filter1d
 histogram_ys= gaussian_filter1d(histogram_y, pow(phi,3))
 _,valleys= find_peaks_valleys(histogram_ys)
 #valleys.append(len(histogram))
+valleys.insert(0,0) # append 0 at the beginning
 
 def average_difference(lst):
     differences = [lst[i+1] - lst[i] for i in range(len(lst)-1)]
@@ -115,18 +120,22 @@ while (valleys[m]<=max(valleys) and (m+n)<len(valleys)):
         lwidth= linecrop.shape[0]
         lheight= linecrop.shape[1]
         lcenter= (int(lwidth/2), int(lheight/2))
+        
         # correct the line orientation
-        left, right = -pow(phi,4), pow(phi,4)  # Define the range to search within
+        # line orientation perhaps wants to MINIMIZE
+        #  the area under the histogram curve
+        left, right = -pow(phi,3), pow(phi,3)  # Define the range to search within
         epsilon = 1e-6  # Define the desired precision
         while abs(right - left) > epsilon:
             mid1 = left + (right - left) / 3
             mid2 = right - (right - left) / 3
             if rottrap(linecrop, mid1) < rottrap(linecrop, mid2):
-                left= mid1
-            else:
                 right= mid2
+            else:
+                left= mid1
         # found it
         orient = (left + right) / 2
+        print(orient)
         M = cv.getRotationMatrix2D(lcenter, orient, 1.0)
         linecrop= cv.warpAffine(linecrop, M, (lheight,lwidth))
         

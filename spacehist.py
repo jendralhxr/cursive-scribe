@@ -71,13 +71,46 @@ plt.xlabel('Row Index')
 plt.ylabel('count')
 plt.show()
 
+
+def find_peaks_valleys(hst):
+    peaks = []
+    valleys = []
+    for i in range(1, len(hst) - 1):
+        if hst[i] > hst[i - 1] and hst[i] >= hst[i + 1]:
+            peaks.append(i)
+        elif hst[i] < hst[i - 1] and hst[i] <= hst[i + 1]:
+            valleys.append(i)
+        elif hst[i] < hst[i - 1] and i==len(hst)-2:
+            valleys.append(i)    
+    return peaks, valleys
+
+from scipy.ndimage import gaussian_filter1d
+histogram_ys= gaussian_filter1d(histogram_y, pow(phi,3))
+_,valleys= find_peaks_valleys(histogram_ys)
+#valleys.append(len(histogram))
+
+def average_difference(lst):
+    differences = [lst[i+1] - lst[i] for i in range(len(lst)-1)]
+    avg_diff = sum(differences) / len(differences)
+    return avg_diff
+
+step= average_difference(valleys) / np.sqrt(phi)
+
 # gonna crop-select each lines here
-#
-#
-#
-
-
-
+m=0
+n=1
+while (valleys[m]<=max(valleys) and (m+n)<len(valleys)):
+    top=valleys[m]
+    bot=valleys[m+n]
+    if (bot-top)>step:
+        linecrop= thresholded[top:bot,:]
+        plt.figure(dpi=300)
+        plt.imshow(linecrop)
+        m=m+n
+        n=1 
+    else:
+        n= n+1
+    
 # spaces, horizontal
 render= image.copy()
 for i in range(width-1, -1, -1):

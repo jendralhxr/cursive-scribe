@@ -101,27 +101,26 @@ while (valleys[m]<=max(valleys) and (m+n)<len(valleys)):
     bot=valleys[m+n]
     if (bot-top)>step:
         linecrop= renderbw[top:bot,:]
-        lwidth= linecrop.shape[0]
-        lheight= linecrop.shape[1]
-        lcenter= (int(lwidth/2), int(lheight/2))
-        # correct the line orientation
-        left, right = -phi, phi  # Define the range to search within
-        epsilon = 1e-6  # Define the desired precision
-        while abs(right - left) > epsilon:
-            mid1 = left + (right - left) / 3
-            mid2 = right - (right - left) / 3
-            if rottrap(linecrop, mid1) < rottrap(linecrop, mid2):
-                right = mid2
-            else:
-                left = mid1
-        # found it
-        min_orient = (left + right) / 2
-        print(min_orient)
-        M = cv.getRotationMatrix2D(lcenter, min_orient, 1.0)
-        linecrop= cv.warpAffine(linecrop, M, (lheight,lwidth))
-       # _,linecrop= cv.threshold(linecrop, 0, 240, cv.THRESH_OTSU)
+       #  lwidth= linecrop.shape[0]
+       #  lheight= linecrop.shape[1]
+       #  lcenter= (int(lwidth/2), int(lheight/2))
+       #  # correct the line orientation
+       #  left, right = -phi, phi  # Define the range to search within
+       #  epsilon = 1e-6  # Define the desired precision
+       #  while abs(right - left) > epsilon:
+       #      mid1 = left + (right - left) / 3
+       #      mid2 = right - (right - left) / 3
+       #      if rottrap(linecrop, mid1) < rottrap(linecrop, mid2):
+       #          right = mid2
+       #      else:
+       #          left = mid1
+       #  # found it
+       #  min_orient = (left + right) / 2
+       #  print(min_orient)
+       #  M = cv.getRotationMatrix2D(lcenter, min_orient, 1.0)
+       #  linecrop= cv.warpAffine(linecrop, M, (lheight,lwidth))
+       # # _,linecrop= cv.threshold(linecrop, 0, 240, cv.THRESH_OTSU)
 
-       
         plt.figure(dpi=300)
         plt.imshow(linecrop)
         m=m+n

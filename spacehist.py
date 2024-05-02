@@ -24,28 +24,25 @@ image_gray= image[:,:,CHANNEL]
 #_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_OTSU)
 _, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
 
-def rottrap(angle):
+def rottrap(img, angle):
     M = cv.getRotationMatrix2D(center, angle, 1.0)
-    dst = cv.warpAffine(thresholded, M, (width,height))
+    dst = cv.warpAffine(img, M, (width,height))
     hist= np.sum(dst, axis=1)  # Sum along columns to get histogram
     return np.trapz(hist)
 
-# find optimal orientation
+# find optimal orientation, ternary search
 left, right = -1, 1  # Define the range to search within
 epsilon = 1e-6  # Define the desired precision
 while abs(right - left) > epsilon:
     mid1 = left + (right - left) / 3
     mid2 = right - (right - left) / 3
-    if rottrap(mid1) < rottrap(mid2):
+    if rottrap(thresholded, mid1) < rottrap(thresholded, mid2):
         right = mid2
     else:
         left = mid1
 # found it
-min_x = (left + right) / 2
-#print("Minimum value:", min_value)
-#print("Corresponding x:", min_x)
-#min_value = rottrap(min_x)
-M = cv.getRotationMatrix2D(center, min_x, 1.0)
+min_orient = (left + right) / 2
+M = cv.getRotationMatrix2D(center, min_orient, 1.0)
 thresholded = cv.warpAffine(thresholded, M, (width,height))
 
 # Calculate histogram
@@ -62,8 +59,8 @@ plt.figure(dpi=300)
 #render= thresholded.copy()
 #render= cv.cvtColor(render, cv.COLOR_BGR2RGB)
 #render= cv.cvtColor(render[:,:,CHANNEL], cv.COLOR_GRAY2RGB)
-_, render = cv.threshold(thresholded, 0, 240, cv.THRESH_BINARY)
-render= cv.cvtColor(render, cv.COLOR_GRAY2RGB)
+_, renderbw = cv.threshold(thresholded, 0, 240, cv.THRESH_BINARY)
+render= cv.cvtColor(renderbw, cv.COLOR_GRAY2RGB)
 plt.imshow(render) 
 plt.plot(histogram_y, row_indices)
 #plt.title('Histogram of Grayscale Image After Otsu Thresholding Along X-Axis')
@@ -103,14 +100,38 @@ while (valleys[m]<=max(valleys) and (m+n)<len(valleys)):
     top=valleys[m]
     bot=valleys[m+n]
     if (bot-top)>step:
-        linecrop= thresholded[top:bot,:]
+        linecrop= renderbw[top:bot,:]
+        lwidth= linecrop.shape[0]
+        lheight= linecrop.shape[1]
+        lcenter= (int(lwidth/2), int(lheight/2))
+        # correct the line orientation
+        left, right = -phi, phi  # Define the range to search within
+        epsilon = 1e-6  # Define the desired precision
+        while abs(right - left) > epsilon:
+            mid1 = left + (right - left) / 3
+            mid2 = right - (right - left) / 3
+            if rottrap(linecrop, mid1) < rottrap(linecrop, mid2):
+                right = mid2
+            else:
+                left = mid1
+        # found it
+        min_orient = (left + right) / 2
+        print(min_orient)
+        M = cv.getRotationMatrix2D(lcenter, min_orient, 1.0)
+        linecrop= cv.warpAffine(linecrop, M, (lheight,lwidth))
+       # _,linecrop= cv.threshold(linecrop, 0, 240, cv.THRESH_OTSU)
+
+       
         plt.figure(dpi=300)
         plt.imshow(linecrop)
         m=m+n
         n=1 
     else:
         n= n+1
-    
+
+
+#-----------
+
 # spaces, horizontal
 render= image.copy()
 for i in range(width-1, -1, -1):

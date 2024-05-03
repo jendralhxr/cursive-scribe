@@ -29,6 +29,20 @@ image_gray= image[:,:,CHANNEL]
 #_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_OTSU)
 _, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
 
+def draw1(img): # draw the intensity
+    plt.figure(dpi=300)
+    plt.imshow(img)
+ 
+def draw2(img): # draw the bitmap
+    plt.figure(dpi=300)
+    if (len(img.shape)==3):
+        plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2RGB))
+    elif (len(img.shape)==2):
+        plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
+                   
+
+    
+
 def rottrap(img, angle):
     M = cv.getRotationMatrix2D(center, angle, 1.0)
     dst = cv.warpAffine(img, M, (width,height))

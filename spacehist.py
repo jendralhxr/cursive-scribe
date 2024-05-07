@@ -5,17 +5,18 @@ Created on Sat Apr 27 10:35:01 2024
 @author: rdx
 """
 
+import os
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
-
+os.chdir("D:")
 
 SLIC_SPACE= 3
-phi= 1.6180339887498948482 # ppl says this is a beautiful number :)
+PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
 
 # Load the image in grayscale
-filename= 'sifatline.png'
+filename= 'p10.png'
 image = cv.imread(filename, cv.IMREAD_COLOR)
 image=  cv.bitwise_not(image)
 
@@ -23,11 +24,19 @@ height= image.shape[0]
 width= image.shape[1]
 center = (width/2, height/2) 
 
-CHANNEL= 2
+CHANNEL= 2 # red is 'brighter as closer to background"
 #image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
-#_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_OTSU)
-_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
+_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_OTSU) # less smear
+#_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
+
+def sharpen(img):
+    kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+    sharp= cv.filter2D(img, -1, kernel)
+    return(sharp)
+
+thresholded= sharpen(thresholded)
+
 
 def draw1(img): # draw the intensity
     plt.figure(dpi=300)
@@ -40,14 +49,19 @@ def draw2(img): # draw the bitmap
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
                    
-
-    
-
 def rottrap(img, angle):
     M = cv.getRotationMatrix2D(center, angle, 1.0)
     dst = cv.warpAffine(img, M, (width,height))
     hist= np.sum(dst, axis=1)  # Sum along columns to get histogram
     return (np.trapz(hist))
+
+def rotmoment(img, angle):
+    M = cv.getRotationMatrix2D(center, angle, 1.0)
+    dst = cv.warpAffine(img, M, (width,height))
+    N= cv.moments(dst)
+    cx= (N['m10'] / N['m00'])
+    cy= (N['m01'] / N['m00'])
+    return (cx, cy)
 
 def rottrap_img(img, angle):
     height= img.shape[0]
@@ -58,13 +72,31 @@ def rottrap_img(img, angle):
     hist= np.sum(dst, axis=1)  # Sum along columns to get histogram
     plt.figure(dpi=300)
     plt.imshow(dst)
+    
     print(np.trapz(hist))
     return(dst)
- 
+
+angles= np.linspace(-6,6,200)
+
+# check for orientation w/ moment
+ax=[]
+ay=[]
+for i in angles:
+    cx, cy= rotmoment(thresholded, i)
+    ax.append(cx)
+    ay.append(cy)
+    
+hst=[]
+for i in angles:
+    h= rottrap(thresholded, i)
+    hst.append(h)
+    
+    
 # find optimal page orientation, ternary search 
 # page orientation usually wants to MAXIMIZE 
 #  the area under the histogram curve
-left, right = -pow(phi,3), pow(phi,3)  # Define the range to search within
+#left, right = -pow(PHI,3), pow(PHI,3)  # Define the range to search within
+left, right = -6, 6  # Define the range to search within
 epsilon = 1e-6  # Define the desired precision
 while abs(right - left) > epsilon:
     mid1 = left + (right - left) / 3
@@ -86,11 +118,11 @@ histogram_x = np.sum(thresholded, axis=0)  # Sum along columns to get histogram
 histogram_y = np.sum(thresholded, axis=1)  # Sum along columns to get histogram
 
 # line segments
-plt.figure(dpi=300)
 #render= cv.cvtColor(render, cv.COLOR_BGR2RGB)
 #render= cv.cvtColor(render[:,:,CHANNEL], cv.COLOR_GRAY2RGB)
 _, renderbw = cv.threshold(thresholded, 0, 240, cv.THRESH_BINARY)
 render= cv.cvtColor(renderbw, cv.COLOR_GRAY2RGB)
+plt.figure(dpi=300)
 plt.imshow(render) 
 plt.plot(histogram_y, row_indices)
 #plt.title('Histogram of Grayscale Image After Otsu Thresholding Along X-Axis')
@@ -111,7 +143,7 @@ def find_peaks_valleys(hst):
     return peaks, valleys
 
 from scipy.ndimage import gaussian_filter1d
-histogram_ys= gaussian_filter1d(histogram_y, pow(phi,3))
+histogram_ys= gaussian_filter1d(histogram_y, pow(PHI,3))
 _,valleys= find_peaks_valleys(histogram_ys)
 #valleys.append(len(histogram))
 valleys.insert(0,0) # append 0 at the beginning
@@ -121,7 +153,7 @@ def average_difference(lst):
     avg_diff = sum(differences) / len(differences)
     return avg_diff
 
-step= average_difference(valleys) / np.sqrt(phi)
+step= average_difference(valleys) / np.sqrt(PHI)
 
 # gonna crop-select each lines here
 m=0
@@ -138,20 +170,20 @@ while (valleys[m]<=max(valleys) and (m+n)<len(valleys)):
         # correct the line orientation
         # line orientation perhaps wants to MINIMIZE
         #  the area under the histogram curve
-        left, right = -pow(phi,3), pow(phi,3)  # Define the range to search within
-        epsilon = 1e-6  # Define the desired precision
-        while abs(right - left) > epsilon:
-            mid1 = left + (right - left) / 3
-            mid2 = right - (right - left) / 3
-            if rottrap(linecrop, mid1) < rottrap(linecrop, mid2):
-                right= mid2
-            else:
-                left= mid1
-        # found it
-        orient = (left + right) / 2
-        print(orient)
-        M = cv.getRotationMatrix2D(lcenter, orient, 1.0)
-        linecrop= cv.warpAffine(linecrop, M, (lheight,lwidth))
+        # left, right = -pow(PHI,3), pow(PHI,3)  # Define the range to search within
+        # epsilon = 1e-6  # Define the desired precision
+        # while abs(right - left) > epsilon:
+        #     mid1 = left + (right - left) / 3
+        #     mid2 = right - (right - left) / 3
+        #     if rottrap(linecrop, mid1) < rottrap(linecrop, mid2):
+        #         right= mid2
+        #     else:
+        #         left= mid1
+        # # found it
+        # orient = (left + right) / 2
+        # print(orient)
+        # M = cv.getRotationMatrix2D(lcenter, orient, 1.0)
+        # linecrop= cv.warpAffine(linecrop, M, (lheight,lwidth))
         
         plt.figure(dpi=300)
         plt.imshow(linecrop)
@@ -169,7 +201,7 @@ for i in range(width-1, -1, -1):
     if (histogram_x[i]<=SLIC_SPACE):
         for j in range(height):
             render.itemset((j,i,2), 240)
-    elif  (histogram_x[i]<phi*SLIC_SPACE):
+    elif  (histogram_x[i]<PHI*SLIC_SPACE):
         for j in range(height):
             render.itemset((j,i,2), 80)
     

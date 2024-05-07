@@ -20,14 +20,14 @@ import pickle
   / | \
 5   6   7
 """
-phi= 1.6180339887498948482 # ppl says this is a beautiful number :)
+PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
 def freeman(x, y):
     if (y==0):
         y=1e-9 # so that we escape the divby0 exception
     if (x==0):
         x=-1e-9 # biased to the left as the text progresses leftward
-    if (abs(x/y)<phi) and (abs(y/x)<phi): # corner angles
+    if (abs(x/y)<PHI) and (abs(y/x)<PHI): # corner angles
         if   (x>0) and (y>0):
             return(1)
         elif (x<0) and (y>0):
@@ -54,8 +54,8 @@ def delete_long_paths(graph, threshold):
         for n in range(m+1,kosong):
             if m != n:
                 # Find all simple paths between start and end nodes
-                if ((voids[n][0]-voids[m][0])<SLIC_SPACE*phi) and\
-                   ((voids[n][1]-voids[m][1])>SLIC_SPACE*phi*4):
+                if ((voids[n][0]-voids[m][0])<SLIC_SPACE*PHI) and\
+                   ((voids[n][1]-voids[m][1])>SLIC_SPACE*PHI*4):
                     paths = nx.all_simple_paths(graph, m, n)
                     for path in paths:
                         if len(path) > threshold:
@@ -207,17 +207,17 @@ for n in range(num_slic):
 spaces.remove_edges_from(spaces.edges) # start anew, just in case
 for m in range(kosong):
     for n in range(m+1, kosong):
-        if (abs(voids[n][1]-voids[m][1]) > SLIC_SPACE*pow(phi,2)):
+        if (abs(voids[n][1]-voids[m][1]) > SLIC_SPACE*pow(PHI,2)):
             break
         vane= freeman(voids[n][0]-voids[m][0], voids[n][1]-voids[m][1])
         dist= math.sqrt( math.pow(voids[n][0]-voids[m][0],2) + math.pow(voids[n][1]-voids[m][1],2) )
-        if (dist<SLIC_SPACE*phi) and ((vane==2) or (vane==6)):
+        if (dist<SLIC_SPACE*PHI) and ((vane==2) or (vane==6)):
             #print(f'jadi {m}-{n}:{vane}:{dist} ({voids[m][0]},{voids[m][1]}) to ({voids[n][0]},{voids[n][1]})')
             spaces.add_edge(m, n, color='#FF0000', weight=1)
             break
 
 # substracing the longs ones from the spaces' edges
-hops= int(height/SLIC_SPACE/phi) # taking into account the top and bottom blank space
+hops= int(height/SLIC_SPACE/PHI) # taking into account the top and bottom blank space
 spaces_old= spaces.copy()
 #spaces= spaces_old.copy()
 delete_long_paths(spaces, hops)
@@ -311,11 +311,11 @@ for m in range(isi):
         if (dest_ud[m]!=-1):
             scribe.add_edge(m, dest_ud[m], color='#0000FF', weight=1e1/distance_ud[m]/2/SLIC_SPACE, code=vane, kernel=kernel_ud)
         # main stroke
-        if ((kernel>pow(phi,2)) or ((kernel>pow(phi,1)) and cue.item(midy,midx))) and \
-            (distance[m]<pow(phi,2)*SLIC_SPACE) and (dest[m]!=-1):
+        if ((kernel>pow(PHI,2)) or ((kernel>pow(PHI,1)) and cue.item(midy,midx))) and \
+            (distance[m]<pow(PHI,2)*SLIC_SPACE) and (dest[m]!=-1):
             scribe.add_edge(m, dest[m], color='#00FF00', weight=1e1/distance[m]/SLIC_SPACE, code=vane, kernel=kernel)
-        if ((kernel_ud>pow(phi,2)) or ((kernel_ud>pow(phi,1)) and cue.item(midy,midx))) and \
-            (distance_ud[m]<pow(phi,2)*SLIC_SPACE) and (dest_ud[m]!=-1):
+        if ((kernel_ud>pow(PHI,2)) or ((kernel_ud>pow(PHI,1)) and cue.item(midy,midx))) and \
+            (distance_ud[m]<pow(PHI,2)*SLIC_SPACE) and (dest_ud[m]!=-1):
             scribe.add_edge(m, dest_ud[m], color='#00FF00', weight=1e1/distance[m]/SLIC_SPACE, code=vane, kernel=kernel)
         
 # additional edges missing from the O(n^2) search
@@ -350,8 +350,8 @@ for m in bends:
             if (tdist<bdist):
                 bdist= tdist
                 bdest= n
-    if (bdest!=-1) and (bdist<pow(phi,2)*SLIC_SPACE) and\
-        ((kernel>pow(phi,2)) or ((kernel>pow(phi,1)) and cue.item(midy,midx))):
+    if (bdest!=-1) and (bdist<pow(PHI,2)*SLIC_SPACE) and\
+        ((kernel>pow(PHI,2)) or ((kernel>pow(PHI,1)) and cue.item(midy,midx))):
         scribe.add_edge(m, bdest, color='#00FF00', weight=1e1/bdist/SLIC_SPACE, code=vane, kernel=kernel)
         #print(f"{m}-{bdest} {bdist} {vane} {kernel}")    
 #scribe.number_of_edges()            

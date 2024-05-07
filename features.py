@@ -30,9 +30,19 @@ orb = cv.ORB_create()
 keypoints, descriptors = orb.detectAndCompute(gray, None)
 image_with_keypoints = cv.drawKeypoints(gray, keypoints, None)
 
+def sharpen(img):
+    kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+    sharp= cv.filter2D(img, -1, kernel)
+    return(sharp)
+
+sharp1= sharpen(gray)
+sharp2= sharpen(sharp1)
+
 # SIFT
 sift = cv.SIFT_create()
-keypoints, descriptors = sift.detectAndCompute(gray, None)
-image_with_keypoints = cv.drawKeypoints(gray, keypoints, None, flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-
+kp0, descriptors = sift.detectAndCompute(gray, None)
+ks0 = cv.drawKeypoints(gray, keypoints, None, flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+kp1, descriptors = sift.detectAndCompute(sharp1, None)
+ks1 = cv.drawKeypoints(gray, keypoints, None, flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+kp2, descriptors = sift.detectAndCompute(sharp2, None)
+ks2 = cv.drawKeypoints(gray, keypoints, None, flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)

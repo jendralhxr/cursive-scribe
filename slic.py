@@ -122,6 +122,11 @@ def draw_graph2(graph):
             width=weights*2,
             )
 
+def draw_dist(graph):
+    # draw the graph using relatif position among nodes
+    a=1
+    a=a+2
+
 def remap_node(G):
     mapping = {node: node*-1 for node in G.nodes()}
     G = nx.relabel_nodes(G, mapping)
@@ -261,6 +266,8 @@ for m in range(isi):
     if (dest[m]!=m):
         midx= int((cx[dest[m]]+cx[m])/2)
         midy= int((cy[dest[m]]+cy[m])/2)
+        
+        # replace KERNEL with CONNECTED COMPONENT (FLOOD FILL)
         kernel=0
         if (cue.item( midy  ,midx  ) !=0):
             kernel= kernel+1

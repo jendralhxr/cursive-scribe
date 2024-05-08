@@ -30,6 +30,11 @@ image_gray= image[:,:,CHANNEL]
 _, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_OTSU) # less smear
 #_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
 
+# connected component
+seed_point = (260, 25)
+cv.floodFill(thresholded, None, seed_point, (255, 255, 255), loDiff=(5), upDiff=(5))
+# do the superpixel here onward
+
 def sharpen(img):
     kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
     sharp= cv.filter2D(img, -1, kernel)

@@ -16,7 +16,7 @@ PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
 
 # Load the image in grayscale
-filename= 'p10.png'
+filename= 'topanribut.png'
 image = cv.imread(filename, cv.IMREAD_COLOR)
 image=  cv.bitwise_not(image)
 
@@ -41,7 +41,6 @@ def sharpen(img):
     return(sharp)
 
 thresholded= sharpen(thresholded)
-
 
 def draw1(img): # draw the intensity
     plt.figure(dpi=300)

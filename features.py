@@ -35,11 +35,11 @@ image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
 
-
+THREVAL= 80
 CHANNEL= 2
 #image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
-_, gray = cv.threshold(image_gray, 0, 80, cv.THRESH_OTSU) # less smear
+_, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #_, gray= cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
 
 
@@ -114,20 +114,22 @@ from typing import Optional
 class ConnectedComponents:
     rect: (int,int,int,int) # from bounding rectangle
     centroid: (int,int) # centroid moment
+    area: Optional[int] = field(default=0)
     nodes: List[int] = field(default_factory=list)
     mat: Optional[np.ndarray] = field(default=None, repr=False)
 
 components=[]
 
 # component = ConnectedComponents(bgn_x=0, bgn_y=0, end_x=100, end_y=100, mid_x=50, mid_y=50, nodes=[2])
+STROKEVAL= 200
 
 pos = nx.get_node_attributes(scribe,'pos_bitmap')
 for n in range(scribe.number_of_nodes()):
     # fill
     seed= pos[n]
     ccv= gray.copy()
-    cv.floodFill(ccv, None, seed, 200, loDiff=(5), upDiff=(5))
-    _, ccv = cv.threshold(ccv, 100, 200, cv.THRESH_BINARY)
+    cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
+    _, ccv = cv.threshold(ccv, 100, STROKEVAL, cv.THRESH_BINARY)
     mu= cv.moments(ccv)
     if mu['m00'] > SLIC_SPACE*PHI:
         mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
@@ -144,13 +146,35 @@ for n in range(scribe.number_of_nodes()):
             components.append(ConnectedComponents(box, mc))
             components[len(components)-1].nodes.append(n)
             components[len(components)-1].mat = ccv.copy()
+            components[len(components)-1].area = int(mu['m00']/THREVAL)
+            
 
 components.sort(key=lambda item:item.centroid[0], reverse=True)
-for i in range(len(components)):
-    print(f'{i} at {components[i].centroid}')
-    rasm= components[i].mat[\
-        components[i].rect[1]:components[i].rect[1]+components[i].rect[3],\
-        components[i].rect[0]:components[i].rect[0]+components[i].rect[2]]
-    cv.imwrite(str(i)+'.png', rasm)
+
+disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+for n in range(len(components)):
+    #print(f'{n} at {components[n].centroid} size {components[n].area}')
+    # draw green line for rasm at edges, color the rasm brighter
+    if components[n].area>4*PHI*pow(SLIC_SPACE,2):
+        disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
+        
+        seed= components[n].centroid
+        disp.itemset((seed[1],seed[0],2), 200)
+        r= components[n].rect[0]+int(components[n].rect[2])
+        l= components[n].rect[0]
+        for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
+            disp.itemset((j1,l,1), 120)
+            disp.itemset((j1,r,1), 120)
+    else:        
+        m= components[n].centroid[1]
+        i= components[n].centroid[0]
+        # draw blue line for shakil at mid
+        for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
+            disp.itemset((j2,i,0), 120)
+
+    #rasm= components[n].mat[\
+    #    components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
+    #    components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
+    #cv.imwrite(str(n)+'.png', rasm)
     
         

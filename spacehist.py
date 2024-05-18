@@ -67,6 +67,16 @@ def rotmoment(img, angle):
     cy= (N['m01'] / N['m00'])
     return (cx, cy)
 
+def rotmoment2(img, angle):
+    center = (img.shape[1]/2, img.shape[0]/2) 
+    M = cv.getRotationMatrix2D(center, angle, 1.0)
+    dst = cv.warpAffine(img, M, (width,height))
+    N1= cv.moments(dst[:, 0:int(dst.shape[1]/2)])
+    N2= cv.moments(dst[:, int(dst.shape[1]/2):dst.shape[1]])
+    cy1= (N1['m01'] / N2['m00'])
+    cy2= (N2['m01'] / N1['m00'])
+    return (cy1, cy2)
+
 def rottrap_img(img, angle):
     height= img.shape[0]
     width= img.shape[1]
@@ -74,10 +84,10 @@ def rottrap_img(img, angle):
     M = cv.getRotationMatrix2D(center, angle, 1.0)
     dst = cv.warpAffine(img, M, (width,height))
     hist= np.sum(dst, axis=1)  # Sum along columns to get histogram
-    plt.figure(dpi=300)
-    plt.imshow(dst)
-    
-    print(np.trapz(hist))
+    #plt.figure(dpi=300)
+    #plt.imshow(dst)
+    draw2(dst)
+    #print(np.trapz(hist))
     return(dst)
 
 angles= np.linspace(-6,6,200)
@@ -219,4 +229,17 @@ plt.xlabel('Column Index')
 plt.ylabel('Number of Pixels')
 plt.show()
 
+# search the optimum orientation,
+c=[]
+moment_min=1e9
+for i in np.linspace(-8, 8, 200):
+    res= rotmoment2(linecrop,i)
+    c.append(res)
+    moment_i= (res[0]-res[1])
+    if np.abs(moment_i) < moment_min:
+        moment_min= np.abs(moment_i)
+        angle_min= i
+        
+    
+    
 

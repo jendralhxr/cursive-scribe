@@ -40,7 +40,7 @@ def sharpen(img):
     sharp= cv.filter2D(img, -1, kernel)
     return(sharp)
 
-thresholded= sharpen(thresholded)
+#thresholded= sharpen(thresholded)
 
 def draw1(img): # draw the intensity
     plt.figure(dpi=300)

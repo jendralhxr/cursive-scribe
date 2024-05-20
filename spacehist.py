@@ -15,25 +15,7 @@ SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
 
-# Load the image in grayscale
-filename= 'topanribut.png'
-image = cv.imread(filename, cv.IMREAD_COLOR)
-image=  cv.bitwise_not(image)
 
-height= image.shape[0]
-width= image.shape[1]
-center = (width/2, height/2) 
-
-CHANNEL= 2 # red is 'brighter as closer to background"
-#image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-image_gray= image[:,:,CHANNEL]
-_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_OTSU) # less smear
-#_, thresholded = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
-
-# connected component
-seed_point = (260, 25)
-cv.floodFill(thresholded, None, seed_point, (255, 255, 255), loDiff=(5), upDiff=(5))
-# do the superpixel here onward
 
 def sharpen(img):
     kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
@@ -83,14 +65,101 @@ def rottrap_img(img, angle):
     center = (width/2, height/2) 
     M = cv.getRotationMatrix2D(center, angle, 1.0)
     dst = cv.warpAffine(img, M, (width,height))
-    hist= np.sum(dst, axis=1)  # Sum along columns to get histogram
+    #hist= np.sum(dst, axis=1)  # Sum along columns to get histogram
     #plt.figure(dpi=300)
     #plt.imshow(dst)
     draw2(dst)
     #print(np.trapz(hist))
     return(dst)
 
-angles= np.linspace(-6,6,200)
+files=[]
+for i in range(2):  # Loop through 0, 1, 2
+    for j in range(10):  # Loop through 0, 1, 2
+        files.append(f"p{i}{j}")  # Append the formatted string followed by a space
+
+rect_out=[]
+rect_fit=[]
+
+for f in files:
+    filename= f+'.png'
+    image = cv.imread(filename, cv.IMREAD_COLOR)
+    image=  cv.bitwise_not(image)
+    
+    height= image.shape[0]
+    width= image.shape[1]
+    center = (width/2, height/2) 
+
+    CHANNEL= 2 # red is 'brighter as closer to background"
+    #image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+    gray= image[:,:,CHANNEL]
+    _, thresholded = cv.threshold(gray, 0, 1, cv.THRESH_OTSU) # less smear
+    _, gray = cv.threshold(gray, 0, 80, cv.THRESH_OTSU) # less smear
+    #_, gray = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
+    # 'outer' bounding box
+    x, y, w, h = cv.boundingRect(gray)
+    r1= cv.boundingRect(gray)
+    rect_out.append(r1)
+    cv.rectangle(image, (x+1, y+1), (x+w-2, y+h-2), (0, 255, 0), 2)  # Draw a green rectangle with thickness 2
+    # 'inner' bounding box
+    contours, hierarchy = cv.findContours(gray, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    all_points = np.vstack(contours)
+    hull = cv.convexHull(all_points)
+    #cv.drawContours(image, [hull], 0, (0, 0, 255), 2)
+    r2= cv.minAreaRect(all_points)
+    box = cv.boxPoints(r2)
+    box = np.int0(box)
+    cv.drawContours(image,[box],0,(0,0,255),2)
+    rect_fit.append(r2)
+    
+    draw2(image)
+
+    # search the optimum orientation,
+    c=[]
+    moment_min=1e9
+    angles= np.linspace(-8,8,200)
+    for i in angles:
+        res= rotmoment2(gray,i)
+        c.append(res)
+        moment_i= (res[0]-res[1])
+        if np.abs(moment_i) < moment_min:
+            moment_min= np.abs(moment_i)
+            angle_min= i
+            
+    %varexp --plot c
+        
+
+# Load the image in grayscale
+filename= 'topanribut.png'
+image = cv.imread(filename, cv.IMREAD_COLOR)
+image=  cv.bitwise_not(image)
+
+height= image.shape[0]
+width= image.shape[1]
+center = (width/2, height/2) 
+
+CHANNEL= 2 # red is 'brighter as closer to background"
+#image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+gray= image[:,:,CHANNEL]
+_, thresholded = cv.threshold(gray, 0, 1, cv.THRESH_OTSU) # less smear
+_, gray = cv.threshold(gray, 0, 80, cv.THRESH_OTSU) # less smear
+#_, gray = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
+
+# search the optimum orientation,
+c=[]
+moment_min=1e9
+angles= np.linspace(-8,8,200)
+for i in angles:
+    res= rotmoment2(gray,i)
+    c.append(res)
+    moment_i= (res[0]-res[1])
+    if np.abs(moment_i) < moment_min:
+        moment_min= np.abs(moment_i)
+        angle_min= i
+        
+%varexp --plot c
+
+
+#---------- unused
 
 # check for orientation w/ moment
 ax=[]
@@ -122,6 +191,15 @@ while abs(right - left) > epsilon:
 # found it
 orient = (left + right) / 2
 print(orient)
+
+#---------- unused
+
+
+
+
+
+
+
 M = cv.getRotationMatrix2D(center, orient, 1.0)
 thresholded = cv.warpAffine(thresholded, M, (width,height))
 
@@ -229,17 +307,7 @@ plt.xlabel('Column Index')
 plt.ylabel('Number of Pixels')
 plt.show()
 
-# search the optimum orientation,
-c=[]
-moment_min=1e9
-for i in np.linspace(-8, 8, 200):
-    res= rotmoment2(linecrop,i)
-    c.append(res)
-    moment_i= (res[0]-res[1])
-    if np.abs(moment_i) < moment_min:
-        moment_min= np.abs(moment_i)
-        angle_min= i
-        
+
     
     
 

@@ -7,11 +7,12 @@ Created on Tue May  7 11:39:58 2024
 """
 
 import os
+os.chdir("/shm")
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
-os.chdir("/shm")
 import networkx as nx
+import sys
 
 plt.figure(dpi=300)
 
@@ -29,9 +30,10 @@ def draw2(img): # draw the bitmap
 SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
-filename= "topanribut.png"
+filename= sys.argv[1]
+imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
-image=  cv.bitwise_not(image)
+#image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
 
@@ -48,13 +50,13 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 # keypoints, descriptors = orb.detectAndCompute(gray, None)
 # image_with_keypoints = cv.drawKeypoints(gray, keypoints, None)
 
-def sharpen(img):
-    kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-    sharp= cv.filter2D(img, -1, kernel)
-    return(sharp)
+# def sharpen(img):
+#     kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+#     sharp= cv.filter2D(img, -1, kernel)
+#     return(sharp)
 
-sharp1= sharpen(gray)
-sharp2= sharpen(sharp1)
+# sharp1= sharpen(gray)
+# sharp2= sharpen(sharp1)
 
 # # SIFT
 # sift = cv.SIFT_create()
@@ -163,18 +165,20 @@ for n in range(len(components)):
         r= components[n].rect[0]+int(components[n].rect[2])
         l= components[n].rect[0]
         for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
-            disp.itemset((j1,l,1), 120)
-            disp.itemset((j1,r,1), 120)
+            if l>width and r<width:
+                disp.itemset((j1,l,1), 120)
+                disp.itemset((j1,r,1), 120)
     else:        
         m= components[n].centroid[1]
         i= components[n].centroid[0]
         # draw blue line for shakil at mid
         for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
-            disp.itemset((j2,i,0), 120)
+            if j2<height:
+                disp.itemset((j2,i,0), 120)
 
     #rasm= components[n].mat[\
     #    components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
     #    components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
     #cv.imwrite(str(n)+'.png', rasm)
-    
+cv.imwrite(imagename+'-disp.png', disp)    
         

@@ -164,8 +164,8 @@ for n in range(len(components)):
         disp.itemset((seed[1],seed[0],2), 200)
         r= components[n].rect[0]+int(components[n].rect[2])
         l= components[n].rect[0]
-        for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
-            if l>width and r<width:
+        if l<width and r<width:
+            for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
                 disp.itemset((j1,l,1), 120)
                 disp.itemset((j1,r,1), 120)
     else:        
@@ -173,7 +173,7 @@ for n in range(len(components)):
         i= components[n].centroid[0]
         # draw blue line for shakil at mid
         for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
-            if j2<height:
+            if j2<height and j2>0: 
                 disp.itemset((j2,i,0), 120)
 
     #rasm= components[n].mat[\

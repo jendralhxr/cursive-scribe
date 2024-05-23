@@ -1,4 +1,4 @@
-# USAGE: python -u scribe.py IMAGE_INPUT GRAPHNETWORK
+# USAGE: python -u slic.py IMAGE_INPUT GRAPHNETWORK
 # TODO: subgraphs matching
 #       associating diactritics with the main character stroke
 #       actually typing back the characters

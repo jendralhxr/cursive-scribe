@@ -1,10 +1,38 @@
+# a tribute for watatita
 
-# -*- coding: utf-8 -*-
+# freeman code going anti-clockwise like trigonometrics angle
 """
-Created on Tue May  7 11:39:58 2024
+3   2   1
+  \ | /
+4 ------0
+  / | \
+5   6   7
+"""
+PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
-@author: rdx
-"""
+def freeman(x, y):
+    if (y==0):
+        y=1e-9 # so that we escape the divby0 exception
+    if (x==0):
+        x=-1e-9 # biased to the left as the text progresses leftward
+    if (abs(x/y)<PHI) and (abs(y/x)<PHI): # corner angles
+        if   (x>0) and (y>0):
+            return(1)
+        elif (x<0) and (y>0):
+            return(3)
+        elif (x<0) and (y<0):
+            return(5)
+        elif (x>0) and (y<0):
+            return(7)
+    else: # square angles
+        if   (x>0) and (abs(x)>abs(y)):
+            return(int(0))
+        elif (y>0) and (abs(y)>abs(x)):
+            return(2)
+        elif (x<0) and (abs(x)>abs(y)):
+            return(4)
+        elif (y<0) and (abs(y)>abs(x)):
+            return(6)
 
 import os
 os.chdir("/shm")
@@ -13,6 +41,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 import sys
+import math
 
 plt.figure(dpi=300)
 
@@ -33,7 +62,7 @@ PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 filename= sys.argv[1]
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
-#image=  cv.bitwise_not(image)
+image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
 
@@ -166,8 +195,10 @@ for n in range(len(components)):
         l= components[n].rect[0]
         if l<width and r<width:
             for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
-                disp.itemset((j1,l,1), 120)
                 disp.itemset((j1,r,1), 120)
+            for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
+                disp.itemset((j1,l,1), 120)
+                
     else:        
         m= components[n].centroid[1]
         i= components[n].centroid[0]
@@ -181,4 +212,63 @@ for n in range(len(components)):
     #    components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
     #cv.imwrite(str(n)+'.png', rasm)
 cv.imwrite(imagename+'-disp.png', disp)    
+        
+#-------
+
+def draw_graph1(graph, posstring):
+    positions = nx.get_node_attributes(graph,posstring)
+    colors = nx.get_edge_attributes(graph,'color').values()
+    plt.figure(figsize=(width/12,height/12)) 
+    nx.draw(graph, 
+            # nodes' param
+            pos=positions,
+            node_color='orange', 
+            node_size=24, 
+            with_labels=True, font_size=8,
+            # edges' param
+            edge_color=colors, 
+            width=1,
+            )
+
+
+def draw_graph2(graph):
+    # nodes
+    positions = nx.get_node_attributes(graph,'pos')
+    area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
+    # edges
+    colors = nx.get_edge_attributes(graph,'color').values()
+    weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
+    plt.figure(figsize=(width/12,height/12)) 
+    nx.draw(graph, 
+            # nodes' param
+            pos=positions, 
+            with_labels=True, node_color='orange',
+            node_size=area*25,
+            font_size=8,
+            # edges' param
+            edge_color=colors, 
+            width=weights*2,
+            )
+    
+scribe.remove_edges_from(scribe.edges) # start anew, just in case
+# we need to make edges between nodes within a connectedcomponent
+for k in range(len(components)):
+    # establish edges from the shortest distance between nodes, forward check
+    # O(n^2) complexity
+    for m in components[k].nodes:
+        src= scribe.nodes()[m]
+        mdist=1e9
+        dst_min= scribe.nodes()[m]
+        n_min= -1
+        for n in components[k].nodes:
+            dst= scribe.nodes()[n]
+            if (m!=n): #### ALSO CHECK wheter no current node between m and n
+                tdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
+                if tdist<mdist:
+                    mdist= tdist
+                    dst_min= scribe.nodes()[n]
+                    n_min= n
+        if (dst_min!=src) and (n_min!=-1):
+            vane= freeman(dst_min['pos_bitmap'][0]-src['pos_bitmap'][0], dst_min['pos_bitmap'][1]-src['pos_bitmap'][1])            
+            scribe.add_edge(m, n_min, color='#00FF00', weight=1e1/mdist/SLIC_SPACE, code=vane)
         

@@ -256,6 +256,7 @@ for k in range(len(components)):
     # establish edges from the shortest distance between nodes, forward check
     # O(n^2) complexity
     for m in components[k].nodes:
+        scribe.nodes[m]['component_id']=k
         src= scribe.nodes()[m]
         mdist=1e9
         dst_min= scribe.nodes()[m]

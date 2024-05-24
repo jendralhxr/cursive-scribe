@@ -262,7 +262,7 @@ for k in range(len(components)):
         n_min= -1
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
-            if (m!=n): #### ALSO CHECK wheter no current node between m and n
+            if (m!=n) and scribe.has_edge(m,n)==False:
                 tdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
                 if tdist<mdist:
                     mdist= tdist

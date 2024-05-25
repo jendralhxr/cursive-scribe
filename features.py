@@ -267,22 +267,20 @@ for k in range(len(components)):
         n2= -1
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
-            if (m!=n) and scribe.has_edge(m,n)==False:
-                tdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
+            tdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
+            if (m!=n) and tdist<2*SLIC_SPACE*PHI:
                 if tdist<dist1 and tdist<dist2:
                     dst1= scribe.nodes()[n]
                     dist1= tdist
                     n1=n
-                if tdist<dist2 and tdist>dist1:
+                if tdist<dist2 and tdist>=dist1 and n1!=n:
                     dst2= scribe.nodes()[n]
                     dist2= tdist
                     n2=n
-        print(f'{m}: {n1} {n2}')            
+        print(f'{m}: {n1}/{dist1} {n2}/{dist2}')            
         #if (dst_min!=src) and (n_min!=-1):
         vane1= freeman(dst1['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst1['pos_bitmap'][1]-src['pos_bitmap'][1]))            
         vane2= freeman(dst2['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst2['pos_bitmap'][1]-src['pos_bitmap'][1]))            
-        if n1==n2:
-            print(f'apesdong{n1}')    
         # add the closest
         if n1!=-1:
             scribe.add_edge(m, n1, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, code=vane1)

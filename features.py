@@ -136,6 +136,8 @@ for n in range(num_slic):
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 
+
+
 # connected components
 from dataclasses import dataclass, field
 from typing import List
@@ -215,7 +217,7 @@ cv.imwrite(imagename+'-disp.png', disp)
         
 #-------
 
-def draw_graph1(graph, posstring):
+def draw1_graph(graph, posstring):
     positions = nx.get_node_attributes(graph,posstring)
     colors = nx.get_edge_attributes(graph,'color').values()
     plt.figure(figsize=(width/12,height/12)) 
@@ -227,7 +229,7 @@ def draw_graph1(graph, posstring):
             with_labels=True, font_size=8,
             # edges' param
             edge_color=colors, 
-            width=1,
+            width=12,
             )
 
 
@@ -257,18 +259,50 @@ for k in range(len(components)):
     for m in components[k].nodes:
         scribe.nodes[m]['component_id']=k
         src= scribe.nodes()[m]
-        mdist=1e9
-        dst_min= scribe.nodes()[m]
-        n_min= -1
+        dist1=1e9
+        dist2=1e9
+        dst1= scribe.nodes()[m] # first closest
+        dst2= scribe.nodes()[m] # second closest
+        n1= -1
+        n2= -1
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
             if (m!=n) and scribe.has_edge(m,n)==False:
                 tdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-                if tdist<mdist:
-                    mdist= tdist
-                    dst_min= scribe.nodes()[n]
-                    n_min= n
-        if (dst_min!=src) and (n_min!=-1):
-            vane= freeman(dst_min['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst_min['pos_bitmap'][1]-src['pos_bitmap'][1]))            
-            scribe.add_edge(m, n_min, color='#00FF00', weight=1e1/mdist/SLIC_SPACE, code=vane)
+                if tdist<dist1 and tdist<dist2:
+                    dst1= scribe.nodes()[n]
+                    dist1= tdist
+                    n1=n
+                if tdist<dist2 and tdist>dist1:
+                    dst2= scribe.nodes()[n]
+                    dist2= tdist
+                    n2=n
+        print(f'{m}: {n1} {n2}')            
+        #if (dst_min!=src) and (n_min!=-1):
+        vane1= freeman(dst1['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst1['pos_bitmap'][1]-src['pos_bitmap'][1]))            
+        vane2= freeman(dst2['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst2['pos_bitmap'][1]-src['pos_bitmap'][1]))            
+        if n1==n2:
+            print(f'apesdong{n1}')    
+        # add the closest
+        if n1!=-1:
+            scribe.add_edge(m, n1, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, code=vane1)
+        # add the second closest only if n2 is not directly connected to n1
+        if scribe.has_edge(n1,n2)==False and n2!=-1:
+            scribe.add_edge(m, n2, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, code=vane1)
+            
+
+# at this stage, we are still missing some edges within the CCs
         
+# cleaning and pruning
+def prune_redundant_edges(G_orig):
+    G= G_orig.copy()
+    redundant_edges = []
+    for u, v in G.edges():
+        G.remove_edge(u, v)
+        if nx.has_path(G, u, v):
+            redundant_edges.append((u, v))
+        G.add_edge(u, v)
+    G.remove_edges_from(redundant_edges)
+    return G
+
+s2=prune_redundant_edges(scribe)

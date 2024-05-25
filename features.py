@@ -231,14 +231,13 @@ def draw_graph1(graph, posstring):
             )
 
 
-def draw_graph2(graph):
+def draw_graph2(graph, posstring):
     # nodes
-    positions = nx.get_node_attributes(graph,'pos')
+    positions = nx.get_node_attributes(graph,posstring)
     area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
     # edges
     colors = nx.get_edge_attributes(graph,'color').values()
     weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
-    plt.figure(figsize=(width/12,height/12)) 
     nx.draw(graph, 
             # nodes' param
             pos=positions, 
@@ -270,6 +269,6 @@ for k in range(len(components)):
                     dst_min= scribe.nodes()[n]
                     n_min= n
         if (dst_min!=src) and (n_min!=-1):
-            vane= freeman(dst_min['pos_bitmap'][0]-src['pos_bitmap'][0], dst_min['pos_bitmap'][1]-src['pos_bitmap'][1])            
+            vane= freeman(dst_min['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst_min['pos_bitmap'][1]-src['pos_bitmap'][1]))            
             scribe.add_edge(m, n_min, color='#00FF00', weight=1e1/mdist/SLIC_SPACE, code=vane)
         

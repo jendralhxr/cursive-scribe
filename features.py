@@ -233,7 +233,7 @@ def draw1_graph(graph, posstring):
             )
 
 
-def draw_graph2(graph, posstring):
+def draw2_graph(graph, posstring):
     # nodes
     positions = nx.get_node_attributes(graph,posstring)
     area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
@@ -250,6 +250,28 @@ def draw_graph2(graph, posstring):
             edge_color=colors, 
             width=weights*2,
             )
+    
+def draw3_graph(graph, posstring):
+    # nodes
+    positions = nx.spring_layout(graph)
+    area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
+    edge_lbls= nx.get_edge_attributes(graph, 'code')
+    # edges
+    colors = nx.get_edge_attributes(graph,'color').values()
+    weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
+    nx.draw(graph, 
+            # nodes' param
+            pos= positions,
+            with_labels=True, node_color='orange',
+            node_size=area*25,
+            font_size=8,
+            # edges' param
+            edge_color=colors, 
+            width=weights*2,
+            )
+    nx.draw_networkx_edge_labels(graph, 
+            pos= positions,
+            edge_labels=edge_lbls, font_color='red')
     
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 # we need to make edges between nodes within a connectedcomponent
@@ -268,7 +290,9 @@ for k in range(len(components)):
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
             tdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-            if (m!=n) and tdist<2*SLIC_SPACE*PHI:
+            #midval= gray.item( int((dst['pos_bitmap'][1]+src['pos_bitmap'][1])/2),\
+            #                  int((dst['pos_bitmap'][0]+src['pos_bitmap'][0])/2) )
+            if (m!=n) and tdist<SLIC_SPACE*pow(PHI,2):# and midval!=0:
                 if tdist<dist1 and tdist<dist2:
                     dst1= scribe.nodes()[n]
                     dist1= tdist
@@ -286,21 +310,27 @@ for k in range(len(components)):
             scribe.add_edge(m, n1, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, code=vane1)
         # add the second closest only if n2 is not directly connected to n1
         if scribe.has_edge(n1,n2)==False and n2!=-1:
-            scribe.add_edge(m, n2, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, code=vane1)
-            
+            scribe.add_edge(m, n2, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, code=vane2)
+# at this stage, the edges within the CCs are kinda compile, but there are some redundant edges
 
-# at this stage, we are still missing some edges within the CCs
+# assign graph_pos
         
 # cleaning and pruning
-def prune_redundant_edges(G_orig):
-    G= G_orig.copy()
-    redundant_edges = []
-    for u, v in G.edges():
-        G.remove_edge(u, v)
-        if nx.has_path(G, u, v):
-            redundant_edges.append((u, v))
-        G.add_edge(u, v)
+def prune_redundant_edges(G):
+    mst = nx.minimum_spanning_tree(G)
+    mst_edges = set(mst.edges())
+    redundant_edges = set(G.edges()) - mst_edges
     G.remove_edges_from(redundant_edges)
     return G
 
-s2=prune_redundant_edges(scribe)
+#s2=prune_redundant_edges(scribe)
+
+def extract_subgraph(G, start):
+    connected_component = nx.node_connected_component(G, start)
+    connected_subgraph = G.subgraph(connected_component)
+    return connected_subgraph.copy()
+    
+
+def edge_attributes(G):
+    for u, v, attrs in G.edges(data=True):
+        print(f"Edge ({u}, {v}) has attributes {attrs}")

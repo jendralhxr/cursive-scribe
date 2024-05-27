@@ -190,7 +190,6 @@ for n in range(len(components)):
     # draw green line for rasm at edges, color the rasm brighter
     if components[n].area>4*PHI*pow(SLIC_SPACE,2):
         disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
-        
         seed= components[n].centroid
         disp.itemset((seed[1],seed[0],2), 200)
         r= components[n].rect[0]+int(components[n].rect[2])
@@ -200,7 +199,6 @@ for n in range(len(components)):
                 disp.itemset((j1,r,1), 120)
             for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
                 disp.itemset((j1,l,1), 120)
-                
     else:        
         m= components[n].centroid[1]
         i= components[n].centroid[0]
@@ -213,7 +211,7 @@ for n in range(len(components)):
     #    components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
     #    components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
     #cv.imwrite(str(n)+'.png', rasm)
-cv.imwrite(imagename+'-disp.png', disp)    
+#cv.imwrite(imagename+'-disp.png', disp)    
         
 #-------
 
@@ -231,7 +229,6 @@ def draw1_graph(graph, posstring):
             edge_color=colors, 
             width=12,
             )
-
 
 def draw2_graph(graph, posstring):
     # nodes
@@ -253,7 +250,10 @@ def draw2_graph(graph, posstring):
     
 def draw3_graph(graph, posstring):
     # nodes
-    positions = nx.spring_layout(graph)
+    if posstring is None:
+        positions = nx.spring_layout(graph)
+    else:
+        positions = nx.get_node_attributes(graph,posstring)
     area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
     edge_lbls= nx.get_edge_attributes(graph, 'code')
     # edges
@@ -283,6 +283,8 @@ for k in range(len(components)):
         src= scribe.nodes()[m]
         dist1=1e9
         dist2=1e9
+        vane1=-1
+        vane2=-1
         dst1= scribe.nodes()[m] # first closest
         dst2= scribe.nodes()[m] # second closest
         n1= -1
@@ -290,30 +292,38 @@ for k in range(len(components)):
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
             tdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-            #midval= gray.item( int((dst['pos_bitmap'][1]+src['pos_bitmap'][1])/2),\
-            #                  int((dst['pos_bitmap'][0]+src['pos_bitmap'][0])/2) )
+            vane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
             if (m!=n) and tdist<SLIC_SPACE*pow(PHI,2):# and midval!=0:
-                if tdist<dist1 and tdist<dist2:
+                if tdist<dist1 and tdist<dist2: # shortest always get it
                     dst1= scribe.nodes()[n]
                     dist1= tdist
                     n1=n
-                if tdist<dist2 and tdist>=dist1 and n1!=n:
+                    vane1= vane
+                if tdist<dist2 and tdist>=dist1 and n!=n1 and vane!=vane1:
                     dst2= scribe.nodes()[n]
                     dist2= tdist
                     n2=n
-        print(f'{m}: {n1}/{dist1} {n2}/{dist2}')            
+                    vane2= vane
+        #print(f'{m}: {n1}/{dist1} {n2}/{dist2}')            
         #if (dst_min!=src) and (n_min!=-1):
-        vane1= freeman(dst1['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst1['pos_bitmap'][1]-src['pos_bitmap'][1]))            
-        vane2= freeman(dst2['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst2['pos_bitmap'][1]-src['pos_bitmap'][1]))            
         # add the closest
         if n1!=-1:
-            scribe.add_edge(m, n1, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, code=vane1)
+            scribe.add_edge(m, n1, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, vane=vane1)
         # add the second closest only if n2 is not directly connected to n1
         if scribe.has_edge(n1,n2)==False and n2!=-1:
-            scribe.add_edge(m, n2, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, code=vane2)
-# at this stage, the edges within the CCs are kinda compile, but there are some redundant edges
+            scribe.add_edge(m, n2, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, vane=vane2)
 
-# assign graph_pos
+# fix the Freeman vane since it may be revesed from double assignment
+for u,v in scribe.edges():
+    if u<v:
+        m=u
+        n=v
+    else:
+        m=v
+        n=u
+    src= scribe.nodes()[m]
+    dst= scribe.nodes()[n]
+    scribe.edges[(u,v)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
         
 # cleaning and pruning
 def prune_redundant_edges(G):

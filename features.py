@@ -8,7 +8,9 @@
   / | \
 5   6   7
 """
+SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
+
 
 def freeman(x, y):
     if (y==0):
@@ -56,8 +58,6 @@ def draw2(img): # draw the bitmap
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
-SLIC_SPACE= 3
-PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
 filename= sys.argv[1]
 imagename, ext= os.path.splitext(filename)
@@ -313,18 +313,7 @@ for k in range(len(components)):
         if scribe.has_edge(n1,n2)==False and n2!=-1:
             scribe.add_edge(m, n2, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, vane=vane2)
 
-# fix the Freeman vane since it may be revesed from double assignment
-for u,v in scribe.edges():
-    if u<v:
-        m=u
-        n=v
-    else:
-        m=v
-        n=u
-    src= scribe.nodes()[m]
-    dst= scribe.nodes()[n]
-    scribe.edges[(u,v)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
-        
+       
 # cleaning and pruning
 def prune_redundant_edges(G):
     mst = nx.minimum_spanning_tree(G)
@@ -340,7 +329,28 @@ def extract_subgraph(G, start):
     connected_subgraph = G.subgraph(connected_component)
     return connected_subgraph.copy()
     
-
 def edge_attributes(G):
-    for u, v, attrs in G.edges(data=True):
-        print(f"Edge ({u}, {v}) has attributes {attrs}")
+    if isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
+        for u, v, attrs in G.edges(data=True):
+            print(f"({u}, {v}) {attrs}")
+    elif isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
+        for u,v,k in G.edges():
+            print(f"({u}, {v}, {k}) {attrs}")
+    
+
+scribe_dg= scribe.to_directed() # or we can do it at rasm level
+scribe_mdg = nx.MultiDiGraph(scribe_dg)
+scribe_mg= nx.MultiGraph(scribe)
+
+def fix_vane(G):
+    if isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
+    # fix the Freeman vane since it may be revesed from double assignment
+        for u,v in G.edges():
+            src= G.nodes()[u]
+            dst= G.nodes()[v]
+            G.edges[(u,v)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
+    elif isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
+        for u,v,k in G.edges():
+            src= G.nodes()[u]
+            dst= G.nodes()[v]
+            G.edges[(u,v,k)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            

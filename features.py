@@ -255,7 +255,7 @@ def draw3_graph(graph, posstring):
     else:
         positions = nx.get_node_attributes(graph,posstring)
     area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
-    edge_lbls= nx.get_edge_attributes(graph, 'code')
+    edge_lbls= nx.get_edge_attributes(graph, 'vane')
     # edges
     colors = nx.get_edge_attributes(graph,'color').values()
     weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
@@ -263,7 +263,7 @@ def draw3_graph(graph, posstring):
             # nodes' param
             pos= positions,
             with_labels=True, node_color='orange',
-            node_size=area*25,
+            node_size=200,
             font_size=8,
             # edges' param
             edge_color=colors, 
@@ -271,7 +271,9 @@ def draw3_graph(graph, posstring):
             )
     nx.draw_networkx_edge_labels(graph, 
             pos= positions,
-            edge_labels=edge_lbls, font_color='red')
+            edge_labels=edge_lbls, 
+            font_size=8,
+            font_color='red')
     
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 # we need to make edges between nodes within a connectedcomponent
@@ -330,27 +332,28 @@ def extract_subgraph(G, start):
     return connected_subgraph.copy()
     
 def edge_attributes(G):
-    if isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
+    if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
+        for u,v,k, attrs in G.edges(keys=True, data=True):
+            print(f"({u}, {v}, {k}) {attrs}")
+    elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
         for u, v, attrs in G.edges(data=True):
             print(f"({u}, {v}) {attrs}")
-    elif isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
-        for u,v,k in G.edges():
-            print(f"({u}, {v}, {k}) {attrs}")
     
-
-scribe_dg= scribe.to_directed() # or we can do it at rasm level
-scribe_mdg = nx.MultiDiGraph(scribe_dg)
-scribe_mg= nx.MultiGraph(scribe)
-
+# fix the Freeman vane since it may be revesed from double assignment
 def fix_vane(G):
-    if isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
-    # fix the Freeman vane since it may be revesed from double assignment
+    if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
+        for u,v,k in G.edges(keys=True):
+            src= G.nodes()[u]
+            dst= G.nodes()[v]
+            G.edges[(u,v,k)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
+    elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
         for u,v in G.edges():
             src= G.nodes()[u]
             dst= G.nodes()[v]
             G.edges[(u,v)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
-    elif isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
-        for u,v,k in G.edges():
-            src= G.nodes()[u]
-            dst= G.nodes()[v]
-            G.edges[(u,v,k)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
+
+
+scribe_dg= scribe.to_directed() # or we can do it at rasm level
+scribe_mdg = nx.MultiDiGraph(scribe_dg)
+scribe_mg= nx.MultiGraph(scribe)
+    

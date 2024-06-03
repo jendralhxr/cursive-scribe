@@ -357,3 +357,17 @@ scribe_dg= scribe.to_directed() # or we can do it at rasm level
 scribe_mdg = nx.MultiDiGraph(scribe_dg)
 scribe_mg= nx.MultiGraph(scribe)
     
+#----------------
+
+
+for k in range(2,5,1):
+    resz = cv.resize(image_gray, (k*image_gray.shape[1], k*image_gray.shape[0]), interpolation=cv.INTER_LINEAR)
+    _, gray = cv.threshold(resz, 0, THREVAL, cv.THRESH_OTSU)
+    for i in range(8):
+        for j in range(8):
+            kernel = np.ones((i,j), np.uint8)  # You can adjust the kernel size as needed
+            erod1 = cv.erode(gray, kernel, iterations=1)
+            #draw2(erod1)
+            nama=f'{k}erod{i}-{j}.png'
+            cv.imwrite(nama, erod1)
+            

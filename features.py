@@ -8,7 +8,7 @@
   / | \
 5   6   7
 """
-SLIC_SPACE= 3
+SLIC_SPACE= 6
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
 
@@ -342,10 +342,15 @@ def edge_attributes(G):
 # fix the Freeman vane since it may be revesed from double assignment
 def fix_vane(G):
     if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
-        for u,v,k in G.edges(keys=True):
+        for u,v,k,data in G.edges(keys=True, data=True):
             src= G.nodes()[u]
             dst= G.nodes()[v]
+            # the original            
             G.edges[(u,v,k)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
+            # the parallel
+            new_edge_data = data.copy()
+            G.add_edge(v, u, new_edge_data)
+            G.edges[(u,v,k+1)]['vane']= freeman(src['pos_bitmap'][0]-dst['pos_bitmap'][0], -(src['pos_bitmap'][1]-dst['pos_bitmap'][1]))            
     elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
         for u,v in G.edges():
             src= G.nodes()[u]
@@ -370,4 +375,38 @@ for k in range(2,5,1):
             #draw2(erod1)
             nama=f'{k}erod{i}-{j}.png'
             cv.imwrite(nama, erod1)
-            
+ 
+#---------
+
+eroded_image = cv.erode(gray, kernel, iterations=1)
+cleaned_image = cv.dilate(eroded_image, kernel, iterations=1)
+
+besar=extract_subgraph(scribe, 81)
+besar_mg= nx.MultiGraph(besar)
+
+def draw_multigraph(G, pos):
+    # Draw nodes and edges
+    if pos is None:
+        pos = nx.spring_layout(G)
+    else:
+        pos = nx.get_node_attributes(G,pos)
+    
+    nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=500, edge_color='gray')
+    
+    # retrieve edge lables
+    edge_labels = {}
+    for u, v, key, data in G.edges(keys=True, data=True):
+        edge_labels[(u, v, key)] = f"{data['vane']}"
+
+    
+    # Draw edge labels
+    if edge_labels:
+        for (u, v, key), label in edge_labels.items():
+            # Calculate midpoint for each edge
+            x = (pos[u][0] + pos[v][0]) / 2
+            y = (pos[u][1] + pos[v][1]) / 2
+            # Add a slight offset to the y position to avoid overlapping labels
+            offset = 0.15 * key
+            plt.text(x, y + offset, label, horizontalalignment='center', fontsize=8, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
+
+                       

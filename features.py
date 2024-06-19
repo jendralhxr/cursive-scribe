@@ -342,14 +342,17 @@ def edge_attributes(G):
 # fix the Freeman vane since it may be revesed from double assignment
 def fix_vane(G):
     if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
+        new_edges = []
         for u,v,k,data in G.edges(keys=True, data=True):
             src= G.nodes()[u]
             dst= G.nodes()[v]
             # the original            
             G.edges[(u,v,k)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
-            # the parallel
             new_edge_data = data.copy()
-            G.add_edge(v, u, new_edge_data)
+            new_edges.append((u, v, new_edge_data))
+        for u, v, data in new_edges:
+            G.add_edge(v, u, **data)
+            # the parallel
             G.edges[(u,v,k+1)]['vane']= freeman(src['pos_bitmap'][0]-dst['pos_bitmap'][0], -(src['pos_bitmap'][1]-dst['pos_bitmap'][1]))            
     elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
         for u,v in G.edges():

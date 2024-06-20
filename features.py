@@ -412,4 +412,22 @@ def draw_multigraph(G, pos):
             offset = 0.15 * key
             plt.text(x, y + offset, label, horizontalalignment='center', fontsize=8, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
 
-                       
+
+def path_vane(G, path, attrname):
+    # Iterate through the path to retrieve node attributes
+    #node_attributes = []
+    #for node in path:
+    #    node_attr = G.nodes[node]  # Access node attributes
+    #    node_attributes.append(node_attr)
+    #print("Node attributes along the path:")
+    #for attr in node_attributes:
+    #    print(attr)
+    
+    # Iterate through the path to retrieve edge attributes
+    edge_attributes = []
+    for i in range(len(path) - 1):
+        edge_attributes.append(G.edges[path[i], path[i + 1]][attrname])  # Access specific edge attribute
+    
+    print("\nEdge attributes along the path:")
+    for attr in edge_attributes:
+        print(attr)

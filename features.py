@@ -8,7 +8,7 @@
   / | \
 5   6   7
 """
-SLIC_SPACE= 6
+SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
 
@@ -37,7 +37,7 @@ def freeman(x, y):
             return(6)
 
 import os
-os.chdir("/shm")
+#os.chdir("/shm")
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -58,10 +58,15 @@ def draw2(img): # draw the bitmap
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
+k=2
+SLIC_SPACE= SLIC_SPACE*k
 
 filename= sys.argv[1]
+filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
+resz = cv.resize(image, (k*image.shape[1], k*image.shape[0]), interpolation=cv.INTER_LINEAR)
+image= resz.copy()
 image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
@@ -237,6 +242,7 @@ def draw2_graph(graph, posstring):
     # edges
     colors = nx.get_edge_attributes(graph,'color').values()
     weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
+    #plt.figure(figsize=(width/12,height/12)) 
     nx.draw(graph, 
             # nodes' param
             pos=positions, 
@@ -254,6 +260,7 @@ def draw3_graph(graph, posstring):
         positions = nx.spring_layout(graph)
     else:
         positions = nx.get_node_attributes(graph,posstring)
+    #plt.figure(figsize=(width/12,height/12)) 
     area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
     edge_lbls= nx.get_edge_attributes(graph, 'vane')
     # edges
@@ -353,7 +360,7 @@ def fix_vane(G):
         for u, v, data in new_edges:
             G.add_edge(v, u, **data)
             # the parallel
-            G.edges[(u,v,k+1)]['vane']= freeman(src['pos_bitmap'][0]-dst['pos_bitmap'][0], -(src['pos_bitmap'][1]-dst['pos_bitmap'][1]))            
+            G.edges[(u,v,k+1)]['vane']= (G.edges[(u,v,k+1)]['vane']+4)%8
     elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
         for u,v in G.edges():
             src= G.nodes()[u]
@@ -365,6 +372,10 @@ scribe_dg= scribe.to_directed() # or we can do it at rasm level
 scribe_mdg = nx.MultiDiGraph(scribe_dg)
 scribe_mg= nx.MultiGraph(scribe)
     
+lam= extract_subgraph(scribe, 14)
+lam_mg= nx.MultiGraph(lam)
+
+
 #----------------
 
 
@@ -381,13 +392,14 @@ for k in range(2,5,1):
  
 #---------
 
-eroded_image = cv.erode(gray, kernel, iterations=1)
-cleaned_image = cv.dilate(eroded_image, kernel, iterations=1)
+# morphological erosion-dilation is not quite up to par
+#eroded_image = cv.erode(gray, kernel, iterations=1)
+#cleaned_image = cv.dilate(eroded_image, kernel, iterations=1)
 
 besar=extract_subgraph(scribe, 81)
 besar_mg= nx.MultiGraph(besar)
 
-def draw_multigraph(G, pos):
+def draw_multigraph(G, pos, scale):
     # Draw nodes and edges
     if pos is None:
         pos = nx.spring_layout(G)
@@ -409,25 +421,15 @@ def draw_multigraph(G, pos):
             x = (pos[u][0] + pos[v][0]) / 2
             y = (pos[u][1] + pos[v][1]) / 2
             # Add a slight offset to the y position to avoid overlapping labels
-            offset = 0.15 * key
-            plt.text(x, y + offset, label, horizontalalignment='center', fontsize=8, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
+            offset = scale * key
+            plt.text(x + offset, y + offset, label, horizontalalignment='center', fontsize=8, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
 
 
 def path_vane(G, path, attrname):
-    # Iterate through the path to retrieve node attributes
-    #node_attributes = []
-    #for node in path:
-    #    node_attr = G.nodes[node]  # Access node attributes
-    #    node_attributes.append(node_attr)
-    #print("Node attributes along the path:")
-    #for attr in node_attributes:
-    #    print(attr)
-    
-    # Iterate through the path to retrieve edge attributes
-    edge_attributes = []
-    for i in range(len(path) - 1):
-        edge_attributes.append(G.edges[path[i], path[i + 1]][attrname])  # Access specific edge attribute
-    
-    print("\nEdge attributes along the path:")
-    for attr in edge_attributes:
-        print(attr)
+    for i in range(len(shortest_path) - 1):
+    u = shortest_path[i]
+    v = shortest_path[i + 1]
+    edge_data = G.get_edge_data(u, v, key=0)  # Get edge attributes (assuming key=0 for simplicity)
+    print(f"{edge_data}")
+        
+lam_path = nx.shortest_path(lam_mlamg, source=14, target=164)

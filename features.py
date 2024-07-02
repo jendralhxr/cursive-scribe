@@ -233,7 +233,7 @@ for n in range(len(components)):
         # draw blue line for shakil 'connection'
         for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
             if j2<height and j2>0: 
-                disp[j2,i,0]= 100
+                disp[j2,i,1]= 100
 
     #rasm= components[n].mat[\
     #    components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\

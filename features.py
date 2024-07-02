@@ -142,6 +142,11 @@ for n in range(num_slic):
             filled=filled+1
 
 
+def pdistance(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+    return distance
 
 # connected components
 from dataclasses import dataclass, field
@@ -155,6 +160,10 @@ class ConnectedComponents:
     area: Optional[int] = field(default=0)
     nodes: List[int] = field(default_factory=list)
     mat: Optional[np.ndarray] = field(default=None, repr=False)
+    node_start: Optional[int] = field(default=-1)    # right-up
+    distance_start: Optional[int] = field(default=0) # right-up
+    node_end: Optional[int] = field(default=-1)      # left-down
+    distance_end: Optional[int] = field(default=0)   # left-down
 
 components=[]
 
@@ -171,6 +180,7 @@ for n in range(scribe.number_of_nodes()):
     mu= cv.moments(ccv)
     if mu['m00'] > SLIC_SPACE*PHI:
         mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
+        pd= pdistance(seed, mc)
         box= cv.boundingRect(ccv)
         #print(f'keypoint[{n}] at ({mc[0]},{mc[1]})')
         # append keypoint if the component already exists
@@ -178,6 +188,14 @@ for n in range(scribe.number_of_nodes()):
         for i in range(len(components)):
             if components[i].centroid==mc:
                 components[i].nodes.append(n)
+                # calculate the distance
+                if seed[0]<=mc[0] and pd>components[i].distance_start: # potential node_start
+                    components[i].distance_start= pd
+                    components[i].node_start= n
+                elif seed[0]>=mc[0] and pd>components[i].distance_end: # potential node_end
+                    components[i].distance_end = pd
+                    components[i].node_end= n
+                
                 found=1
                 break
         if (found==0):
@@ -185,9 +203,11 @@ for n in range(scribe.number_of_nodes()):
             components[len(components)-1].nodes.append(n)
             components[len(components)-1].mat = ccv.copy()
             components[len(components)-1].area = int(mu['m00']/THREVAL)
-            
+            components[len(components)-1].node_start= n
+            components[len(components)-1].node_end= n
+            components[len(components)-1].distance_start= pd
+            components[len(components)-1].distance_end= pd
 
-components.sort(key=lambda item:item.centroid[0], reverse=True)
 
 disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):
@@ -196,28 +216,32 @@ for n in range(len(components)):
     if components[n].area>4*PHI*pow(SLIC_SPACE,2):
         disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
         seed= components[n].centroid
-        disp[seed[1],seed[0],2]= 200
+        #disp[seed[1],seed[0],2]= 220
+        cv.circle(disp, seed, 2, (0,0,200), -1)
+        cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
+        cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
         r= components[n].rect[0]+int(components[n].rect[2])
         l= components[n].rect[0]
-        if l<width and r<width:
-            for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
-                disp[j1,r,1]= 120
-            for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
-                disp[j1,l,1]= 120
+        # if l<width and r<width: # did we ever went beyond the frame?
+        #     for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
+        #         disp[j1,r,1]= 120
+        #     for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
+        #         disp[j1,l,1]= 120
     else:        
         m= components[n].centroid[1]
         i= components[n].centroid[0]
-        # draw blue line for shakil at mid
+        # draw blue line for shakil 'connection'
         for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
             if j2<height and j2>0: 
-                disp[j2,i,0]= 120
+                disp[j2,i,0]= 100
 
     #rasm= components[n].mat[\
     #    components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
     #    components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
     #cv.imwrite(str(n)+'.png', rasm)
 #cv.imwrite(imagename+'-disp.png', disp)    
-        
+draw2(disp) 
+       
 #-------
 
 def draw1_graph(graph, posstring):

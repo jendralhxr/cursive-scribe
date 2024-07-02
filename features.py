@@ -61,7 +61,7 @@ def draw2(img): # draw the bitmap
 k=2
 SLIC_SPACE= SLIC_SPACE*k
 
-filename= sys.argv[1]
+#filename= sys.argv[1]
 filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
@@ -120,7 +120,7 @@ for j in range(height):
     for i in range(width):
         if cue.item(j,i)!=0:
             moments[lbls[j,i]] = np.append(moments[lbls[j,i]], np.array([[i,j]]), axis=0)
-            render.itemset((j,i,0), 120-(10*(lbls[j,i]%6)))
+            render[j,i,0]= 120-(10*(lbls[j,i]%6))
         else:
             moments_void[lbls[j,i]] = np.append(moments_void[lbls[j,i]], np.array([[i,j]]), axis=0)
 
@@ -136,7 +136,7 @@ for n in range(num_slic):
         cx= int( np.mean(moments[n][1:,0]) ) # centroid
         cy= int( np.mean(moments[n][1:,1]) )
         if (cue.item(cy,cx)!=0):
-            render.itemset((cy,cx,1), 255) 
+            render[cy,cx,1] = 255 
             scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy) )
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
@@ -196,21 +196,21 @@ for n in range(len(components)):
     if components[n].area>4*PHI*pow(SLIC_SPACE,2):
         disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
         seed= components[n].centroid
-        disp.itemset((seed[1],seed[0],2), 200)
+        disp[seed[1],seed[0],2]= 200
         r= components[n].rect[0]+int(components[n].rect[2])
         l= components[n].rect[0]
         if l<width and r<width:
             for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
-                disp.itemset((j1,r,1), 120)
+                disp[j1,r,1]= 120
             for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
-                disp.itemset((j1,l,1), 120)
+                disp[j1,l,1]= 120
     else:        
         m= components[n].centroid[1]
         i= components[n].centroid[0]
         # draw blue line for shakil at mid
         for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
             if j2<height and j2>0: 
-                disp.itemset((j2,i,0), 120)
+                disp[j2,i,0]= 120
 
     #rasm= components[n].mat[\
     #    components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
@@ -379,16 +379,16 @@ lam_mg= nx.MultiGraph(lam)
 #----------------
 
 
-for k in range(2,5,1):
-    resz = cv.resize(image_gray, (k*image_gray.shape[1], k*image_gray.shape[0]), interpolation=cv.INTER_LINEAR)
-    _, gray = cv.threshold(resz, 0, THREVAL, cv.THRESH_OTSU)
-    for i in range(8):
-        for j in range(8):
-            kernel = np.ones((i,j), np.uint8)  # You can adjust the kernel size as needed
-            erod1 = cv.erode(gray, kernel, iterations=1)
-            #draw2(erod1)
-            nama=f'{k}erod{i}-{j}.png'
-            cv.imwrite(nama, erod1)
+# for k in range(2,5,1):
+#     resz = cv.resize(image_gray, (k*image_gray.shape[1], k*image_gray.shape[0]), interpolation=cv.INTER_LINEAR)
+#     _, gray = cv.threshold(resz, 0, THREVAL, cv.THRESH_OTSU)
+#     for i in range(8):
+#         for j in range(8):
+#             kernel = np.ones((i,j), np.uint8)  # You can adjust the kernel size as needed
+#             erod1 = cv.erode(gray, kernel, iterations=1)
+#             #draw2(erod1)
+#             nama=f'{k}erod{i}-{j}.png'
+            #cv.imwrite(nama, erod1)
  
 #---------
 
@@ -426,10 +426,10 @@ def draw_multigraph(G, pos, scale):
 
 
 def path_vane(G, path, attrname):
-    for i in range(len(shortest_path) - 1):
-    u = shortest_path[i]
-    v = shortest_path[i + 1]
-    edge_data = G.get_edge_data(u, v, key=0)  # Get edge attributes (assuming key=0 for simplicity)
-    print(f"{edge_data}")
+    for i in range(len(path) - 1):
+        u = path[i]
+        v = path[i + 1]
+        edge_data = G.get_edge_data(u, v, key=0)  # Get edge attributes (assuming key=0 for simplicity)
+        print(f"{edge_data}")
         
-lam_path = nx.shortest_path(lam_mlamg, source=14, target=164)
+lam_path = nx.shortest_path(lam_mg, source=14, target=164)

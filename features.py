@@ -192,7 +192,7 @@ for n in range(scribe.number_of_nodes()):
                 if seed[0]<=mc[0] and pd>components[i].distance_start: # potential node_start
                     components[i].distance_start= pd
                     components[i].node_start= n
-                elif seed[0]>=mc[0] and pd>components[i].distance_end: # potential node_end
+                if seed[0]>=mc[0] and pd>components[i].distance_end: # potential node_end
                     components[i].distance_end = pd
                     components[i].node_end= n
                 
@@ -241,6 +241,15 @@ for n in range(len(components)):
     #cv.imwrite(str(n)+'.png', rasm)
 #cv.imwrite(imagename+'-disp.png', disp)    
 draw2(disp) 
+
+components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
+for n in range(len(components)):
+    ccv= gray.copy()
+    seed= pos[components[n].node_start]
+    cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
+    draw2(ccv)
+
+
        
 #-------
 
@@ -252,7 +261,7 @@ def draw1_graph(graph, posstring):
             # nodes' param
             pos=positions,
             node_color='orange', 
-            node_size=24, 
+            node_size=48, 
             with_labels=True, font_size=8,
             # edges' param
             edge_color=colors, 
@@ -314,38 +323,38 @@ for k in range(len(components)):
     for m in components[k].nodes:
         scribe.nodes[m]['component_id']=k
         src= scribe.nodes()[m]
-        dist1=1e9
-        dist2=1e9
-        vane1=-1
-        vane2=-1
-        dst1= scribe.nodes()[m] # first closest
-        dst2= scribe.nodes()[m] # second closest
-        n1= -1
-        n2= -1
+        ndist=[1e9, 1e9, 1e9]
+        ndst= [-1, -1, -1]
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
-            tdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-            vane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
-            if (m!=n) and tdist<SLIC_SPACE*pow(PHI,2):# and midval!=0:
-                if tdist<dist1 and tdist<dist2: # shortest always get it
-                    dst1= scribe.nodes()[n]
-                    dist1= tdist
-                    n1=n
-                    vane1= vane
-                if tdist<dist2 and tdist>=dist1 and n!=n1 and vane!=vane1:
-                    dst2= scribe.nodes()[n]
-                    dist2= tdist
-                    n2=n
-                    vane2= vane
-        #print(f'{m}: {n1}/{dist1} {n2}/{dist2}')            
-        #if (dst_min!=src) and (n_min!=-1):
-        # add the closest
-        if n1!=-1:
-            scribe.add_edge(m, n1, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, vane=vane1)
-        # add the second closest only if n2 is not directly connected to n1
-        if scribe.has_edge(n1,n2)==False and n2!=-1:
-            scribe.add_edge(m, n2, color='#00FF00', weight=1e1/dist1/SLIC_SPACE, vane=vane2)
-
+            cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
+            if (m!=n) and cdist<SLIC_SPACE*PHI:
+                if cdist<ndist[2]: # #1 shortest
+                    ndist[0]= ndist[1]
+                    ndist[1]= ndist[2]
+                    ndist[2]= cdist
+                    ndst[0]= ndst[1]
+                    ndst[1]= ndst[2]
+                    ndst[2]= n
+                elif cdist>=ndist[2] and cdist<=ndist[1]:
+                    ndist[0]= ndist[1]
+                    ndist[1]= cdist
+                    ndst[0]= ndst[1]
+                    ndst[1]= n
+                elif cdist<ndist[0]:
+                    ndist[0]= cdist
+                    ndst[0]= n
+        for i in range(3):
+            if ndist[i]!=1e9 and ndst[i]!=-1:
+                dst= scribe.nodes()[ndst[i]]
+                #print(f'{m} to {n}: {ndist[i]}')            
+                tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
+                if (i==2) or\
+                   (i==1 and scribe.has_edge(ndst[2],ndst[1])==False ) or \
+                   (i==0 and scribe.has_edge(ndst[2],ndst[0])==False and scribe.has_edge(ndst[1],ndst[0])==False):
+                    scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e1/ndist[i]/SLIC_SPACE, vane=tvane) 
+            
+draw1_graph(scribe, 'pos_render')
        
 # cleaning and pruning
 def prune_redundant_edges(G):

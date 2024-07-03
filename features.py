@@ -165,12 +165,10 @@ class ConnectedComponents:
     node_end: Optional[int] = field(default=-1)      # left-down
     distance_end: Optional[int] = field(default=0)   # left-down
 
-components=[]
-
-# component = ConnectedComponents(bgn_x=0, bgn_y=0, end_x=100, end_y=100, mid_x=50, mid_y=50, nodes=[2])
 STROKEVAL= 200
 
 pos = nx.get_node_attributes(scribe,'pos_bitmap')
+components=[]
 for n in range(scribe.number_of_nodes()):
     # fill
     seed= pos[n]
@@ -178,11 +176,10 @@ for n in range(scribe.number_of_nodes()):
     cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
     _, ccv = cv.threshold(ccv, 100, STROKEVAL, cv.THRESH_BINARY)
     mu= cv.moments(ccv)
-    if mu['m00'] > SLIC_SPACE*PHI:
+    if mu['m00'] > pow(SLIC_SPACE,2)*PHI:
         mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
         pd= pdistance(seed, mc)
         box= cv.boundingRect(ccv)
-        #print(f'keypoint[{n}] at ({mc[0]},{mc[1]})')
         # append keypoint if the component already exists
         found=0
         for i in range(len(components)):
@@ -192,22 +189,27 @@ for n in range(scribe.number_of_nodes()):
                 if seed[0]<=mc[0] and pd>components[i].distance_start: # potential node_start
                     components[i].distance_start= pd
                     components[i].node_start= n
-                if seed[0]>=mc[0] and pd>components[i].distance_end: # potential node_end
+                elif seed[0]>mc[0] and pd>components[i].distance_end: # potential node_end
                     components[i].distance_end = pd
                     components[i].node_end= n
-                
                 found=1
+                #print(f'old node[{n}] with component[{i}] at {mc} from {components[i].centroid} distance: {pd})')
                 break
         if (found==0):
             components.append(ConnectedComponents(box, mc))
-            components[len(components)-1].nodes.append(n)
-            components[len(components)-1].mat = ccv.copy()
-            components[len(components)-1].area = int(mu['m00']/THREVAL)
-            components[len(components)-1].node_start= n
-            components[len(components)-1].node_end= n
-            components[len(components)-1].distance_start= pd
-            components[len(components)-1].distance_end= pd
+            idx= len(components)-1
+            components[idx].nodes.append(n)
+            components[idx].mat = ccv.copy()
+            components[idx].area = int(mu['m00']/THREVAL)
+            if seed[0]<=mc[0]:
+                components[idx].node_start= n
+                components[idx].distance_start= pd
+            else:
+                components[idx].node_end= n
+                components[idx].distance_end= pd
+            #print(f'new node[{n}] with component[{idx}] at {mc} from {components[idx].centroid} distance: {pd})')
 
+components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 
 disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):
@@ -217,9 +219,11 @@ for n in range(len(components)):
         disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
         seed= components[n].centroid
         #disp[seed[1],seed[0],2]= 220
-        cv.circle(disp, seed, 2, (0,0,200), -1)
-        cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
-        cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
+        cv.circle(disp, seed, 2, (0,0,120), -1)
+        if components[n].node_start!=-1:
+            cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
+        if components[n].node_end!=-1:
+            cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
         r= components[n].rect[0]+int(components[n].rect[2])
         l= components[n].rect[0]
         # if l<width and r<width: # did we ever went beyond the frame?
@@ -242,13 +246,13 @@ for n in range(len(components)):
 #cv.imwrite(imagename+'-disp.png', disp)    
 draw2(disp) 
 
-components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
+# draw each components separately, sorted right to left
 for n in range(len(components)):
     ccv= gray.copy()
     seed= pos[components[n].node_start]
     cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
-    draw2(ccv)
-
+    #draw2(components[n].mat) # only the mask
+    draw2(ccv) # along with the neighbor
 
        
 #-------

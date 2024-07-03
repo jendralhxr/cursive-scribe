@@ -349,7 +349,8 @@ for k in range(len(components)):
                 dst= scribe.nodes()[ndst[i]]
                 #print(f'{m} to {n}: {ndist[i]}')            
                 tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
-                if (i==2) or\
+                # // (i==1 and scribe.has_edge(m,ndst[2])==True ) # for 1+alpha
+                if (i==2) or \
                    (i==1 and scribe.has_edge(ndst[2],ndst[1])==False ) or \
                    (i==0 and scribe.has_edge(ndst[2],ndst[0])==False and scribe.has_edge(ndst[1],ndst[0])==False):
                     scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e1/ndist[i]/SLIC_SPACE, vane=tvane) 

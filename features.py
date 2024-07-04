@@ -392,8 +392,8 @@ for k in range(len(components)):
                     closest_vane= tvane
         print(f'{k}\t{m} \t| {closestcomp_id}\t{n}\t: {closestcomp_distance} {tvane}')            
         # define the diacritics connection
-        if closestcomp_distance<SLIC_SPACE*pow(PHI,3):
-            scribe.add_edge(closest_src, closest_dst, color='#0000FF', weight=1e3/closestcomp_distance/SLIC_SPACE, vane=closest_vane)
+        #if closestcomp_distance<SLIC_SPACE*pow(PHI,3):
+        #    scribe.add_edge(closest_src, closest_dst, color='#0000FF', weight=1e3/closestcomp_distance/SLIC_SPACE, vane=closest_vane)
         
 draw1_graph(scribe, 'pos_render')
        
@@ -421,33 +421,33 @@ def edge_attributes(G):
             print(f"({u}, {v}) {attrs}")
     
 # fix the Freeman vane since it may be revesed from double assignment
-def fix_vane(G):
-    if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
-        new_edges = []
-        for u,v,k,data in G.edges(keys=True, data=True):
-            src= G.nodes()[u]
-            dst= G.nodes()[v]
-            # the original            
-            G.edges[(u,v,k)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
-            new_edge_data = data.copy()
-            new_edges.append((u, v, new_edge_data))
-        for u, v, data in new_edges:
-            G.add_edge(v, u, **data)
-            # the parallel
-            G.edges[(u,v,k+1)]['vane']= (G.edges[(u,v,k+1)]['vane']+4)%8
-    elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
-        for u,v in G.edges():
-            src= G.nodes()[u]
-            dst= G.nodes()[v]
-            G.edges[(u,v)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
+# def fix_vane(G):
+#     if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
+#         new_edges = []
+#         for u,v,k,data in G.edges(keys=True, data=True):
+#             src= G.nodes()[u]
+#             dst= G.nodes()[v]
+#             # the original            
+#             G.edges[(u,v,k)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
+#             new_edge_data = data.copy()
+#             new_edges.append((u, v, new_edge_data))
+#         for u, v, data in new_edges:
+#             G.add_edge(v, u, **data)
+#             # the parallel
+#             G.edges[(u,v,k+1)]['vane']= (G.edges[(u,v,k+1)]['vane']+4)%8
+#     elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
+#         for u,v in G.edges():
+#             src= G.nodes()[u]
+#             dst= G.nodes()[v]
+#             G.edges[(u,v)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
 
 
-scribe_dg= scribe.to_directed() # or we can do it at rasm level
-scribe_mdg = nx.MultiDiGraph(scribe_dg)
-scribe_mg= nx.MultiGraph(scribe)
+# scribe_dg= scribe.to_directed() # or we can do it at rasm level
+# scribe_mdg = nx.MultiDiGraph(scribe_dg)
+# scribe_mg= nx.MultiGraph(scribe)
     
 lam= extract_subgraph(scribe, 14)
-lam_mg= nx.MultiGraph(lam)
+# lam_mg= nx.MultiGraph(lam)
 
 
 #----------------
@@ -496,11 +496,12 @@ def draw_multigraph(G, pos, scale):
             plt.text(x + offset, y + offset, label, horizontalalignment='center', fontsize=8, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
 
 
-def path_vane(G, path, attrname):
+def path_vane(G, path):
+    pathstring=''
     for i in range(len(path) - 1):
-        u = path[i]
-        v = path[i + 1]
-        edge_data = G.get_edge_data(u, v, key=0)  # Get edge attributes (assuming key=0 for simplicity)
-        print(f"{edge_data}")
+        src= G.nodes()[path[i]]
+        dst= G.nodes()[path[i+1]]
+        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
+        pathstring+=str(tvane)
+    return pathstring
         
-lam_path = nx.shortest_path(lam_mg, source=14, target=164)

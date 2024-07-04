@@ -446,8 +446,7 @@ def edge_attributes(G):
 # scribe_mdg = nx.MultiDiGraph(scribe_dg)
 # scribe_mg= nx.MultiGraph(scribe)
     
-lam= extract_subgraph(scribe, 14)
-# lam_mg= nx.MultiGraph(lam)
+
 
 
 #----------------
@@ -467,8 +466,7 @@ lam= extract_subgraph(scribe, 14)
 #eroded_image = cv.erode(gray, kernel, iterations=1)
 #cleaned_image = cv.dilate(eroded_image, kernel, iterations=1)
 
-besar=extract_subgraph(scribe, 81)
-besar_mg= nx.MultiGraph(besar)
+#besar_mg= nx.MultiGraph(besar)
 
 def draw_multigraph(G, pos, scale):
     # Draw nodes and edges
@@ -504,4 +502,13 @@ def path_vane(G, path):
         tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
         pathstring+=str(tvane)
     return pathstring
-        
+
+from networkx.algorithms import approximation as approx
+
+lam= extract_subgraph(scribe, 14)
+tsp_lam= approx.traveling_salesman_problem(lam, cycle=False)
+print(path_vane(lam, tsp_lam))
+      
+besar=extract_subgraph(scribe, 28)
+tsp_besar = approx.traveling_salesman_problem(besar, cycle=False)
+print(path_vane(besar, tsp_besar))

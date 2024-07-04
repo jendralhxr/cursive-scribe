@@ -377,21 +377,20 @@ for k in range(len(components)):
         closestcomp_distance= 1e9
         closest_src= -1
         closest_dst= -1
+        closest_vane= -1
         for m in components[k].nodes:
             for n in components[closestcomp_id].nodes:
+                tvane= freeman(pos[n][0]-pos[m][0], pos[n][1]-pos[m][1])
                 pd= pdistance(pos[m], pos[n])
-                if pd<closestcomp_distance:
+                if pd<closestcomp_distance and (tvane==2 or tvane==6):
                     closestcomp_distance= pd
                     closest_src= m
                     closest_dst= n
-        print(f'node {m} comp {k} -- close to {n} comp {closestcomp_id}: {closestcomp_distance}')            
+                    closest_vane= tvane
+        print(f'{k}\t{m} \t| {closestcomp_id}\t{n}\t: {closestcomp_distance} {tvane}')            
         # define the diacritics connection
-        if pos[m][1]<pos[n][1]:
-            tvane= 11
-        else:
-            tvane= 12
         if closestcomp_distance<SLIC_SPACE*pow(PHI,3):
-            scribe.add_edge(m, n, color='#0000FF', weight=1e3/closestcomp_distance/SLIC_SPACE, vane=tvane)
+            scribe.add_edge(closest_src, closest_dst, color='#0000FF', weight=1e3/closestcomp_distance/SLIC_SPACE, vane=closest_vane)
         
 draw1_graph(scribe, 'pos_render')
        

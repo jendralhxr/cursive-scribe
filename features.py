@@ -368,10 +368,12 @@ for k in range(len(components)):
         closestcomp_id= -1
         for l in range(len(components)):
             if k!=l and len(components[l].nodes)>4:
-                pd= pdistance(components[k].centroid, components[l].centroid)
-                tvane= freeman(components[l].centroid[0]-components[k].centroid[0], components[l].centroid[1]-components[k].centroid[1])
-                if pd<closestcomp_distance and tvane!=0 and tvane!=4:
-                    closestcomp_distance= pd
+                dist_centroid= pdistance(components[k].centroid, components[l].centroid)
+                dist_start= pdistance(components[k].centroid, pos[components[l].node_start])
+                dist_end= pdistance(components[k].centroid, pos[components[l].node_end])
+                dist_min= min(dist_centroid, dist_centroid)
+                if dist_min<closestcomp_distance:
+                    closestcomp_distance= dist_min
                     closestcomp_id= l
         #print(f'small comp at {k} close to {closestcomp_id}: {closestcomp_distance}')            
         # then find closest node from the closest connected component

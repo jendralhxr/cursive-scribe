@@ -359,6 +359,40 @@ for k in range(len(components)):
                    (i==0 and scribe.has_edge(ndst[2],ndst[0])==False and scribe.has_edge(ndst[1],ndst[0])==False):
                     scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e1/ndist[i]/SLIC_SPACE, vane=tvane) 
             
+# finding diacritics connection
+for k in range(len(components)):
+    if components[k].area<pow(SLIC_SPACE,2)*pow(PHI,2) or len(components[k].nodes)<=3:
+    #if len(components[k].nodes)<3:
+        # find closest component
+        closestcomp_distance= 1e9
+        closestcomp_id= -1
+        for l in range(len(components)):
+            if k!=l and len(components[l].nodes)>=4:
+                pd= pdistance(components[k].centroid, components[l].centroid)
+                if pd<closestcomp_distance:
+                    closestcomp_distance= pd
+                    closestcomp_id= l
+        #print(f'small comp at {k} close to {closestcomp_id}: {closestcomp_distance}')            
+        # then find closest node from the closest connected component
+        closestcomp_distance= 1e9
+        closest_src= -1
+        closest_dst= -1
+        for m in components[k].nodes:
+            for n in components[closestcomp_id].nodes:
+                pd= pdistance(pos[m], pos[n])
+                if pd<closestcomp_distance:
+                    closestcomp_distance= pd
+                    closest_src= m
+                    closest_dst= n
+        print(f'node {m} comp {k} -- close to {n} comp {closestcomp_id}: {closestcomp_distance}')            
+        # define the diacritics connection
+        if pos[m][1]<pos[n][1]:
+            tvane= 11
+        else:
+            tvane= 12
+        if closestcomp_distance<SLIC_SPACE*pow(PHI,3):
+            scribe.add_edge(m, n, color='#0000FF', weight=1e3/closestcomp_distance/SLIC_SPACE, vane=tvane)
+        
 draw1_graph(scribe, 'pos_render')
        
 # cleaning and pruning
@@ -415,8 +449,6 @@ lam_mg= nx.MultiGraph(lam)
 
 
 #----------------
-
-
 # for k in range(2,5,1):
 #     resz = cv.resize(image_gray, (k*image_gray.shape[1], k*image_gray.shape[0]), interpolation=cv.INTER_LINEAR)
 #     _, gray = cv.threshold(resz, 0, THREVAL, cv.THRESH_OTSU)
@@ -426,8 +458,7 @@ lam_mg= nx.MultiGraph(lam)
 #             erod1 = cv.erode(gray, kernel, iterations=1)
 #             #draw2(erod1)
 #             nama=f'{k}erod{i}-{j}.png'
-            #cv.imwrite(nama, erod1)
- 
+#             cv.imwrite(nama, erod1)
 #---------
 
 # morphological erosion-dilation is not quite up to par

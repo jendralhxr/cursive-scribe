@@ -361,15 +361,16 @@ for k in range(len(components)):
             
 # finding diacritics connection
 for k in range(len(components)):
-    if components[k].area<pow(SLIC_SPACE,2)*pow(PHI,2) or len(components[k].nodes)<=3:
+    if components[k].area<pow(SLIC_SPACE,2)*pow(PHI,3) or len(components[k].nodes)<=4:
     #if len(components[k].nodes)<3:
         # find closest component
         closestcomp_distance= 1e9
         closestcomp_id= -1
         for l in range(len(components)):
-            if k!=l and len(components[l].nodes)>=4:
+            if k!=l and len(components[l].nodes)>4:
                 pd= pdistance(components[k].centroid, components[l].centroid)
-                if pd<closestcomp_distance:
+                tvane= freeman(components[l].centroid[0]-components[k].centroid[0], components[l].centroid[1]-components[k].centroid[1])
+                if pd<closestcomp_distance and tvane!=0 and tvane!=4:
                     closestcomp_distance= pd
                     closestcomp_id= l
         #print(f'small comp at {k} close to {closestcomp_id}: {closestcomp_distance}')            

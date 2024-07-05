@@ -390,10 +390,10 @@ for k in range(len(components)):
                     closest_src= m
                     closest_dst= n
                     closest_vane= tvane
-        print(f'{k}\t{m} \t| {closestcomp_id}\t{n}\t: {closestcomp_distance} {tvane}')            
+        # print(f'{k}\t{m} \t| {closestcomp_id}\t{n}\t: {closestcomp_distance} {tvane}')            
         # define the diacritics connection
-        #if closestcomp_distance<SLIC_SPACE*pow(PHI,3):
-        #    scribe.add_edge(closest_src, closest_dst, color='#0000FF', weight=1e3/closestcomp_distance/SLIC_SPACE, vane=closest_vane)
+        if closestcomp_distance<SLIC_SPACE*pow(PHI,3):
+           scribe.add_edge(closest_src, closest_dst, color='#0000FF', weight=1e3/closestcomp_distance/SLIC_SPACE, vane=closest_vane)
         
 draw1_graph(scribe, 'pos_render')
        
@@ -503,6 +503,15 @@ def path_vane(G, path):
         pathstring+=str(tvane)
     return pathstring
 
+def path2_vane(G, path):
+    pathstring=''
+    for n in path:
+        src= G.nodes()[n[0]]
+        dst= G.nodes()[n[1]]
+        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
+        pathstring+=str(tvane)
+    return pathstring
+
 from networkx.algorithms import approximation as approx
 
 lam= extract_subgraph(scribe, 14)
@@ -510,5 +519,9 @@ tsp_lam= approx.traveling_salesman_problem(lam, cycle=False)
 print(path_vane(lam, tsp_lam))
       
 besar=extract_subgraph(scribe, 28)
-tsp_besar = approx.traveling_salesman_problem(besar, cycle=False)
-print(path_vane(besar, tsp_besar))
+#tsp_besar = approx.traveling_salesman_problem(besar, cycle=False)
+#print(path_vane(besar, tsp_besar))
+#list(nx.dfs_edges(besar, source=28))
+
+list(nx.bfs_edges(besar, source=28)) # simplifiend
+list(nx.edge_bfs(besar, source=28)) # traverse sequence

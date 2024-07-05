@@ -41,9 +41,9 @@ letter = {
 
 
 def printnumber(thelist):
-    kalima=[]
+    kalima=''
     for num in thelist:
-        kalima+=letter[num]
+        kalima +=(letter[num])
     return(kalima)
     
 import random

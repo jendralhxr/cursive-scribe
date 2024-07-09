@@ -376,39 +376,28 @@ for k in range(len(components)):
 # finding diacritics connection
 for k in range(len(components)):
     if components[k].area<pow(SLIC_SPACE,2)*pow(PHI,3) or len(components[k].nodes)<=4:
-    #if len(components[k].nodes)<3:
-        # find closest component
-        closestcomp_distance= 1e9
-        closestcomp_id= -1
-        for l in range(len(components)):
-            if k!=l and len(components[l].nodes)>4:
-                dist_centroid= pdistance(components[k].centroid, components[l].centroid)
-                dist_start= pdistance(components[k].centroid, pos[components[l].node_start])
-                dist_end= pdistance(components[k].centroid, pos[components[l].node_end])
-                dist_min= min(dist_centroid, dist_centroid)
-                if dist_min<closestcomp_distance:
-                    closestcomp_distance= dist_min
-                    closestcomp_id= l
-        print(f'small comp at {k} close to {closestcomp_id}: {closestcomp_distance}')            
-        # then find closest node from the closest connected component
-        closestcomp_distance= 1e9
-        closest_src= -1
-        closest_dst= -1
+        src_comp= k
+        src_node= -1
+        closest_comp= -1
+        closest_dist= 1e9
+        closest_node= -1
         closest_vane= -1
-        for m in components[k].nodes:
-            for n in components[closestcomp_id].nodes:
-                tvane= freeman(pos[n][0]-pos[m][0], pos[n][1]-pos[m][1])
-                pd= pdistance(pos[m], pos[n])
-                if pd<closestcomp_distance and (tvane==2 or tvane==6):
-                    closestcomp_distance= pd
-                    closest_src= m
-                    closest_dst= n
-                    closest_vane= tvane
-        # print(f'{k}\t{m} \t| {closestcomp_id}\t{n}\t: {closestcomp_distance} {tvane}')            
-        # define the diacritics connection
-        if closestcomp_distance<SLIC_SPACE*pow(PHI,3):
-           scribe.add_edge(closest_src, closest_dst, color='#0000FF', weight=1e3/closestcomp_distance/SLIC_SPACE, vane=closest_vane)
-        
+        for l in range(len(components)):
+            if (k!=l) and pdistance(components[k].centroid, components[l].centroid)<SLIC_SPACE*pow(PHI,5):
+                for m in components[k].nodes:
+                    for n in components[l].nodes:
+                        tdist= pdistance(pos[m], pos[n])
+                        tvane= freeman(pos[n][0]-pos[m][0], pos[n][1]-pos[m][1])
+                        if tdist<closest_dist and (tvane==2 or tvane==6):
+                            closest_comp= l
+                            src_node= m
+                            closest_node= n
+                            closest_vane= tvane
+                            closest_dist= tdist
+        print(f'comp {k} to {closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
+        if closest_dist<SLIC_SPACE*pow(PHI,4):
+            scribe.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
+
 draw1_graph(scribe, 'pos_render')
        
 # cleaning and pruning

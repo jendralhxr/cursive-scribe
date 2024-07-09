@@ -256,14 +256,16 @@ for n in range(len(components)):
     #    components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
     #cv.imwrite(str(n)+'.png', rasm)
 #cv.imwrite(imagename+'-disp.png', disp)    
+
 draw2(disp) 
 
 # draw each components separately, sorted right to left
 for n in range(len(components)):
-    ccv= gray.copy()
+    ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
     seed= pos[components[n].node_start]
-    cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
+    cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
     #draw2(components[n].mat) # only the mask
+    cv.putText(ccv, str(n), seed, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
     draw2(ccv) # along with the neighbor
 
        

@@ -198,10 +198,10 @@ for n in range(scribe.number_of_nodes()):
             if components[i].centroid==mc:
                 components[i].nodes.append(n)
                 # calculate the distance
-                if seed[0]<=mc[0] and pd>components[i].distance_start: # potential node_start
+                if seed[0]>mc[0] and pd>components[i].distance_start: # potential node_start
                     components[i].distance_start= pd
                     components[i].node_start= n
-                elif seed[0]>mc[0] and pd>components[i].distance_end: # potential node_end
+                elif seed[0]<mc[0] and pd>components[i].distance_end: # potential node_end
                     components[i].distance_end = pd
                     components[i].node_end= n
                 found=1
@@ -213,7 +213,7 @@ for n in range(scribe.number_of_nodes()):
             components[idx].nodes.append(n)
             components[idx].mat = ccv.copy()
             components[idx].area = int(mu['m00']/THREVAL)
-            if seed[0]<=mc[0]:
+            if seed[0]>mc[0]:
                 components[idx].node_start= n
                 components[idx].distance_start= pd
             else:
@@ -265,7 +265,7 @@ for n in range(len(components)):
     seed= pos[components[n].node_start]
     cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
     #draw2(components[n].mat) # only the mask
-    cv.putText(ccv, str(n), seed, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
+    cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
     draw2(ccv) # along with the neighbor
 
        
@@ -389,7 +389,7 @@ for k in range(len(components)):
                 if dist_min<closestcomp_distance:
                     closestcomp_distance= dist_min
                     closestcomp_id= l
-        #print(f'small comp at {k} close to {closestcomp_id}: {closestcomp_distance}')            
+        print(f'small comp at {k} close to {closestcomp_id}: {closestcomp_distance}')            
         # then find closest node from the closest connected component
         closestcomp_distance= 1e9
         closest_src= -1
@@ -508,7 +508,7 @@ def draw_multigraph(G, pos, scale):
             plt.text(x + offset, y + offset, label, horizontalalignment='center', fontsize=8, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
 
 
-def path_vane(G, path):
+def path_vane(G, path): # if path is written as series of nodes
     pathstring=''
     for i in range(len(path) - 1):
         src= G.nodes()[path[i]]
@@ -517,7 +517,7 @@ def path_vane(G, path):
         pathstring+=str(tvane)
     return pathstring
 
-def path2_vane(G, path):
+def path2_vane(G, path): # if path is written is written as series of edges
     pathstring=''
     for n in path:
         src= G.nodes()[n[0]]

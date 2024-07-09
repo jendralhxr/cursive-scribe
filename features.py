@@ -1,16 +1,12 @@
-# a tribute for watatita
-
 # freeman code going anti-clockwise like trigonometrics angle
-"""
-3   2   1
-  \ | /
-4 ------0
-  / | \
-5   6   7
-"""
+#    3   2   1
+#      \ | /
+#    4 ------0
+#      / | \
+#    5   6   7
+
 SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
-
 
 def freeman(x, y):
     if (y==0):
@@ -118,11 +114,27 @@ moments_void = [np.zeros((1, 2)) for _ in range(num_slic)]
 # tabulating the superpixel labels
 for j in range(height):
     for i in range(width):
-        if cue.item(j,i)!=0:
+        if cue[j,i]!=0:
             moments[lbls[j,i]] = np.append(moments[lbls[j,i]], np.array([[i,j]]), axis=0)
-            render[j,i,0]= 120-(10*(lbls[j,i]%6))
+            render[j,i,0]= 140-(10*(lbls[j,i]%6))
         else:
             moments_void[lbls[j,i]] = np.append(moments_void[lbls[j,i]], np.array([[i,j]]), axis=0)
+
+moments[0][1] = [0,0] # random irregularities, not quite sure why
+# some badly needed 'sanity' check
+def remove_zeros(moments):
+    temp=[]
+    v= len(moments)
+    if v==1:
+        return temp
+    else:
+        for p in range(v):
+            if moments[p][0]!=0. and moments[p][1]!=0.:
+                temp.append(moments[p])
+        return temp
+
+for n in range(len(moments)):
+    moments[n]= remove_zeros(moments[n])
 
 # draw render here
 # draw2(renders)
@@ -132,10 +144,10 @@ scribe= nx.Graph() # start anew, just in case
 # valid superpixel
 filled=0
 for n in range(num_slic):
-    if ( len(moments[n])>SLIC_SPACE): # remove spurious superpixel with area less than 2 px 
-        cx= int( np.mean(moments[n][1:,0]) ) # centroid
-        cy= int( np.mean(moments[n][1:,1]) )
-        if (cue.item(cy,cx)!=0):
+    if ( len(moments[n])>SLIC_SPACE ): # remove spurious superpixel with area less than 2 px 
+        cx= int( np.mean( [array[0] for array in moments[n]] )) # centroid
+        cy= int( np.mean( [array[1] for array in moments[n]] ))
+        if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
             scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy) )
             #print(f'point{n} at ({cx},{cy})')

@@ -128,14 +128,14 @@ def add_hurf(G, pos, v1, v2, v3, v4, dia, hurf):
         base= '#400000'
         col= add_to_hex_color(base, hue, 0, 0)
         
-    G.add_node(100+v1, 200+v2, color=col)
-    G.add_node(200+v2, 300+v3, color=col)
+    G.add_edge(100+v1, 200+v2, color=col)
+    G.add_edge(200+v2, 300+v3, color=col)
     if v4!=0:
-        G.add_node(300+v3, 400+v4, color=col)
-        G.add_node(400+v4, dia, color=col)
+        G.add_edge(300+v3, 400+v4, color=col)
+        G.add_edge(400+v4, dia, color=col)
     else:
-        G.add_node(300+v3, dia, color=col)
-    G.add_node(dia, hurf, color=col)
+        G.add_edge(300+v3, dia, color=col)
+    G.add_edge(dia, hurf, color=col)
 
 # isolated
 add_hurf(hurf, 0, 6, 6, 6, 0, 500, 1) # 'ا'

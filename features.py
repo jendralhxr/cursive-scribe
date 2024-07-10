@@ -42,12 +42,8 @@ import sys
 import math
 
 plt.figure(dpi=300)
-
-def draw1(img): # draw the intensity
-    plt.figure(dpi=300)
-    plt.imshow(img)
   
-def draw2(img): # draw the bitmap
+def draw(img): # draw the bitmap
     plt.figure(dpi=300)
     if (len(img.shape)==3):
         plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2RGB))
@@ -73,29 +69,6 @@ CHANNEL= 2
 image_gray= image[:,:,CHANNEL]
 _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #_, gray= cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
-
-
-# # ORB
-# orb = cv.ORB_create()
-# keypoints, descriptors = orb.detectAndCompute(gray, None)
-# image_with_keypoints = cv.drawKeypoints(gray, keypoints, None)
-
-# def sharpen(img):
-#     kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-#     sharp= cv.filter2D(img, -1, kernel)
-#     return(sharp)
-
-# sharp1= sharpen(gray)
-# sharp2= sharpen(sharp1)
-
-# # SIFT
-# sift = cv.SIFT_create()
-# kp0, descriptors = sift.detectAndCompute(gray, None)
-# ks0 = cv.drawKeypoints(gray, keypoints, None, flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-# kp1, descriptors = sift.detectAndCompute(sharp1, None)
-# ks1 = cv.drawKeypoints(gray, keypoints, None, flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-# kp2, descriptors = sift.detectAndCompute(sharp2, None)
-# ks2 = cv.drawKeypoints(gray, keypoints, None, flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
 cue= gray.copy()
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
@@ -137,7 +110,10 @@ for n in range(len(moments)):
     moments[n]= remove_zeros(moments[n])
 
 # draw render here
-# draw2(renders)
+# draw(renders)
+
+#---- image processing routines should be finished by here 
+
 # generating nodes
 scribe= nx.Graph() # start anew, just in case
 
@@ -152,7 +128,6 @@ for n in range(num_slic):
             scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy) )
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
-
 
 def pdistance(point1, point2):
     x1, y1 = point1
@@ -230,7 +205,6 @@ for n in range(len(components)):
     if components[n].area>4*PHI*pow(SLIC_SPACE,2):
         disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
         seed= components[n].centroid
-        #disp[seed[1],seed[0],2]= 220
         cv.circle(disp, seed, 2, (0,0,120), -1)
         if components[n].node_start!=-1:
             cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
@@ -257,7 +231,7 @@ for n in range(len(components)):
     #cv.imwrite(str(n)+'.png', rasm)
 #cv.imwrite(imagename+'-disp.png', disp)    
 
-draw2(disp) 
+draw(disp) 
 
 # draw each components separately, sorted right to left
 for n in range(len(components)):
@@ -266,27 +240,12 @@ for n in range(len(components)):
     cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
     #draw2(components[n].mat) # only the mask
     cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
-    draw2(ccv) # along with the neighbor
+    draw(ccv) # along with the neighbor
 
        
 #-------
 
-def draw1_graph(graph, posstring):
-    positions = nx.get_node_attributes(graph,posstring)
-    colors = nx.get_edge_attributes(graph,'color').values()
-    plt.figure(figsize=(width/12,height/12)) 
-    nx.draw(graph, 
-            # nodes' param
-            pos=positions,
-            node_color='orange', 
-            node_size=48, 
-            with_labels=True, font_size=8,
-            # edges' param
-            edge_color=colors, 
-            width=12,
-            )
-
-def draw2_graph(graph, posstring):
+def draw_graph(graph, posstring):
     # nodes
     positions = nx.get_node_attributes(graph,posstring)
     area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
@@ -305,7 +264,7 @@ def draw2_graph(graph, posstring):
             width=weights*2,
             )
     
-def draw3_graph(graph, posstring):
+def draw_graph_edgelabel(graph, posstring):
     # nodes
     if posstring is None:
         positions = nx.spring_layout(graph)
@@ -398,17 +357,7 @@ for k in range(len(components)):
         if closest_dist<SLIC_SPACE*pow(PHI,4):
             scribe.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
 
-draw1_graph(scribe, 'pos_render')
-       
-# cleaning and pruning
-def prune_redundant_edges(G):
-    mst = nx.minimum_spanning_tree(G)
-    mst_edges = set(mst.edges())
-    redundant_edges = set(G.edges()) - mst_edges
-    G.remove_edges_from(redundant_edges)
-    return G
-
-#s2=prune_redundant_edges(scribe)
+draw_graph(scribe, 'pos_render')
 
 def extract_subgraph(G, start):
     connected_component = nx.node_connected_component(G, start)
@@ -423,81 +372,7 @@ def edge_attributes(G):
         for u, v, attrs in G.edges(data=True):
             print(f"({u}, {v}) {attrs}")
     
-# fix the Freeman vane since it may be revesed from double assignment
-# def fix_vane(G):
-#     if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
-#         new_edges = []
-#         for u,v,k,data in G.edges(keys=True, data=True):
-#             src= G.nodes()[u]
-#             dst= G.nodes()[v]
-#             # the original            
-#             G.edges[(u,v,k)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
-#             new_edge_data = data.copy()
-#             new_edges.append((u, v, new_edge_data))
-#         for u, v, data in new_edges:
-#             G.add_edge(v, u, **data)
-#             # the parallel
-#             G.edges[(u,v,k+1)]['vane']= (G.edges[(u,v,k+1)]['vane']+4)%8
-#     elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
-#         for u,v in G.edges():
-#             src= G.nodes()[u]
-#             dst= G.nodes()[v]
-#             G.edges[(u,v)]['vane']= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))            
-
-
-# scribe_dg= scribe.to_directed() # or we can do it at rasm level
-# scribe_mdg = nx.MultiDiGraph(scribe_dg)
-# scribe_mg= nx.MultiGraph(scribe)
-    
-
-
-
-#----------------
-# for k in range(2,5,1):
-#     resz = cv.resize(image_gray, (k*image_gray.shape[1], k*image_gray.shape[0]), interpolation=cv.INTER_LINEAR)
-#     _, gray = cv.threshold(resz, 0, THREVAL, cv.THRESH_OTSU)
-#     for i in range(8):
-#         for j in range(8):
-#             kernel = np.ones((i,j), np.uint8)  # You can adjust the kernel size as needed
-#             erod1 = cv.erode(gray, kernel, iterations=1)
-#             #draw2(erod1)
-#             nama=f'{k}erod{i}-{j}.png'
-#             cv.imwrite(nama, erod1)
-#---------
-
-# morphological erosion-dilation is not quite up to par
-#eroded_image = cv.erode(gray, kernel, iterations=1)
-#cleaned_image = cv.dilate(eroded_image, kernel, iterations=1)
-
-#besar_mg= nx.MultiGraph(besar)
-
-def draw_multigraph(G, pos, scale):
-    # Draw nodes and edges
-    if pos is None:
-        pos = nx.spring_layout(G)
-    else:
-        pos = nx.get_node_attributes(G,pos)
-    
-    nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=500, edge_color='gray')
-    
-    # retrieve edge lables
-    edge_labels = {}
-    for u, v, key, data in G.edges(keys=True, data=True):
-        edge_labels[(u, v, key)] = f"{data['vane']}"
-
-    
-    # Draw edge labels
-    if edge_labels:
-        for (u, v, key), label in edge_labels.items():
-            # Calculate midpoint for each edge
-            x = (pos[u][0] + pos[v][0]) / 2
-            y = (pos[u][1] + pos[v][1]) / 2
-            # Add a slight offset to the y position to avoid overlapping labels
-            offset = scale * key
-            plt.text(x + offset, y + offset, label, horizontalalignment='center', fontsize=8, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none'))
-
-
-def path_vane(G, path): # if path is written as series of nodes
+def path_vane_nodes(G, path): # if path is written as series of nodes
     pathstring=''
     for i in range(len(path) - 1):
         src= G.nodes()[path[i]]
@@ -506,7 +381,7 @@ def path_vane(G, path): # if path is written as series of nodes
         pathstring+=str(tvane)
     return pathstring
 
-def path2_vane(G, path): # if path is written is written as series of edges
+def path_vane_edges(G, path): # if path is written is written as series of edges
     pathstring=''
     for n in path:
         src= G.nodes()[n[0]]
@@ -515,16 +390,8 @@ def path2_vane(G, path): # if path is written is written as series of edges
         pathstring+=str(tvane)
     return pathstring
 
-from networkx.algorithms import approximation as approx
 
-lam= extract_subgraph(scribe, 14)
-tsp_lam= approx.traveling_salesman_problem(lam, cycle=False)
-print(path_vane(lam, tsp_lam))
-      
 besar=extract_subgraph(scribe, 28)
-#tsp_besar = approx.traveling_salesman_problem(besar, cycle=False)
-#print(path_vane(besar, tsp_besar))
-#list(nx.dfs_edges(besar, source=28))
-
-list(nx.bfs_edges(besar, source=28)) # simplifiend
+#list(nx.bfs_edges(besar, source=28)) # simplifiend
 list(nx.edge_bfs(besar, source=28)) # traverse sequence
+path_vane_edges(scribe, list(nx.edge_bfs(besar, source=28)))

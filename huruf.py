@@ -52,41 +52,41 @@ hurf.add_node(530, label='﮷', desc='three dots under', )
 hurf.add_node(55, label='ء', desc='hamza')
 
 
-hurf.add_node(100, label='0')
-hurf.add_node(101, label='1')
-hurf.add_node(102, label='2')
-hurf.add_node(103, label='3')
-hurf.add_node(104, label='4')
-hurf.add_node(105, label='5')
-hurf.add_node(106, label='6')
-hurf.add_node(107, label='7')
+hurf.add_node(100, label='1→')
+hurf.add_node(101, label='1↗')
+hurf.add_node(102, label='1↑')
+hurf.add_node(103, label='1↖')
+hurf.add_node(104, label='1←')
+hurf.add_node(105, label='1↙')
+hurf.add_node(106, label='1↓')
+hurf.add_node(107, label='1↘')
 
-hurf.add_node(200, label='0')
-hurf.add_node(201, label='1')
-hurf.add_node(202, label='2')
-hurf.add_node(203, label='3')
-hurf.add_node(204, label='4')
-hurf.add_node(205, label='5')
-hurf.add_node(206, label='6')
-hurf.add_node(207, label='7')
+hurf.add_node(200, label='2→')
+hurf.add_node(201, label='2↗')
+hurf.add_node(202, label='2↑')
+hurf.add_node(203, label='2↖')
+hurf.add_node(204, label='2←')
+hurf.add_node(205, label='2↙')
+hurf.add_node(206, label='2↓')
+hurf.add_node(207, label='2↘')
 
-hurf.add_node(300, label='0')
-hurf.add_node(301, label='1')
-hurf.add_node(302, label='2')
-hurf.add_node(303, label='3')
-hurf.add_node(304, label='4')
-hurf.add_node(305, label='5')
-hurf.add_node(306, label='6')
-hurf.add_node(307, label='7')
+hurf.add_node(300, label='3→') # 0
+hurf.add_node(301, label='3↗') # 1
+hurf.add_node(302, label='3↑') # 2
+hurf.add_node(303, label='3↖') # 3
+hurf.add_node(304, label='3←') # 4
+hurf.add_node(305, label='3↙') # 5
+hurf.add_node(306, label='3↓') # 6
+hurf.add_node(307, label='3↘') # 7
 
-hurf.add_node(400, label='0')
-hurf.add_node(401, label='1')
-hurf.add_node(402, label='2')
-hurf.add_node(403, label='3')
-hurf.add_node(404, label='4')
-hurf.add_node(405, label='5')
-hurf.add_node(406, label='6')
-hurf.add_node(407, label='7')
+hurf.add_node(400, label='4→') # 0
+hurf.add_node(401, label='4↗') # 1
+hurf.add_node(402, label='4↑') # 2
+hurf.add_node(403, label='4↖') # 3
+hurf.add_node(404, label='4←') # 4
+hurf.add_node(405, label='4↙') # 5
+hurf.add_node(406, label='4↓') # 6
+hurf.add_node(407, label='4↘') # 7
 
 def add_to_hex_color(hex_color, r_add, g_add, b_add):
     r_hex = hex_color[1:3]
@@ -326,17 +326,24 @@ add_hurf(hurf, 3, 5, 5, 4, 3, 500, 36) # 'ی'
 add_hurf(hurf, 3, 5, 4, 4, 3, 520, 35) # 'ي'
 add_hurf(hurf, 3, 5, 4, 4, 3, 500, 36) # 'ی'
 
-def draw_graph(graph):
+def draw_graph(graph, pos):
     # edges
+    if pos==None:
+        pos = nx.spring_layout(graph)  # positions for all nodes
+         
+    labels = nx.get_node_attributes(graph, 'label')
     colors = nx.get_edge_attributes(graph,'color').values()
-    #plt.figure(figsize=(width/12,height/12)) 
+    
     nx.draw(graph, 
+            pos,
             # nodes' param
-            with_labels=True, node_color='orange',
-            node_size=40,
+            with_labels=True, labels=labels,
+            node_color='orange',
+            node_size=60,
             font_size=8,
             # edges' param
             edge_color=colors, 
             )
 
-draw_graph(hurf)
+draw_graph(hurf, None)
+draw_graph(hurf, nx.spiral_layout(hurf))

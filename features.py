@@ -40,6 +40,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import sys
 import math
+import heapq
 
 plt.figure(dpi=300)
   
@@ -180,7 +181,7 @@ for n in range(scribe.number_of_nodes()):
                     components[i].distance_end = pd
                     components[i].node_end= n
                 found=1
-                #print(f'old node[{n}] with component[{i}] at {mc} from {components[i].centroid} distance: {pd})')
+                n=print(f'old node[{n}] with component[{i}] at {mc} from {components[i].centroid} distance: {pd})')
                 break
         if (found==0):
             components.append(ConnectedComponents(box, mc))
@@ -195,6 +196,10 @@ for n in range(scribe.number_of_nodes()):
                 components[idx].node_end= n
                 components[idx].distance_end= pd
             #print(f'new node[{n}] with component[{idx}] at {mc} from {components[idx].centroid} distance: {pd})')
+
+for i in components[n].nodes:
+    distance= pdistance(components[n].centroid, pos[i])
+    print(f'{i}: {distance}')
 
 components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 
@@ -236,11 +241,11 @@ draw(disp)
 # draw each components separately, sorted right to left
 for n in range(len(components)):
     ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-    seed= pos[components[n].node_start]
-    cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-    #draw2(components[n].mat) # only the mask
-    cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
-    draw(ccv) # along with the neighbor
+    if components[n].node_start!=-1:
+        seed= pos[components[n].node_start]
+        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
+        draw(ccv) # along with the neighbor
 
 
 
@@ -331,8 +336,13 @@ for k in range(len(components)):
                    (i==1 and scribe.has_edge(ndst[2],ndst[1])==False ) or \
                    (i==0 and scribe.has_edge(ndst[2],ndst[0])==False and scribe.has_edge(ndst[1],ndst[0])==False):
                     scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane) 
+
+degree_rasm= scribe.degree()
             
-# finding diacritics connection
+RASM_EDGE_MAXDEG= 3
+
+# finding diacritics connection for small components
+# and update extreme nodes for large components
 for k in range(len(components)):
     if components[k].area<pow(SLIC_SPACE,2)*pow(PHI,3) or len(components[k].nodes)<=4:
         src_comp= k
@@ -356,6 +366,30 @@ for k in range(len(components)):
         print(f'comp {k} to {closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
         if closest_dist<SLIC_SPACE*pow(PHI,4):
             scribe.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
+    else: # large ones
+        raddist_start=[]
+        raddist_end=[]
+        for m in components[k].nodes:
+            if pos[m][0] < components[k].centroid[0]:
+                raddist_start.append( (pdistance(components[k].centroid, pos[m]), m) )
+            else:
+                raddist_end.append( (pdistance(components[k].centroid, pos[m]), m) )
+            radmax3_start= heapq.nlargest(3, raddist_start, key=lambda x:x[0])
+            radmax3_end  = heapq.nlargest(3, raddist_end  , key=lambda x:x[0])
+            for d in range(1,RASM_EDGE_MAXDEG): # 
+                for e in radmax3_start:
+                    if degree_rasm(e)==d:
+                        components[k].node_start= e[1]
+                for e in radmax3_end:
+                    if degree_rasm(e)==d:
+                        components[k].node_start= e[1]
+                        
+            
+        
+            
+        
+        
+degree_dia= scribe.degree()
 
 draw_graph(scribe, 'pos_render', 8)
 

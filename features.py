@@ -181,7 +181,7 @@ for n in range(scribe.number_of_nodes()):
                     components[i].distance_end = pd
                     components[i].node_end= n
                 found=1
-                n=print(f'old node[{n}] with component[{i}] at {mc} from {components[i].centroid} distance: {pd})')
+                # print(f'old node[{n}] with component[{i}] at {mc} from {components[i].centroid} distance: {pd})')
                 break
         if (found==0):
             components.append(ConnectedComponents(box, mc))
@@ -197,11 +197,13 @@ for n in range(scribe.number_of_nodes()):
                 components[idx].distance_end= pd
             #print(f'new node[{n}] with component[{idx}] at {mc} from {components[idx].centroid} distance: {pd})')
 
-for i in components[n].nodes:
-    distance= pdistance(components[n].centroid, pos[i])
-    print(f'{i}: {distance}')
 
 components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
+# for n in len(components):
+#     for i in components[n].nodes:
+#         distance= pdistance(components[n].centroid, pos[i])
+#         print(f'{i}: {distance}')
+
 
 disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):
@@ -338,9 +340,7 @@ for k in range(len(components)):
                     scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane) 
 
 degree_rasm= scribe.degree()
-            
 RASM_EDGE_MAXDEG= 3
-
 # finding diacritics connection for small components
 # and update extreme nodes for large components
 for k in range(len(components)):
@@ -363,29 +363,21 @@ for k in range(len(components)):
                             closest_node= n
                             closest_vane= tvane
                             closest_dist= tdist
-        print(f'comp {k} to {closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
+        #print(f'comp {k} to {closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
         if closest_dist<SLIC_SPACE*pow(PHI,4):
             scribe.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
     else: # large ones
         raddist_start=[]
-        raddist_end=[]
         for m in components[k].nodes:
             if pos[m][0] < components[k].centroid[0]:
-                raddist_start.append( (pdistance(components[k].centroid, pos[m]), m) )
-            else:
-                raddist_end.append( (pdistance(components[k].centroid, pos[m]), m) )
+                raddist_start.append( (pdistance(pos[components[k].node_end], pos[m]), m) )
             radmax3_start= heapq.nlargest(3, raddist_start, key=lambda x:x[0])
-            radmax3_end  = heapq.nlargest(3, raddist_end  , key=lambda x:x[0])
             for d in range(1,RASM_EDGE_MAXDEG): # 
                 for e in radmax3_start:
                     if degree_rasm(e)==d:
+                        print(f'comp{k}_start: {components[k].node_start} -> {e[1]}')
                         components[k].node_start= e[1]
-                for e in radmax3_end:
-                    if degree_rasm(e)==d:
-                        components[k].node_start= e[1]
-                        
-            
-        
+                        break
             
         
         

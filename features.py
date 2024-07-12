@@ -368,16 +368,24 @@ for k in range(len(components)):
             scribe.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
     else: # large ones
         raddist_start=[]
+        # calculate the distances
         for m in components[k].nodes:
-            if pos[m][0] < components[k].centroid[0]:
+            if pos[m][0] > components[k].centroid[0]:
                 raddist_start.append( (pdistance(pos[components[k].node_end], pos[m]), m) )
+            #    print(f'comp{k} node{m}')
             radmax3_start= heapq.nlargest(3, raddist_start, key=lambda x:x[0])
-            for d in range(1,RASM_EDGE_MAXDEG): # 
-                for e in radmax3_start:
-                    if degree_rasm(e)==d:
-                        print(f'comp{k}_start: {components[k].node_start} -> {e[1]}')
-                        components[k].node_start= e[1]
-                        break
+            #print(radmax3_start)
+        # find the more appropriate starting node
+        flag= False
+        for d in range(1,RASM_EDGE_MAXDEG): # 
+            for e in radmax3_start:
+                if degree_rasm(e[1])==d:
+                    #print(f'comp{k}_start: {components[k].node_start} -> {e[1]}')
+                    components[k].node_start= e[1]
+                    flag= True
+                    break
+            if flag:
+                break
             
         
         

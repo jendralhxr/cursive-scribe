@@ -126,7 +126,7 @@ for n in range(num_slic):
         cy= int( np.mean( [array[1] for array in moments[n]] ))
         if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
-            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy) )
+            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='orange')
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 
@@ -257,17 +257,19 @@ def draw_graph(graph, posstring, scale):
     positions = nx.get_node_attributes(graph,posstring)
     area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
     # edges
-    colors = nx.get_edge_attributes(graph,'color').values()
+    node_colors = nx.get_node_attributes(graph,'color').values()
+    edge_colors = nx.get_edge_attributes(graph,'color').values()
     weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
     #plt.figure(figsize=(width/12,height/12)) 
     nx.draw(graph, 
             # nodes' param
             pos=positions, 
-            with_labels=True, node_color='orange',
+            with_labels=True, 
+            node_color= node_colors,
             node_size=area*25,
             font_size=8,
             # edges' param
-            edge_color=colors, 
+            edge_color=edge_colors, 
             width=weights*2,
             )
     
@@ -382,6 +384,7 @@ for k in range(len(components)):
                 if degree_rasm(e[1])==d:
                     #print(f'comp{k}_start: {components[k].node_start} -> {e[1]}')
                     components[k].node_start= e[1]
+                    scribe.nodes[components[k].node_start]['color']= 'red'
                     flag= True
                     break
             if flag:

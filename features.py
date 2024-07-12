@@ -242,11 +242,11 @@ for n in range(len(components)):
     cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
     draw(ccv) # along with the neighbor
 
-       
-#-------
 
-def draw_graph(graph, posstring):
+
+def draw_graph(graph, posstring, scale):
     # nodes
+    plt.figure(figsize=(3*scale,3)) 
     positions = nx.get_node_attributes(graph,posstring)
     area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
     # edges
@@ -330,7 +330,7 @@ for k in range(len(components)):
                 if (i==2) or \
                    (i==1 and scribe.has_edge(ndst[2],ndst[1])==False ) or \
                    (i==0 and scribe.has_edge(ndst[2],ndst[0])==False and scribe.has_edge(ndst[1],ndst[0])==False):
-                    scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e1/ndist[i]/SLIC_SPACE, vane=tvane) 
+                    scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane) 
             
 # finding diacritics connection
 for k in range(len(components)):
@@ -357,7 +357,7 @@ for k in range(len(components)):
         if closest_dist<SLIC_SPACE*pow(PHI,4):
             scribe.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
 
-draw_graph(scribe, 'pos_render')
+draw_graph(scribe, 'pos_render', 8)
 
 def extract_subgraph(G, start):
     connected_component = nx.node_connected_component(G, start)

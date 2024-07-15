@@ -1,3 +1,5 @@
+#!/opt/spyder/envs/my-env/bin/python
+
 # freeman code going anti-clockwise like trigonometrics angle
 #    3   2   1
 #      \ | /
@@ -54,8 +56,8 @@ def draw(img): # draw the bitmap
 k=2
 SLIC_SPACE= SLIC_SPACE*k
 
-#filename= sys.argv[1]
-filename= 'topanribut.png'
+filename= sys.argv[1]
+#filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (k*image.shape[1], k*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -94,7 +96,7 @@ for j in range(height):
         else:
             moments_void[lbls[j,i]] = np.append(moments_void[lbls[j,i]], np.array([[i,j]]), axis=0)
 
-moments[0][1] = [0,0] # random irregularities, not quite sure why
+#moments[0][1] = [0,0] # random irregularities, not quite sure why
 # some badly needed 'sanity' check
 def remove_zeros(moments):
     temp=[]
@@ -110,10 +112,9 @@ def remove_zeros(moments):
 for n in range(len(moments)):
     moments[n]= remove_zeros(moments[n])
 
-# draw render here
-# draw(renders)
+# draw(render)
 
-#---- image processing routines should be finished by here 
+# // image [pre-]processing ends here
 
 # generating nodes
 scribe= nx.Graph() # start anew, just in case
@@ -217,8 +218,8 @@ for n in range(len(components)):
             cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
         if components[n].node_end!=-1:
             cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
-        r= components[n].rect[0]+int(components[n].rect[2])
-        l= components[n].rect[0]
+        # r= components[n].rect[0]+int(components[n].rect[2])
+        # l= components[n].rect[0]
         # if l<width and r<width: # did we ever went beyond the frame?
         #     for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
         #         disp[j1,r,1]= 120
@@ -230,7 +231,7 @@ for n in range(len(components)):
         # draw blue line for shakil 'connection'
         for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
             if j2<height and j2>0: 
-                disp[j2,i,1]= 100
+                disp[j2,i,1]= STROKEVAL/2
 
     #rasm= components[n].mat[\
     #    components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
@@ -238,17 +239,16 @@ for n in range(len(components)):
     #cv.imwrite(str(n)+'.png', rasm)
 #cv.imwrite(imagename+'-disp.png', disp)    
 
-draw(disp) 
+# draw(disp) 
 
 # draw each components separately, sorted right to left
-for n in range(len(components)):
-    ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-    if components[n].node_start!=-1:
-        seed= pos[components[n].node_start]
-        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
-        draw(ccv) # along with the neighbor
-
+# for n in range(len(components)):
+#     ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+#     if components[n].node_start!=-1:
+#         seed= pos[components[n].node_start]
+#         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+#         cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
+#         draw(ccv) # along with the neighbor
 
 
 def draw_graph(graph, posstring, scale):
@@ -273,33 +273,39 @@ def draw_graph(graph, posstring, scale):
             width=weights*2,
             )
     
-def draw_graph_edgelabel(graph, posstring):
+def draw_graph_edgelabel(graph, posstring, scale, filename):
+    plt.figure(figsize=(4*scale,4)) 
     # nodes
     if posstring is None:
         positions = nx.spring_layout(graph)
     else:
         positions = nx.get_node_attributes(graph,posstring)
-    #plt.figure(figsize=(width/12,height/12)) 
-    area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
+    
+    #area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
     edge_lbls= nx.get_edge_attributes(graph, 'vane')
     # edges
-    colors = nx.get_edge_attributes(graph,'color').values()
+    node_colors = nx.get_node_attributes(graph,'color').values()
+    edge_colors = nx.get_edge_attributes(graph,'color').values()
     weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
+    #plt.figure(figsize=(width/12,height/12)) 
     nx.draw(graph, 
             # nodes' param
-            pos= positions,
-            with_labels=True, node_color='orange',
-            node_size=200,
-            font_size=8,
+            pos=positions, 
+            with_labels=True, 
+            node_color= node_colors,
+            node_size=100,
+            font_size=6,
             # edges' param
-            edge_color=colors, 
+            edge_color=edge_colors, 
             width=weights*2,
             )
     nx.draw_networkx_edge_labels(graph, 
             pos= positions,
             edge_labels=edge_lbls, 
-            font_size=8,
+            font_size=4,
             font_color='red')
+    if filename is not None:
+        plt.savefig(filename)
     
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 # we need to make edges between nodes within a connectedcomponent
@@ -390,10 +396,9 @@ for k in range(len(components)):
             if flag:
                 break
         
-degree_dia= scribe.degree()
+# degree_dia= scribe.degree()
 
-draw_graph(scribe, 'pos_render', 8)
-
+# draw_graph(scribe, 'pos_render', 8)
 
 def extract_subgraph(G, start):
     connected_component = nx.node_connected_component(G, start)
@@ -432,14 +437,13 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
                 pathstring+='-'
     return pathstring
 
+draw_graph_edgelabel(scribe, 'pos_render', 8, sys.argv[2])
 
-besar= extract_subgraph(scribe, 29)
 #list(nx.bfs_edges(besar, source=29)) # simplifiend
-list(nx.edge_bfs(besar, source=29)) # traverse sequence
-path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, 29), source=29)))
+#list(nx.edge_bfs(besar, source=29)) # traverse sequence
+#path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, 29), source=29)))
 
 for i in range(len(components)):
     if len(components[i].nodes)>3:
         print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, components[i].node_start), source=components[i].node_start))))
-    
 

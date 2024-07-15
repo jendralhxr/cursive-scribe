@@ -274,7 +274,7 @@ def draw_graph(graph, posstring, scale):
             )
     
 def draw_graph_edgelabel(graph, posstring, scale, filename):
-    plt.figure(figsize=(4*scale,4)) 
+    plt.figure(figsize=(5*scale,5)) 
     # nodes
     if posstring is None:
         positions = nx.spring_layout(graph)
@@ -302,7 +302,7 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
     nx.draw_networkx_edge_labels(graph, 
             pos= positions,
             edge_labels=edge_lbls, 
-            font_size=4,
+            font_size=5,
             font_color='red')
     if filename is not None:
         plt.savefig(filename)
@@ -348,6 +348,9 @@ for k in range(len(components)):
                     scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane) 
 
 degree_rasm= scribe.degree()
+
+scribe_dia= scribe.copy()
+
 RASM_EDGE_MAXDEG= 3
 # finding diacritics connection for small components
 # and update extreme nodes for large components
@@ -374,7 +377,13 @@ for k in range(len(components)):
         #print(f'comp {k} to {closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
         if closest_dist<SLIC_SPACE*pow(PHI,4):
             scribe.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
-    else: # large ones
+            if closest_vane==6: # diacritics over
+                scribe.nodes[closest_node]['color']='#0080FF'
+                scribe_dia.nodes[closest_node]['color']='#0080FF'
+            else: # diacritics below
+                scribe.nodes[closest_node]['color']='#8000FF'
+                scribe_dia.nodes[closest_node]['color']='#8000FF'
+    else: # large ones, updating the starting node
         raddist_start=[]
         # calculate the distances
         for m in components[k].nodes:
@@ -391,6 +400,7 @@ for k in range(len(components)):
                     #print(f'comp{k}_start: {components[k].node_start} -> {e[1]}')
                     components[k].node_start= e[1]
                     scribe.nodes[components[k].node_start]['color']= 'red'
+                    scribe_dia.nodes[components[k].node_start]['color']= 'red'
                     flag= True
                     break
             if flag:
@@ -398,7 +408,7 @@ for k in range(len(components)):
         
 # degree_dia= scribe.degree()
 
-# draw_graph(scribe, 'pos_render', 8)
+# draw_graph(scribe_dia, 'pos_render', 8)
 
 def extract_subgraph(G, start):
     connected_component = nx.node_connected_component(G, start)
@@ -428,16 +438,19 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         src= G.nodes()[n[0]]
         dst= G.nodes()[n[1]]
         tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
+        G.edges[n]['vane']=tvane
         if (G.edges[n]['color']=='#00FF00'): # main stroke
             pathstring+=str(tvane)
-        else: #substroke
-            if tvane==2:
-                pathstring+='+'
-            else:
-                pathstring+='-'
+        # else: #substroke
+        #     if tvane==2:
+        #         pathstring+='+'
+        #     else:
+        #         pathstring+='-'
+        if dst['color']=='#8000FF': # diacritics below
+            pathstring+='-'
+        if dst['color']=='#0080FF': # diacritics over
+            pathstring+='+'
     return pathstring
-
-draw_graph_edgelabel(scribe, 'pos_render', 8, sys.argv[2])
 
 #list(nx.bfs_edges(besar, source=29)) # simplifiend
 #list(nx.edge_bfs(besar, source=29)) # traverse sequence
@@ -447,3 +460,5 @@ for i in range(len(components)):
     if len(components[i].nodes)>3:
         print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, components[i].node_start), source=components[i].node_start))))
 
+
+draw_graph_edgelabel(scribe, 'pos_render', 8, sys.argv[2])

@@ -376,7 +376,7 @@ for k in range(len(components)):
                             closest_dist= tdist
         #print(f'comp {k} to {closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
         if closest_dist<SLIC_SPACE*pow(PHI,4):
-            scribe.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
+            scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
             if closest_vane==6: # diacritics over
                 scribe.nodes[closest_node]['color']='#0080FF'
                 scribe_dia.nodes[closest_node]['color']='#0080FF'
@@ -460,5 +460,5 @@ for i in range(len(components)):
     if len(components[i].nodes)>3:
         print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, components[i].node_start), source=components[i].node_start))))
 
-
-draw_graph_edgelabel(scribe, 'pos_render', 8, sys.argv[2])
+graphfile= imagename+'-graph'+ext
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

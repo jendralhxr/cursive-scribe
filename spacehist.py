@@ -148,11 +148,14 @@ while (valleys[m]<=max(valleys) and (m+n)<len(valleys)):
                 moment_min= np.abs(moment_i)
                 angle_min= i     
         
+        
+        if angle_min>-3 and angle_min<3:
+            linecrop= rotimg(linecrop, angle_min)
+            linecrop_img= rotimg(linecrop_img, angle_min)
+        
         print(f"{imagename}: line {m}, angle {angle_min} ")                
         cv.imwrite(imagename+'-line'+str(m)+'.png', linecrop)
         cv.imwrite(imagename+'-lineimg'+str(m)+'.png', linecrop_img)
-        linecrop= rotimg(linecrop, angle_min)
-        #cv.imwrite(imagename+'-line'+str(m)+'-rot'+str(angle_min)+'.png', linecrop)
         
         m=m+n
         n=1 

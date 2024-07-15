@@ -389,12 +389,11 @@ for k in range(len(components)):
                     break
             if flag:
                 break
-            
-        
         
 degree_dia= scribe.degree()
 
 draw_graph(scribe, 'pos_render', 8)
+
 
 def extract_subgraph(G, start):
     connected_component = nx.node_connected_component(G, start)
@@ -424,11 +423,23 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         src= G.nodes()[n[0]]
         dst= G.nodes()[n[1]]
         tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
-        pathstring+=str(tvane)
+        if (G.edges[n]['color']=='#00FF00'): # main stroke
+            pathstring+=str(tvane)
+        else: #substroke
+            if tvane==2:
+                pathstring+='+'
+            else:
+                pathstring+='-'
     return pathstring
 
 
-besar=extract_subgraph(scribe, 28)
-#list(nx.bfs_edges(besar, source=28)) # simplifiend
-list(nx.edge_bfs(besar, source=28)) # traverse sequence
-path_vane_edges(scribe, list(nx.edge_bfs(besar, source=28)))
+besar= extract_subgraph(scribe, 29)
+#list(nx.bfs_edges(besar, source=29)) # simplifiend
+list(nx.edge_bfs(besar, source=29)) # traverse sequence
+path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, 29), source=29)))
+
+for i in range(len(components)):
+    if len(components[i].nodes)>3:
+        print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, components[i].node_start), source=components[i].node_start))))
+    
+

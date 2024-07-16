@@ -411,8 +411,9 @@ for k in range(len(components)):
 # draw_graph(scribe_dia, 'pos_render', 8)
 
 def extract_subgraph(G, start):
-    connected_component = nx.node_connected_component(G, start)
-    connected_subgraph = G.subgraph(connected_component)
+    if start!=-1:
+        connected_component = nx.node_connected_component(G, start)
+        connected_subgraph = G.subgraph(connected_component)
     return connected_subgraph.copy()
     
 def edge_attributes(G):
@@ -458,7 +459,11 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 
 for i in range(len(components)):
     if len(components[i].nodes)>3:
-        print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, components[i].node_start), source=components[i].node_start))))
+        if components[i].node_start==-1:
+            node_start= components[i].nodes[0]
+        else:
+            node_start= components[i].node_start
+        print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start))))
 
 graphfile= imagename+'-graph'+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

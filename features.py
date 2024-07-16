@@ -394,9 +394,9 @@ for k in range(len(components)):
             #print(radmax3_start)
         # find the more appropriate starting node
         flag= False
-        for d in range(1,RASM_EDGE_MAXDEG): # 
+        for d in range(1,RASM_EDGE_MAXDEG): # starting node needs to have the smallest degree if possible
             for e in radmax3_start:
-                if degree_rasm(e[1])==d:
+                if degree_rasm(e[1])==d and e[1]!=-1:
                     #print(f'comp{k}_start: {components[k].node_start} -> {e[1]}')
                     components[k].node_start= e[1]
                     scribe.nodes[components[k].node_start]['color']= 'red'
@@ -460,7 +460,13 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 for i in range(len(components)):
     if len(components[i].nodes)>3:
         if components[i].node_start==-1:
-            node_start= components[i].nodes[0]
+            node_pos=(0,0)
+            node_start=-1
+            for n in components[i].nodes:
+                if pos[n][0] > node_pos[0]:
+                    node_start= n
+                    node_pos= pos[n]
+            #node_start= components[i].nodes[0]
         else:
             node_start= components[i].node_start
         print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start))))

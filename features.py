@@ -320,7 +320,7 @@ for k in range(len(components)):
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-            if (m!=n) and cdist<SLIC_SPACE*PHI:
+            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,PHI):
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]
@@ -406,7 +406,7 @@ for k in range(len(components)):
             if flag:
                 break
         
-# degree_dia= scribe.degree()
+degree_dia= scribe.degree()
 
 # draw_graph(scribe_dia, 'pos_render', 8)
 
@@ -447,10 +447,10 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         #         pathstring+='+'
         #     else:
         #         pathstring+='-'
-        if dst['color']=='#8000FF': # diacritics below
-            pathstring+='-'
-        if dst['color']=='#0080FF': # diacritics over
+        if dst['color']=='#8000FF': # diacritics over
             pathstring+='+'
+        if dst['color']=='#0080FF': # diacritics below
+            pathstring+='-'
     return pathstring
 
 #list(nx.bfs_edges(besar, source=29)) # simplifiend

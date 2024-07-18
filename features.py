@@ -1,5 +1,3 @@
-#!/opt/spyder/envs/my-env/bin/python
-
 # freeman code going anti-clockwise like trigonometrics angle
 #    3   2   1
 #      \ | /
@@ -25,7 +23,7 @@ def freeman(x, y):
         elif (x>0) and (y<0):
             return(7)
     else: # square angles
-        if   (x>0) and (abs(x)>abs(y)):
+        if   (x>0) and (abs(x)>abs(y):
             return(int(0))
         elif (y>0) and (abs(y)>abs(x)):
             return(2)
@@ -53,20 +51,20 @@ def draw(img): # draw the bitmap
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
-k=2
-SLIC_SPACE= SLIC_SPACE*k
+RESIZE_FACTOR=2
+SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
 
 filename= sys.argv[1]
 #filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
-resz = cv.resize(image, (k*image.shape[1], k*image.shape[0]), interpolation=cv.INTER_LINEAR)
+resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
 image= resz.copy()
 image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
 
-THREVAL= 80
+THREVAL= 60
 CHANNEL= 2
 #image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
@@ -242,13 +240,13 @@ for n in range(len(components)):
 # draw(disp) 
 
 # draw each components separately, sorted right to left
-# for n in range(len(components)):
-#     ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-#     if components[n].node_start!=-1:
-#         seed= pos[components[n].node_start]
-#         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-#         cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
-#         draw(ccv) # along with the neighbor
+for n in range(len(components)):
+    ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+    if components[n].node_start!=-1:
+        seed= pos[components[n].node_start]
+        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
+        draw(ccv) # along with the neighbor
 
 
 def draw_graph(graph, posstring, scale):
@@ -315,12 +313,15 @@ for k in range(len(components)):
     for m in components[k].nodes:
         scribe.nodes[m]['component_id']=k
         src= scribe.nodes()[m]
+        # three closest nodes
         ndist=[1e9, 1e9, 1e9]
         ndst= [-1, -1, -1]
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,PHI):
+            has_dark= False
+            # add the checking for line segment
+            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,PHI) and has_dark==False:
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]
@@ -469,6 +470,7 @@ for i in range(len(components)):
             #node_start= components[i].nodes[0]
         else:
             node_start= components[i].node_start
+        scribe_dia.nodes[node_start]['color']= 'red'
         print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start))))
 
 graphfile= imagename+'-graph'+ext

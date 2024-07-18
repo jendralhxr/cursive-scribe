@@ -23,7 +23,7 @@ def freeman(x, y):
         elif (x>0) and (y<0):
             return(7)
     else: # square angles
-        if   (x>0) and (abs(x)>abs(y):
+        if   (x>0) and (abs(x)>abs(y)):
             return(int(0))
         elif (y>0) and (abs(y)>abs(x)):
             return(2)
@@ -54,8 +54,8 @@ def draw(img): # draw the bitmap
 RESIZE_FACTOR=2
 SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
 
-filename= sys.argv[1]
-#filename= 'topanribut.png'
+#filename= sys.argv[1]
+filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -135,7 +135,7 @@ def pdistance(point1, point2):
     distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     return distance
 
-# connected components
+# connected componentscv.circle(disp, pos[compodef line_iterator(img, point0, point1):
 from dataclasses import dataclass, field
 from typing import List
 from typing import Optional
@@ -270,7 +270,7 @@ def draw_graph(graph, posstring, scale):
             edge_color=edge_colors, 
             width=weights*2,
             )
-    
+
 def draw_graph_edgelabel(graph, posstring, scale, filename):
     plt.figure(figsize=(5*scale,5)) 
     # nodes
@@ -304,6 +304,20 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
             font_color='red')
     if filename is not None:
         plt.savefig(filename)
+
+def line_iterator(img, point0, point1):
+    INTERVAL= 4
+    dx= (point1[0]-point0[0])/INTERVAL
+    dy= (point1[1]-point0[1])/INTERVAL
+    has_dark= False
+    # pick three points
+    for i in range(1,INTERVAL):
+        x= int (point0[0]+i*dx)
+        y= int (point0[1]+i*dy)
+        if img[y,x]==0:
+            has_dark= True
+            break
+    return has_dark
     
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 # we need to make edges between nodes within a connectedcomponent
@@ -319,7 +333,7 @@ for k in range(len(components)):
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-            has_dark= False
+            has_dark= line_iterator(cue, src['pos_bitmap'], dst['pos_bitmap'])
             # add the checking for line segment
             if (m!=n) and cdist<SLIC_SPACE*pow(PHI,PHI) and has_dark==False:
                 if cdist<ndist[2]: # #1 shortest

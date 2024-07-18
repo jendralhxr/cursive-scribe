@@ -42,7 +42,7 @@ import sys
 import math
 import heapq
 
-plt.figure(dpi=300)
+plt.figure(dpi=600)
   
 def draw(img): # draw the bitmap
     plt.figure(dpi=300)
@@ -54,8 +54,8 @@ def draw(img): # draw the bitmap
 RESIZE_FACTOR=2
 SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
 
-#filename= sys.argv[1]
-filename= 'topanribut.png'
+filename= sys.argv[1]
+#filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -240,13 +240,13 @@ for n in range(len(components)):
 # draw(disp) 
 
 # draw each components separately, sorted right to left
-for n in range(len(components)):
-    ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-    if components[n].node_start!=-1:
-        seed= pos[components[n].node_start]
-        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
-        draw(ccv) # along with the neighbor
+# for n in range(len(components)):
+#     ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+#     if components[n].node_start!=-1:
+#         seed= pos[components[n].node_start]
+#         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+#         cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
+#         draw(ccv) # along with the neighbor
 
 
 def draw_graph(graph, posstring, scale):

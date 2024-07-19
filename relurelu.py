@@ -19,7 +19,7 @@ words = [
 '7744',
 '7744',
 '655',
-'655',
+'655', 
 '5353',
 '5353',
 '1645',
@@ -92,10 +92,10 @@ label_to_id = {label: idx for idx, label in enumerate(set(labels))}
 labels = [label_to_id[label] for label in labels]
 
 # Convert words to numerical representation 
-(for simplicity, using character indices)
+# (for simplicity, using character indices)
 max_len = max(len(word) for word in words)
 X = np.zeros((len(words), max_len))
-for i, word in enumerate(words):222
+for i, word in enumerate(words):
     for j, char in enumerate(word):
         X[i, j] = ord(char)
 
@@ -103,11 +103,15 @@ for i, word in enumerate(words):222
 y = np.array(labels)
 
 # Split data into train and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.01, random_state=42)
 
 # Define the model
 model = Sequential([
-    Dense(128, activation='relu', input_shape=(max_len,)),
+    Dense(128, activation='relu'),
+    Dropout(0.5),
+    Dense(64, activation='relu'),
+    Dropout(0.5),
+    Dense(64, activation='relu'),
     Dropout(0.5),
     Dense(64, activation='relu'),
     Dropout(0.5),

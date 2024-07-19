@@ -7,13 +7,21 @@
 
 SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
+WHITESPACE_INTERVAL= 3
+
+RASM_EDGE_MAXDEG= 3
+THREVAL= 60
+CHANNEL= 2
+RESIZE_FACTOR=2
+SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
+
 
 def freeman(x, y):
     if (y==0):
         y=1e-9 # so that we escape the divby0 exception
     if (x==0):
         x=-1e-9 # biased to the left as the text progresses leftward
-    if (abs(x/y)<PHI) and (abs(y/x)<PHI): # corner angles
+    if (abs(x/y)<pow(PHI,2)) and (abs(y/x)<pow(PHI,2)): # corner angles
         if   (x>0) and (y>0):
             return(1)
         elif (x<0) and (y>0):
@@ -51,8 +59,6 @@ def draw(img): # draw the bitmap
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
-RESIZE_FACTOR=2
-SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
 
 filename= sys.argv[1]
 #filename= 'topanribut.png'
@@ -64,8 +70,6 @@ image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
 
-THREVAL= 60
-CHANNEL= 2
 #image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
 _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
@@ -306,12 +310,11 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
         plt.savefig(filename)
 
 def line_iterator(img, point0, point1):
-    INTERVAL= 4
-    dx= (point1[0]-point0[0])/INTERVAL
-    dy= (point1[1]-point0[1])/INTERVAL
+    dx= (point1[0]-point0[0])/WHITESPACE_INTERVAL
+    dy= (point1[1]-point0[1])/WHITESPACE_INTERVAL
     has_dark= False
     # pick three points
-    for i in range(1,INTERVAL):
+    for i in range(1,WHITESPACE_INTERVAL):
         x= int (point0[0]+i*dx)
         y= int (point0[1]+i*dy)
         if img[y,x]==0:
@@ -366,7 +369,6 @@ degree_rasm= scribe.degree()
 
 scribe_dia= scribe.copy()
 
-RASM_EDGE_MAXDEG= 3
 # finding diacritics connection for small components
 # and update extreme nodes for large components
 for k in range(len(components)):
@@ -455,6 +457,7 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         dst= G.nodes()[n[1]]
         tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
         G.edges[n]['vane']=tvane
+        scribe_dia.edges[n]['vane']=tvane
         if (G.edges[n]['color']=='#00FF00'): # main stroke
             pathstring+=str(tvane)
         # else: #substroke

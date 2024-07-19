@@ -9,7 +9,7 @@ SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 WHITESPACE_INTERVAL= 3
 
-RASM_EDGE_MAXDEG= 3
+RASM_EDGE_MAXDEG= 2
 THREVAL= 60
 CHANNEL= 2
 RESIZE_FACTOR=2
@@ -354,7 +354,7 @@ for k in range(len(components)):
                 elif cdist<ndist[0]:
                     ndist[0]= cdist
                     ndst[0]= n
-        for i in range(3):
+        for i in range(2, 2-RASM_EDGE_MAXDEG, -1):
             if ndist[i]!=1e9 and ndst[i]!=-1:
                 dst= scribe.nodes()[ndst[i]]
                 #print(f'{m} to {n}: {ndist[i]}')            

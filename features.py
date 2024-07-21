@@ -490,6 +490,8 @@ for i in range(len(components)):
             node_start= components[i].node_start
         scribe_dia.nodes[node_start]['color']= 'red'
         print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start))))
+        # assign detected rasm to the component
+        # components[i].rasm=''
 
 graphfile= imagename+'-graph'+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

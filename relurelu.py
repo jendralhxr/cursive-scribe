@@ -1,125 +1,47 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.optimizers import Adam
-from sklearn.model_selection import train_test_split
-import numpy as np
+from tensorflow.keras.layers import Dense
 
-# vane sequence
-words = [
-'222',
-'642',
-'642',
-'741',
-'642',
-'474',
-'474',
-'474',
-'474',
-'7744',
-'7744',
-'655',
-'655', 
-'5353',
-'5353',
-'1645',
-'1645',
-'1642',
-'1642',
-'4605',
-'4605',
-'4605',
-'1644',
-'1644',
-'1644',
-'4674',
-'5574',
-'6643',
-'7466',
-'642',
-'4175',
-'4175',
-'471',
-'505',
-'1054',
-'1054',
-'642'
-     ]
+# Generate more random data for demonstration
+np.random.seed(42)
 
-# Labels (huruf)
-labels=[
-  'ا'
-  , 'ب'
-  , 'ت'
-  , 'ة'
-  , 'ث'
-  , 'ج'
-  , 'چ'
-  , 'ح'
-  , 'خ'
-  , 'د'
-  , 'ذ'
-  , 'ر'
-  , 'ز'
-  , 'س'
-  , 'ش'
-  , 'ص'
-  , 'ض'
-  , 'ط'
-  , 'ظ'
-  , 'ع'
-  , 'غ'
-  , 'ڠ'
-  , 'ف'
-  , 'ڤ'
-  , 'ق'
-  , 'ک'
-        , 'ݢ'
-  , 'ل'
-  , 'م'
-  , 'ن'
-  , 'و'
-  , 'ۏ'
-  , 'ه'
-  , 'ء'
-  , 'ي'
-  , 'ی'
-  , 'ڽ'
-  ]
+# Generate 1000 random 4-digit number strings
+random_numbers = np.random.randint(1000, 10000, size=1000).astype(str)
 
-# Convert labels to numerical format
-label_to_id = {label: idx for idx, label in enumerate(set(labels))}
-labels = [label_to_id[label] for label in labels]
+# Assign random letters from A to Z as labels
+random_labels = np.random.choice(list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), size=1000)
 
-# Convert words to numerical representation 
-# (for simplicity, using character indices)
-max_len = max(len(word) for word in words)
-X = np.zeros((len(words), max_len))
-for i, word in enumerate(words):
-    for j, char in enumerate(word):
-        X[i, j] = ord(char)
+# Convert characters to numeric values (optional preprocessing step)
+# No need to convert to float32 if directly processing as strings
+numbers = np.array([list(map(int, list(num))) for num in random_numbers])
 
-# Convert labels to numpy array
-y = np.array(labels)
+# Convert labels to numeric indices
+label_to_index = {label: i for i, label in enumerate(np.unique(random_labels))}
+indices = np.array([label_to_index[label] for label in random_labels])
 
-# Split data into train and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.01, random_state=42)
+# Check shapes and types
+print(f'Numbers shape: {numbers.shape}, Numbers type: {numbers.dtype}')
+print(f'Indices shape: {indices.shape}, Indices type: {indices.dtype}')
+
+# Create TensorFlow Dataset and batch it
+batch_size = 32
+dataset = tf.data.Dataset.from_tensor_slices((numbers, indices)).batch(batch_size)
 
 # Define the model
 model = Sequential([
-    Dense(128, activation='relu'),
-    Dropout(0.5),
+    Dense(64, activation='relu', input_shape=(4,)),  # Input shape corrected to (4,)
     Dense(64, activation='relu'),
-    Dropout(0.5),
     Dense(64, activation='relu'),
-    Dropout(0.5),
     Dense(64, activation='relu'),
-    Dropout(0.5),
-    Dense(len(set(labels)), activation='softmax')  # Number of classes is the length of unique labels
+    Dense(64, activation='relu'),
+    Dense(32, activation='relu'),
+    Dense(32, activation='relu'),
+    Dense(len(label_to_index), activation='softmax')  # Output layer with softmax activation
 ])
 
 # Compile the model
-model.compile(optimizer=Adam(learning_rate=0.001),
+model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
@@ -127,22 +49,25 @@ model.compile(optimizer=Adam(learning_rate=0.001),
 model.summary()
 
 # Train the model
-history = model.fit(X_train, y_train, epochs=50, batch_size=16, validation_data=(X_test, y_test))
+epochs = 800
+model.fit(dataset, epochs=epochs)
 
-# Evaluate the model on test data
-loss, accuracy = model.evaluate(X_test, y_test)
-print(f'Test Accuracy: {accuracy:.4f}')
+# Evaluate the model
+loss, accuracy = model.evaluate(dataset)
+print(f'Accuracy: {accuracy}')
+
+def predict(num):
+    nums= list(map(int, list(num)))
+    test_number = np.array([[nums]]).astype(np.float32) / 9999.0  # Normalize test input
+    predicted_index = np.argmax(model.predict(test_number))
+    predicted_label = list(label_to_index.keys())[predicted_index]
+    print(f'Predicted label: {predicted_label}')
+
 
 # Example prediction
-test_word = '222'
-# Convert test_word to numerical representation
-X_pred = np.zeros((1, max_len))
-for j, char in enumerate(test_word):
-    X_pred[0, j] = ord(char)
-# Predict
-predictions = model.predict(X_pred)
-predicted_class = np.argmax(predictions)
-# Map predicted class index back to label
-id_to_label = {v: k for k, v in label_to_id.items()}
-predicted_label = id_to_label[predicted_class]
-print(f'The word "{test_word}" is classified as "{predicted_label}".')
+test_number = np.array([[0, 2, 7, 0]]).astype(np.float32) / 9999.0  # Normalize test input
+predicted_index = np.argmax(model.predict(test_number))
+predicted_label = list(label_to_index.keys())[predicted_index]
+print(f'Predicted label: {predicted_label}')
+
+

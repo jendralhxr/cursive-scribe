@@ -311,7 +311,6 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
         plt.savefig(filename)
 
 def line_iterator(img, point0, point1):
-    flag_pass= False
     for n in range(WHITESPACE_INTERVAL,1,-1):
         dx= (point1[0]-point0[0])/n
         dy= (point1[1]-point0[1])/n
@@ -326,10 +325,8 @@ def line_iterator(img, point0, point1):
                 img[y-1,x]==0 and img[y-1,x+1]==0 and img[y-1,x-1]==0:
                 has_dark= True
                 break
-        #print(f"{n}space {has_dark}")
-        if has_dark==False:
-            flag_pass= True
-        if flag_pass==True:
+        #print(f"{n} space {has_dark}")
+        if has_dark==True:
             break
     return has_dark
     

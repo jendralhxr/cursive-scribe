@@ -326,7 +326,7 @@ def line_iterator(img, point0, point1):
                 has_dark= True
                 break
         #print(f"{n} space {has_dark}")
-        if has_dark==True:
+        if has_dark==False: # would prefer connected stroke
             break
     return has_dark
     

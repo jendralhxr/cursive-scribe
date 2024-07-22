@@ -8,7 +8,7 @@
 SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
-WHITESPACE_INTERVAL= 2
+WHITESPACE_INTERVAL= 5
 RASM_EDGE_MAXDEG= 2
 
 THREVAL= 60
@@ -311,15 +311,25 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
         plt.savefig(filename)
 
 def line_iterator(img, point0, point1):
-    dx= (point1[0]-point0[0])/WHITESPACE_INTERVAL
-    dy= (point1[1]-point0[1])/WHITESPACE_INTERVAL
-    has_dark= False
-    # pick three points
-    for i in range(1,WHITESPACE_INTERVAL):
-        x= int (point0[0]+i*dx)
-        y= int (point0[1]+i*dy)
-        if img[y,x]==0:
-            has_dark= True
+    flag_pass= False
+    for n in range(WHITESPACE_INTERVAL,1,-1):
+        dx= (point1[0]-point0[0])/n
+        dy= (point1[1]-point0[1])/n
+        has_dark= False
+        for i in range(1,n):
+            x= int (point0[0]+i*dx)
+            y= int (point0[1]+i*dy)
+            # 3x3 kernel to account for the floating point rounding
+            #print(f"{n} {i} -- ({x},{y}) {img[y,x]}")
+            if img[y,x]==0 and img[y,x+1]==0 and img[y,x-1]==0 and\
+                img[y+1,x]==0 and img[y+1,x+1]==0 and img[y+1,x-1]==0 and\
+                img[y-1,x]==0 and img[y-1,x+1]==0 and img[y-1,x-1]==0:
+                has_dark= True
+                break
+        #print(f"{n}space {has_dark}")
+        if has_dark==False:
+            flag_pass= True
+        if flag_pass==True:
             break
     return has_dark
     

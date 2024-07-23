@@ -51,17 +51,15 @@ import sys
 import math
 import heapq
 
-plt.figure(dpi=800)
-  
 def draw(img): # draw the bitmap
-    plt.figure(dpi=300)
+    plt.figure(dpi=600)
     if (len(img.shape)==3):
         plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2RGB))
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
 
-#filename= sys.argv[1]
+filename= sys.argv[1]
 #filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
@@ -277,10 +275,10 @@ def draw_graph(graph, posstring, scale):
             )
 
 def draw_graph_edgelabel(graph, posstring, scale, filename):
-    plt.figure(figsize=(5*scale,5)) 
+    plt.figure(figsize=(4*scale,4)) 
     # nodes
     if posstring is None:
-        positions = nx.spring_layout(graph)
+        positions = nx.spring_600layout(graph)
     else:
         positions = nx.get_node_attributes(graph,posstring)
     
@@ -308,7 +306,7 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
             font_size=5,
             font_color='red')
     if filename is not None:
-        plt.savefig(filename)
+        plt.savefig(filename, dpi=300)
 
 def line_iterator(img, point0, point1):
     for n in range(WHITESPACE_INTERVAL,1,-1):
@@ -378,19 +376,24 @@ degree_rasm= scribe.degree()
 
 def prune_edges(G, hop):
     temp= scribe.copy()
+    # the search
     edges_to_remove = []
-    for u, v in temp.edges():
-        if G.degree(u)>=3 or G.degree(v)>=3:
+    for u, v in G.edges():
+        tempU= G.degree(u)
+        tempV= G.degree(v)
+        if tempU>=3 and tempV>=3:
             temp.remove_edge(u, v)
-            if nx.has_path(temp, u, v) and len(nx.shortest_path(temp, u, v)) <= hop:
-                edges_to_remove.append((u, v))
-                print(f"{u}-{v} needs deleting")
+            if nx.has_path(temp, u, v) and (temp.degree(u)<tempU and temp.degree(v)<tempV):
+                minlen= len(nx.shortest_path(temp, u, v))
+                #print(f"{u}-{v} {minlen}")
+                if minlen <= hop:
+                    edges_to_remove.append((u, v))
             temp.add_edge(u, v)
-    
+    # the pruning
     for u, v in edges_to_remove:
         G.remove_edge(u, v)
         
-prune_edges(scribe, 3)
+prune_edges(scribe, 2)
 
 degree_rasm= scribe.degree()
 scribe_dia= scribe.copy()

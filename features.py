@@ -51,7 +51,7 @@ import sys
 import math
 import heapq
 
-plt.figure(dpi=600)
+plt.figure(dpi=800)
   
 def draw(img): # draw the bitmap
     plt.figure(dpi=300)
@@ -61,7 +61,7 @@ def draw(img): # draw the bitmap
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
 
-filename= sys.argv[1]
+#filename= sys.argv[1]
 #filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
@@ -373,14 +373,32 @@ for k in range(len(components)):
                    (i==0 and scribe.has_edge(ndst[2],ndst[0])==False and scribe.has_edge(ndst[1],ndst[0])==False):
                     scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane) 
 
+
 degree_rasm= scribe.degree()
 
+def prune_edges(G, hop):
+    temp= scribe.copy()
+    edges_to_remove = []
+    for u, v in temp.edges():
+        if G.degree(u)>=3 or G.degree(v)>=3:
+            temp.remove_edge(u, v)
+            if nx.has_path(temp, u, v) and len(nx.shortest_path(temp, u, v)) <= hop:
+                edges_to_remove.append((u, v))
+                print(f"{u}-{v} needs deleting")
+            temp.add_edge(u, v)
+    
+    for u, v in edges_to_remove:
+        G.remove_edge(u, v)
+        
+prune_edges(scribe, 3)
+
+degree_rasm= scribe.degree()
 scribe_dia= scribe.copy()
 
 # finding diacritics connection for small components
 # and update extreme nodes for large components
 for k in range(len(components)):
-    if components[k].area<pow(SLIC_SPACE,2)*pow(PHI,3) or len(components[k].nodes)<=4:
+    if components[k].area<pow(SLIC_SPACE,2)*pow(PHI,4) or len(components[k].nodes)<=4: # small components (diacritics)
         src_comp= k
         src_node= -1
         closest_comp= -1

@@ -383,10 +383,10 @@ def prune_edges(G, hop):
         tempV= G.degree(v)
         if tempU>=3 and tempV>=3:
             temp.remove_edge(u, v)
-            if nx.has_path(temp, u, v) and (temp.degree(u)<tempU and temp.degree(v)<tempV):
+            #print(f'edge {u} {v}: from {tempU} {tempV} to {temp.degree(u)} {temp.degree(v)} ')
+            if nx.has_path(temp, u, v) and temp.degree(u)<tempU and temp.degree(v)<tempV:
                 minlen= len(nx.shortest_path(temp, u, v))
-                #print(f"{u}-{v} {minlen}")
-                if minlen <= hop:
+                if minlen >= hop+1: # minlen is number of nodes involved, so number of edges involved +1
                     edges_to_remove.append((u, v))
             temp.add_edge(u, v)
     # the pruning

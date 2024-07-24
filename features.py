@@ -500,6 +500,34 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 #list(nx.edge_bfs(besar, source=29)) # traverse sequence
 #path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, 29), source=29)))
 
+import Levenshtein
+
+def fuzzy_substring_matching(template, long_string):
+    if long_string!='':
+        min_distance = float('inf')
+        best_match = None
+        best_start_index = -1
+        len_template = len(template)
+        len_long_string = len(long_string)
+        
+        for i in range(len_long_string - len_template + 1):
+            substring = long_string[i:i + len_template]
+            distance = Levenshtein.distance(template, substring)
+            if distance < min_distance:
+                min_distance = distance
+                best_match = substring
+                best_start_index = i
+        
+        if best_match is not None: # and perhahps min_distance threshold too
+            remainder = long_string[:best_start_index] + long_string[best_start_index + len_template:]
+            # shall we do recursion or shall we do iteration? ITERATION!
+        else:
+            remainder = ''
+            
+        return best_match, min_distance, remainder
+
+
+
 for i in range(len(components)):
     if len(components[i].nodes)>3:
         if components[i].node_start==-1:
@@ -515,7 +543,7 @@ for i in range(len(components)):
         scribe_dia.nodes[node_start]['color']= 'red'
         print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start))))
         
-        
+                
         rasm=''
         # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         # seed= pos[components[i].node_end]

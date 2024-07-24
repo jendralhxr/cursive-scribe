@@ -736,9 +736,9 @@ for i in range(len(components)):
         
         remainder_stroke= path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start)))
         
-        remainder_stroke='2233223'
+        #remainder_stroke='2233223'
         rasm=''
-        while len(remainder_stroke)!=0 and remainder_stroke!='':
+        while len(remainder_stroke)>=3 and remainder_stroke!='':
             # find the substring with smalesst edit distance
             lev_dist_min=1e9
             hurf_min=''
@@ -747,17 +747,22 @@ for i in range(len(components)):
                     hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
                     if lev_dist_temp<lev_dist_min:
                         hurf_min=data['label']
-                        remainder_min= remainder_temp
                         lev_dist_min= lev_dist_temp
+                        remainder_min= remainder_temp
+                        # adding rules for terminal hurf
                 else:
                     remainder_stroke=''
+                    break
             # found the best possible match
             # distance selection can be applied here
             rasm+=hurf_min
-            remainder_stroke= remainder_min
-            print(f"current match: {hurf_min} , rasm is {rasm}, remainder is {remainder_stroke}")    
+            # lev_dist_min= lev_dist_temp
             
-            
+            if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
+                remainder_stroke=''
+            else:
+                remainder_stroke= remainder_min
+            #print(f"current match: {hurf_min} dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
             
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         seed= pos[components[i].node_end]

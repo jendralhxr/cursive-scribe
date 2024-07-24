@@ -1,4 +1,5 @@
 # isolated
+hurf= nx.graph()
 hurf.add_node('222',	 label='ا')
 hurf.add_node('642-',	 label='ب')
 hurf.add_node('642+',	 	label='ت')

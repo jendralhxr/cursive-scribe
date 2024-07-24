@@ -377,7 +377,6 @@ degree_rasm= scribe.degree()
 def prune_edges(G, hop):
     temp= scribe.copy()
     # the search
-    edges_to_remove = []
     for u, v in G.edges():
         tempU= G.degree(u)
         tempV= G.degree(v)
@@ -387,11 +386,8 @@ def prune_edges(G, hop):
             if nx.has_path(temp, u, v) and temp.degree(u)<tempU and temp.degree(v)<tempV:
                 minlen= len(nx.shortest_path(temp, u, v))
                 if minlen >= hop+1: # minlen is number of nodes involved, so number of edges involved +1
-                    edges_to_remove.append((u, v))
-            temp.add_edge(u, v)
-    # the pruning
-    for u, v in edges_to_remove:
-        G.remove_edge(u, v)
+                    G.remove_edge(u, v)
+        
         
 prune_edges(scribe, 2)
 
@@ -518,6 +514,15 @@ for i in range(len(components)):
             node_start= components[i].node_start
         scribe_dia.nodes[node_start]['color']= 'red'
         print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start))))
+        
+        
+        rasm=''
+        # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+        # seed= pos[components[i].node_end]
+        # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        # cv.putText(ccv, rasm, components[i].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
+        # draw(ccv) # along with the neighbor
+
         # assign detected rasm to the component
         # components[i].rasm=''
 

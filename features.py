@@ -500,6 +500,200 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 #list(nx.edge_bfs(besar, source=29)) # traverse sequence
 #path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, 29), source=29)))
 
+
+######
+# isolated
+hurf= nx.Graph()
+hurf.add_node('222',	 label='ا')
+hurf.add_node('642-',	 label='ب')
+hurf.add_node('642+',	 	label='ت')
+hurf.add_node('741+',	 	label='ة')
+hurf.add_node('471+',	 	label='ة')
+hurf.add_node('642+',	 	label='ث')
+hurf.add_node('642+',  label='ڽ')
+hurf.add_node('474-',	 label='ج')
+hurf.add_node('474-',	 label='چ')
+hurf.add_node('474',	 label='ح')
+hurf.add_node('474+', label='خ')
+hurf.add_node('074-',	 label='ج')
+hurf.add_node('074-',	 label='چ')
+hurf.add_node('074',	 label='ح')
+hurf.add_node('074+', label='خ')
+hurf.add_node('7744', label='د')
+hurf.add_node('7744+', label='ذ')
+hurf.add_node('655', label='ر')
+hurf.add_node('655+',  label='ز')
+hurf.add_node('5353', label='س')
+hurf.add_node('5353+', label='ش')
+hurf.add_node('645', label='ص')
+hurf.add_node('645+', label='ض')
+hurf.add_node('6422', label='ط')
+hurf.add_node('6422+', label='ظ')
+hurf.add_node('4605', label='ع')
+hurf.add_node('4605+', label='غ')
+hurf.add_node('4605+', label='ڠ')
+hurf.add_node('644+', label='ف')
+hurf.add_node('644+', label='ڤ')
+hurf.add_node('644+', label='ق')
+hurf.add_node('4674', label='ک')
+hurf.add_node('5574', label='ک')
+hurf.add_node('4674+', label='ݢ')
+hurf.add_node('5574+', label='ݢ')
+hurf.add_node('6644', label='ل')
+hurf.add_node('7466', label='م')
+hurf.add_node('642+',  label='ن')
+hurf.add_node('4175', label='و')
+hurf.add_node('4175+', label='ۏ')
+hurf.add_node('471', label='ه')
+hurf.add_node('741', label='ه')
+hurf.add_node('505', label='ء')
+hurf.add_node('054-', label='ي')
+hurf.add_node('0543', label='ی')
+
+# initial
+hurf.add_node('6434-', label='ب')
+hurf.add_node('6434+', label='ن')
+hurf.add_node('6434+', label='ت')
+hurf.add_node('6434+', label='ث')
+hurf.add_node('6434+', label='ڽ')
+hurf.add_node('6434-', label='ي')
+hurf.add_node('6434', label='ی')
+hurf.add_node('744-',	 label='ج')
+hurf.add_node('744-',	 label='چ')
+hurf.add_node('744',	 label='ح')
+hurf.add_node('744+', label='خ')
+hurf.add_node('0744-',	 label='ج')
+hurf.add_node('0744-',	 label='چ')
+hurf.add_node('0744',	 label='ح')
+hurf.add_node('0744+', label='خ')
+hurf.add_node('6464', label='س')
+hurf.add_node('6464+', label='ش')
+hurf.add_node('5744', label='ص')
+hurf.add_node('5744+', label='ض')
+hurf.add_node('5742', label='ط')
+hurf.add_node('5742+', label='ظ')
+hurf.add_node('5746', label='ط')
+hurf.add_node('5746', label='ظ')
+hurf.add_node('174', label='ع')
+hurf.add_node('174+',  label='غ')
+hurf.add_node('174+',  label='ڠ')
+hurf.add_node('164+',  label='ف')
+hurf.add_node('1644+', label='ڤ')
+hurf.add_node('1644+', label='ق')
+hurf.add_node('4674', label='ک')
+hurf.add_node('5574', label='ک')
+hurf.add_node('4674', label='ݢ')
+hurf.add_node('5574', label='ݢ')
+hurf.add_node('6644', label='ل')
+hurf.add_node('7444', label='م')
+hurf.add_node('3544', label='م')
+
+# medial
+hurf.add_node('2434-', label='ب')
+hurf.add_node('2434+', label='ن')
+hurf.add_node('2434+', label='ت')
+hurf.add_node('2434+', label='ث')
+hurf.add_node('2434+', label='ڽ')
+hurf.add_node('2434-', label='ي')
+hurf.add_node('2434', label='ی')
+hurf.add_node('344-',	 label='ج')
+hurf.add_node('344-',	 label='چ')
+hurf.add_node('344',	 label='ح')
+hurf.add_node('344+', label='خ')
+hurf.add_node('3434', label='س')
+hurf.add_node('3434+', label='ش')
+hurf.add_node('1164', label='ص')
+hurf.add_node('1164', label='ض')
+hurf.add_node('11622', label='ط')
+hurf.add_node('11622+', label='ظ')
+hurf.add_node('1166', label='ط')
+hurf.add_node('1166+', label='ظ')
+hurf.add_node('30544', label='ع')
+hurf.add_node('30544+', label='غ')
+hurf.add_node('30544+', label='ڠ')
+hurf.add_node('34544', label='ع')
+hurf.add_node('3454+', label='غ')
+hurf.add_node('3454+', label='ڠ')
+hurf.add_node('3464+', label='ف')
+hurf.add_node('3464+', label='ڤ')
+hurf.add_node('3464+', label='ق')
+hurf.add_node('4311', label='ک')
+hurf.add_node('4200', label='ک')
+hurf.add_node('4311', label='ݢ')
+hurf.add_node('4200', label='ݢ')
+hurf.add_node('6644', label='ل')
+hurf.add_node('7444', label='م')
+hurf.add_node('3544', label='م')
+
+# final
+hurf.add_node('466',	 label='ا')
+hurf.add_node('422',	 label='ا')
+hurf.add_node('6432-', label='ب')
+hurf.add_node('6432+', label='ت')
+hurf.add_node('6432+', label='ن')
+hurf.add_node('6432+', label='ث')
+hurf.add_node('6432+', label='ڽ')
+hurf.add_node('6431-', label='ب')
+hurf.add_node('6431+', label='ت')
+hurf.add_node('6431+', label='ن')
+hurf.add_node('6431+', label='ث')
+hurf.add_node('6431+', label='ڽ')
+hurf.add_node('2250+', label='ة')
+hurf.add_node('2410+', label='ة')
+hurf.add_node('2250', label='ه')
+hurf.add_node('2410', label='ه')
+hurf.add_node('2251+', label='ة')
+hurf.add_node('2411+', label='ة')
+hurf.add_node('2251', label='ه')
+hurf.add_node('2411', label='ه')
+hurf.add_node('3467-', label='ج')
+hurf.add_node('3467-', label='چ')
+hurf.add_node('3467', label='ح')
+hurf.add_node('3467+', label='خ')
+hurf.add_node('3505-', label='ج')
+hurf.add_node('3505-', label='چ')
+hurf.add_node('3505', label='ح')
+hurf.add_node('3505+', label='خ')
+hurf.add_node('3501-', label='ج')
+hurf.add_node('3501-', label='چ')
+hurf.add_node('3501', label='ح')
+hurf.add_node('3501+', label='خ')
+hurf.add_node('3344', label='د')
+hurf.add_node('3344+', label='ذ')
+hurf.add_node('3555', label='ر')
+hurf.add_node('3555+', label='ز')
+hurf.add_node('3434', label='س')
+hurf.add_node('3434+', label='ش')
+hurf.add_node('3545', label='ص')
+hurf.add_node('3545+', label='ض')
+hurf.add_node('1542', label='ط')
+hurf.add_node('1542+', label='ظ')
+hurf.add_node('41422', label='ط')
+hurf.add_node('41422+', label='ظ')
+hurf.add_node('3067', label='ع')
+hurf.add_node('3067', label='غ')
+hurf.add_node('3067+', label='ڠ')
+hurf.add_node('1644+', label='ف')
+hurf.add_node('3043+', label='ڤ')
+hurf.add_node('3043+', label='ق')
+hurf.add_node('4422', label='ک')
+hurf.add_node('4466', label='ک')
+hurf.add_node('4422+', label='ݢ')
+hurf.add_node('4466+', label='ݢ')
+hurf.add_node('2254', label='ل')
+hurf.add_node('5466', label='ل')
+hurf.add_node('7466', label='م')
+hurf.add_node('3566', label='م')
+hurf.add_node('4175', label='و')
+hurf.add_node('4175+', label='ۏ')
+hurf.add_node('5543-', label='ي')
+hurf.add_node('5543', label='ی')
+hurf.add_node('5443-', label='ي')
+hurf.add_node('5443', label='ی')
+
+#####
+
+
 import Levenshtein
 
 def fuzzy_substring_matching(template, long_string):
@@ -516,16 +710,14 @@ def fuzzy_substring_matching(template, long_string):
             if distance < min_distance:
                 min_distance = distance
                 best_match = substring
-                best_start_index = i
+                best_index = i
         
         if best_match is not None: # and perhahps min_distance threshold too
-            remainder = long_string[:best_start_index] + long_string[best_start_index + len_template:]
+            remainder = long_string[:best_index] + long_string[best_start_index + len_template:]
             # shall we do recursion or shall we do iteration? ITERATION!
         else:
             remainder = ''
-            
         return best_match, min_distance, remainder
-
 
 
 for i in range(len(components)):
@@ -541,18 +733,37 @@ for i in range(len(components)):
         else:
             node_start= components[i].node_start
         scribe_dia.nodes[node_start]['color']= 'red'
-        print(path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start))))
         
-                
+        remainder_stroke= path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start)))
+        
+        remainder_stroke='2233223'
         rasm=''
-        # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        # seed= pos[components[i].node_end]
-        # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        # cv.putText(ccv, rasm, components[i].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
-        # draw(ccv) # along with the neighbor
-
-        # assign detected rasm to the component
-        # components[i].rasm=''
+        while len(remainder_stroke)!=0 and remainder_stroke!='':
+            # find the substring with smalesst edit distance
+            lev_dist_min=1e9
+            hurf_min=''
+            for template, data in hurf.nodes(data=True):
+                if len(remainder_stroke)>=3: 
+                    hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
+                    if lev_dist_temp<lev_dist_min:
+                        hurf_min=data['label']
+                        remainder_min= remainder_temp
+                        lev_dist_min= lev_dist_temp
+                else:
+                    remainder_stroke=''
+            # found the best possible match
+            # distance selection can be applied here
+            rasm+=hurf_min
+            remainder_stroke= remainder_min
+            print(f"current match: {hurf_min} , rasm is {rasm}, remainder is {remainder_stroke}")    
+            
+            
+            
+        ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+        seed= pos[components[i].node_end]
+        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        cv.putText(ccv, rasm, components[i].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
+        draw(ccv) # along with the neighbor
 
 graphfile= imagename+'-graph'+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

@@ -155,7 +155,7 @@ class ConnectedComponents:
     node_end: Optional[int] = field(default=-1)      # left-down
     distance_end: Optional[int] = field(default=0)   # left-down
 
-STROKEVAL= 200
+STROKEVAL= 160
 
 pos = nx.get_node_attributes(scribe,'pos_bitmap')
 components=[]
@@ -710,15 +710,19 @@ def fuzzy_substring_matching(template, long_string):
             if distance < min_distance:
                 min_distance = distance
                 best_match = substring
-                best_index = i
+                #best_index = i
         
+        #print(f"term1: {long_string[:best_index]}")
+        #print(f"term2: {long_string[best_start_index + len_template:]}")
         if best_match is not None: # and perhahps min_distance threshold too
-            remainder = long_string[:best_index] + long_string[best_start_index + len_template:]
+            remainder = long_string[best_start_index + len_template:]
             # shall we do recursion or shall we do iteration? ITERATION!
         else:
             remainder = ''
         return best_match, min_distance, remainder
 
+from PIL import ImageFont, ImageDraw, Image
+FONTSIZE= 24
 
 for i in range(len(components)):
     if len(components[i].nodes)>3:
@@ -735,6 +739,7 @@ for i in range(len(components)):
         scribe_dia.nodes[node_start]['color']= 'red'
         
         remainder_stroke= path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start)))
+        print(remainder_stroke)
         
         #remainder_stroke='2233223'
         rasm=''
@@ -746,6 +751,7 @@ for i in range(len(components)):
                 if len(remainder_stroke)>=3: 
                     hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
                     if lev_dist_temp<lev_dist_min:
+                        template_min= template
                         hurf_min=data['label']
                         lev_dist_min= lev_dist_temp
                         remainder_min= remainder_temp
@@ -762,13 +768,24 @@ for i in range(len(components)):
                 remainder_stroke=''
             else:
                 remainder_stroke= remainder_min
-            #print(f"current match: {hurf_min} dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
+            #print(f"current match: {hurf_min} ({template_min}) dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
             
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         seed= pos[components[i].node_end]
         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        cv.putText(ccv, rasm, components[i].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
-        draw(ccv) # along with the neighbor
+        
+        pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
+        font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
+        drawPIL = ImageDraw.Draw(pil_image)
+        drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
+        # Convert back to Numpy array and switch back from RGB to BGR
+        ccv= np.asarray(pil_image)
+        ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
+        
+        #cv.putText(ccv, rasm, components[i].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 0), 2)
+        #draw(ccv) # along with the neighbor
+        cv.imwrite(imagename+'c'+str(i)+'.png', ccv)
 
-graphfile= imagename+'-graph'+ext
+graphfile= 'graph-'+imagename+ext
+
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

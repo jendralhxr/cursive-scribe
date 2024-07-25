@@ -745,6 +745,7 @@ for i in range(len(components)):
             node_start= components[i].node_start
         scribe_dia.nodes[node_start]['color']= 'red'
         
+        # CONSIDERING TO USE DFS instead
         remainder_stroke= path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start)))
         print(remainder_stroke)
         

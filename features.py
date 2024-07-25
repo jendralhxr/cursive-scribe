@@ -784,7 +784,7 @@ for i in range(len(components)):
         
         #cv.putText(ccv, rasm, components[i].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 0), 2)
         #draw(ccv) # along with the neighbor
-        cv.imwrite(imagename+'c'+str(i)+'.png', ccv)
+        cv.imwrite(imagename+'c'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
 

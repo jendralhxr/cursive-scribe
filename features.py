@@ -251,7 +251,6 @@ for n in range(len(components)):
 #         cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
 #         draw(ccv) # along with the neighbor
 
-
 def draw_graph(graph, posstring, scale):
     # nodes
     plt.figure(figsize=(3*scale,3)) 
@@ -360,16 +359,25 @@ for k in range(len(components)):
                 elif cdist<ndist[0]:
                     ndist[0]= cdist
                     ndst[0]= n
-        for i in range(2, 2-RASM_EDGE_MAXDEG, -1):
+        #print(f'{m} to {ndst[0]}({ndist[0]:.2f}) {ndst[1]}({ndist[1]:.2f}) {ndst[2]}({ndist[2]:.2f})')
+        filled=[False, False, False]
+        for i in range(2, -1, -1):
             if ndist[i]!=1e9 and ndst[i]!=-1:
                 dst= scribe.nodes()[ndst[i]]
-                #print(f'{m} to {n}: {ndist[i]}')            
                 tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
                 # // (i==1 and scribe.has_edge(m,ndst[2])==True ) # for 1+alpha
+                if scribe.has_edge(m, ndst[i]):
+                    filled[i]= True
+                # this is for 2+alpha
                 if (i==2) or \
                    (i==1 and scribe.has_edge(ndst[2],ndst[1])==False ) or \
                    (i==0 and scribe.has_edge(ndst[2],ndst[0])==False and scribe.has_edge(ndst[1],ndst[0])==False):
-                    scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane) 
+                    scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane)
+                    #print(f'{m} to {ndst[i]}: {ndist[i]}')            
+                if filled[2]==False and filled[1]==False and i==(3-RASM_EDGE_MAXDEG):
+                    break
+                    
+                    
 
 
 degree_rasm= scribe.degree()
@@ -706,17 +714,16 @@ def fuzzy_substring_matching(template, long_string):
         
         for i in range(len_long_string - len_template + 1):
             substring = long_string[i:i + len_template]
-            distance = Levenshtein.distance(template, substring)
+            distance = Levenshtein.distance(template, substring) / len_template
             if distance < min_distance:
                 min_distance = distance
                 best_match = substring
                 #best_index = i
         
-        #print(f"term1: {long_string[:best_index]}")
-        #print(f"term2: {long_string[best_start_index + len_template:]}")
+        #print(f"match: {long_string[:best_index]}")
+        #print(f"remainder: {long_string[best_start_index + len_template:]}")
         if best_match is not None: # and perhahps min_distance threshold too
             remainder = long_string[best_start_index + len_template:]
-            # shall we do recursion or shall we do iteration? ITERATION!
         else:
             remainder = ''
         return best_match, min_distance, remainder
@@ -741,7 +748,7 @@ for i in range(len(components)):
         remainder_stroke= path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start)))
         print(remainder_stroke)
         
-        #remainder_stroke='2233223'
+        #remainder_stroke='46775346-4+476444321'
         rasm=''
         while len(remainder_stroke)>=3 and remainder_stroke!='':
             # find the substring with smalesst edit distance
@@ -761,7 +768,6 @@ for i in range(len(components)):
                 else:
                     remainder_stroke=''
                     break
-            
             # found the best possible match
             # distance selection can be applied here
             if template_min!='':
@@ -771,24 +777,20 @@ for i in range(len(components)):
                 remainder_stroke=''
             else:
                 remainder_stroke= remainder_min
-            print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
+            #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
             
-        ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        seed= pos[components[i].node_end]
-        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        
-        pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
-        font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
-        drawPIL = ImageDraw.Draw(pil_image)
-        drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
-        # Convert back to Numpy array and switch back from RGB to BGR
-        ccv= np.asarray(pil_image)
-        ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        
-        #cv.putText(ccv, rasm, components[i].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 0), 2)
-        #draw(ccv) # along with the neighbor
-        cv.imwrite(imagename+'c'+str(i).zfill(2)+'.png', ccv)
+        # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+        # seed= pos[components[i].node_end]
+        # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        # pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
+        # font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
+        # drawPIL = ImageDraw.Draw(pil_image)
+        # drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
+        # # Convert back to Numpy array and switch back from RGB to BGR
+        # ccv= np.asarray(pil_image)
+        # ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
+        # #draw(ccv) # along with the neighbor
+        # cv.imwrite(imagename+'c'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
-
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

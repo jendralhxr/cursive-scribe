@@ -747,6 +747,8 @@ for i in range(len(components)):
             # find the substring with smalesst edit distance
             lev_dist_min=1e9
             hurf_min=''
+            template_min=''
+            remainder_min=''
             for template, data in hurf.nodes(data=True):
                 if len(remainder_stroke)>=3: 
                     hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
@@ -759,16 +761,17 @@ for i in range(len(components)):
                 else:
                     remainder_stroke=''
                     break
+            
             # found the best possible match
             # distance selection can be applied here
-            rasm+=hurf_min
-            # lev_dist_min= lev_dist_temp
+            if template_min!='':
+                rasm+=hurf_min
             
             if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
                 remainder_stroke=''
             else:
                 remainder_stroke= remainder_min
-            #print(f"current match: {hurf_min} ({template_min}) dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
+            print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
             
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         seed= pos[components[i].node_end]

@@ -176,6 +176,8 @@ for n in range(scribe.number_of_nodes()):
             if components[i].centroid==mc:
                 components[i].nodes.append(n)
                 # calculate the distance
+                tvane= freeman(seed[0]-mc[0], mc[1]-seed[1] )
+                #if seed[0]>mc[0] and pd>components[i].distance_start and (tvane==2 or tvane==4): # potential node_start for long rasm
                 if seed[0]>mc[0] and pd>components[i].distance_start: # potential node_start
                     components[i].distance_start= pd
                     components[i].node_start= n
@@ -504,10 +506,8 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
             pathstring+='-'
     return pathstring
 
-#list(nx.bfs_edges(besar, source=29)) # simplifiend
+#list(nx.bfs_edges(besar, source=29)) # simplified
 #list(nx.edge_bfs(besar, source=29)) # traverse sequence
-#path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, 29), source=29)))
-
 
 ######
 # isolated
@@ -728,6 +728,47 @@ def fuzzy_substring_matching(template, long_string):
             remainder = ''
         return best_match, min_distance, remainder
 
+from collections import deque
+
+def custom_bfs_dfs(graph, start_node):
+    queue = deque([start_node])  # Initialize the queue with the start node
+    visited = set([start_node])  # Set to keep track of visited nodes
+    edges = []  # List to store edges
+
+    def dfs(node):
+        stack = [node]  # Use a stack for the DFS traversal
+        branch_edges = []
+        while stack:
+            current = stack.pop()
+            if current not in visited:
+                visited.add(current)
+                # Explore all neighbors of the current node
+                for neighbor in graph.neighbors(current):
+                    if neighbor not in visited:
+                        stack.append(neighbor)
+                        branch_edges.append((current, neighbor))  # Add the edge to the branch
+        return branch_edges
+
+    while queue:
+        node = queue.popleft()  # Get the next node from the BFS queue
+        neighbors = list(graph.neighbors(node))  # Get neighbors of the current node
+        unvisited_neighbors = [neighbor for neighbor in neighbors if neighbor not in visited]
+        
+        # print all the branch first then traverse
+        if unvisited_neighbors:
+            for neighbor in unvisited_neighbors:
+                # Add the edge from the current node to the neighbor
+                edges.append((node, neighbor))
+                if len(list(graph.neighbors(neighbor))) > 1:  # If there's a branch
+                    branch_edges = dfs(neighbor)  # Explore the branch using DFS
+                    edges.extend(branch_edges)  # Add the edges found during DFS
+                else:
+                    visited.add(neighbor)  # Mark the neighbor as visited
+                    queue.append(neighbor)  # Add the neighbor to the BFS queue
+
+    return edges
+
+
 from PIL import ImageFont, ImageDraw, Image
 FONTSIZE= 24
 
@@ -737,7 +778,7 @@ for i in range(len(components)):
             node_pos=(0,0)
             node_start=-1
             for n in components[i].nodes:
-                if pos[n][0] > node_pos[0]:
+                if pos[n][0] > node_pos[0]: # leftmost node as starting node if it is still missing
                     node_start= n
                     node_pos= pos[n]
             #node_start= components[i].nodes[0]
@@ -745,8 +786,7 @@ for i in range(len(components)):
             node_start= components[i].node_start
         scribe_dia.nodes[node_start]['color']= 'red'
         
-        # CONSIDERING TO USE DFS instead
-        remainder_stroke= path_vane_edges(scribe, list(nx.edge_bfs(extract_subgraph(scribe, node_start), source=node_start)))
+        remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
         print(remainder_stroke)
         
         #remainder_stroke='46775346-4+476444321'

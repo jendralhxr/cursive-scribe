@@ -128,7 +128,7 @@ for n in range(num_slic):
         cy= int( np.mean( [array[1] for array in moments[n]] ))
         if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
-            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='orange')
+            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='orange', rasm=True)
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 
@@ -325,7 +325,7 @@ def line_iterator(img, point0, point1):
                 has_dark= True
                 break
         #print(f"{n} space {has_dark}")
-        if has_dark==False: # would prefer connected stroke
+        if has_dark==True: # would prefer separated stroke
             break
     return has_dark
     
@@ -408,6 +408,8 @@ scribe_dia= scribe.copy()
 # and update extreme nodes for large components
 for k in range(len(components)):
     if components[k].area<pow(SLIC_SPACE,2)*pow(PHI,4) or len(components[k].nodes)<=4: # small components (diacritics)
+        for j in components[k].nodes:
+            scribe.nodes[j]['rasm']=False
         src_comp= k
         src_node= -1
         closest_comp= -1
@@ -420,7 +422,7 @@ for k in range(len(components)):
                     for n in components[l].nodes:
                         tdist= pdistance(pos[m], pos[n])
                         tvane= freeman(pos[n][0]-pos[m][0], pos[n][1]-pos[m][1])
-                        if tdist<closest_dist and (tvane==2 or tvane==6):
+                        if tdist<closest_dist and (tvane==2 or tvane==6) and scribe.nodes[n]['rasm']==True:
                             closest_comp= l
                             src_node= m
                             closest_node= n

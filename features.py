@@ -8,7 +8,7 @@
 SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
-WHITESPACE_INTERVAL= 5
+WHITESPACE_INTERVAL= 4
 RASM_EDGE_MAXDEG= 2
 
 THREVAL= 60
@@ -208,41 +208,40 @@ components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 #         distance= pdistance(components[n].centroid, pos[i])
 #         print(f'{i}: {distance}')
 
-
-disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-for n in range(len(components)):
-    #print(f'{n} at {components[n].centroid} size {components[n].area}')
-    # draw green line for rasm at edges, color the rasm brighter
-    if components[n].area>4*PHI*pow(SLIC_SPACE,2):
-        disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
-        seed= components[n].centroid
-        cv.circle(disp, seed, 2, (0,0,120), -1)
-        if components[n].node_start!=-1:
-            cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
-        if components[n].node_end!=-1:
-            cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
-        # r= components[n].rect[0]+int(components[n].rect[2])
-        # l= components[n].rect[0]
-        # if l<width and r<width: # did we ever went beyond the frame?
-        #     for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
-        #         disp[j1,r,1]= 120
-        #     for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
-        #         disp[j1,l,1]= 120
-    else:        
-        m= components[n].centroid[1]
-        i= components[n].centroid[0]
-        # draw blue line for shakil 'connection'
-        for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
-            if j2<height and j2>0: 
-                disp[j2,i,1]= STROKEVAL/2
+# drawing the starting node (bitmap level)
+# disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+# for n in range(len(components)):
+#     #print(f'{n} at {components[n].centroid} size {components[n].area}')
+#     # draw green line for rasm at edges, color the rasm brighter
+#     if components[n].area>4*PHI*pow(SLIC_SPACE,2):
+#         disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
+#         seed= components[n].centroid
+#         cv.circle(disp, seed, 2, (0,0,120), -1)
+#         if components[n].node_start!=-1:
+#             cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
+#         if components[n].node_end!=-1:
+#             cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
+#         # r= components[n].rect[0]+int(components[n].rect[2])
+#         # l= components[n].rect[0]
+#         # if l<width and r<width: # did we ever went beyond the frame?
+#         #     for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
+#         #         disp[j1,r,1]= 120
+#         #     for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
+#         #         disp[j1,l,1]= 120
+#     else:        
+#         m= components[n].centroid[1]
+#         i= components[n].centroid[0]
+#         # draw blue line for shakil 'connection'
+#         for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
+#             if j2<height and j2>0: 
+#                 disp[j2,i,1]= STROKEVAL/2
 
     #rasm= components[n].mat[\
     #    components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
     #    components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
     #cv.imwrite(str(n)+'.png', rasm)
-#cv.imwrite(imagename+'-disp.png', disp)    
-
 # draw(disp) 
+#cv.imwrite(imagename+'-disp.png', disp)    
 
 # draw each components separately, sorted right to left
 # for n in range(len(components)):
@@ -345,7 +344,7 @@ for k in range(len(components)):
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
             has_dark= line_iterator(cue, src['pos_bitmap'], dst['pos_bitmap'])
             # add the checking for line segment
-            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,PHI) and has_dark==False:
+            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2) and has_dark==False:
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]
@@ -752,7 +751,10 @@ def custom_bfs_dfs(graph, start_node):
         return branch_edges
 
     while queue:
-        node = queue.popleft()  # Get the next node from the BFS queue
+        if (pos[queue[-1]][0] > pos[queue[0]][0]):
+            node = queue.pop()
+        else:
+            node = queue.popleft()  # Get the next node from the BFS queue
         neighbors = list(graph.neighbors(node))  # Get neighbors of the current node
         unvisited_neighbors = [neighbor for neighbor in neighbors if neighbor not in visited]
         

@@ -67,7 +67,9 @@ model.fit(train_sequences, train_labels, epochs=epochs, batch_size=batch_size, v
 loss, accuracy = model.evaluate(test_sequences, test_labels)
 print(f'Accuracy on test data: {accuracy}')
 
-pickle.dump(model, 'rasm-lstm.model', 'wb')
+pickle.dump(model, open('rasm-lstm.model', 'wb'))
+#model= pickle.load(open('rasm-lstm.model', 'rb'))
+
 
 # Example prediction
 def predict(string):

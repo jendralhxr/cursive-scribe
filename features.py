@@ -824,18 +824,18 @@ for i in range(len(components)):
                 remainder_stroke= remainder_min
             #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
             
-        # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        # seed= pos[components[i].node_end]
-        # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        # pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
-        # font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
-        # drawPIL = ImageDraw.Draw(pil_image)
-        # drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
-        # # Convert back to Numpy array and switch back from RGB to BGR
-        # ccv= np.asarray(pil_image)
-        # ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        # #draw(ccv) # along with the neighbor
-        # cv.imwrite(imagename+'c'+str(i).zfill(2)+'.png', ccv)
+        ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+        seed= pos[components[i].node_end]
+        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
+        font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
+        drawPIL = ImageDraw.Draw(pil_image)
+        drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
+        # Convert back to Numpy array and switch back from RGB to BGR
+        ccv= np.asarray(pil_image)
+        ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
+        draw(ccv)
+        cv.imwrite(imagename+'c'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

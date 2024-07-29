@@ -63,13 +63,18 @@ epochs = 4000
 batch_size = 32
 model.fit(train_sequences, train_labels, epochs=epochs, batch_size=batch_size, validation_split=0.2)
 
-# Evaluate the model on the test dataset
+def save_variables(filename, *args):
+    with open(filename, 'wb') as f:
+        pickle.dump(args, f)
+def load_variables(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
+
+save_variables('rasm-lstm.model', model, train_sequences, test_sequences, train_labels, test_labels)
+model, train_sequences, test_sequences, train_labels, test_labels= load_variables('rasm-lstm.model')
+
 loss, accuracy = model.evaluate(test_sequences, test_labels)
 print(f'Accuracy on test data: {accuracy}')
-
-pickle.dump(model, open('rasm-lstm.model', 'wb'))
-#model= pickle.load(open('rasm-lstm.model', 'rb'))
-
 
 # Example prediction
 def predict(string):
@@ -79,7 +84,7 @@ def predict(string):
     print(f'Predicted class: {predicted_index}')
 
 # Test the prediction function
-predict("222223") # alif
+predict("222") # alif
 
 
 

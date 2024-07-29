@@ -1,75 +1,83 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import LSTM, Dense, Embedding
+from sklearn.model_selection import train_test_split
+import pickle
+import pandas as pd
 
-# Generate more random data for demonstration
+# Generate random data
 np.random.seed(42)
 
-# Generate 1000 random 4-digit number strings
-random_numbers = np.random.randint(1000, 1000000, size=100000).astype(str)
+# Parameters
+num_samples = 1000
+max_length = 10  # Max length of the strings
+num_classes = 40  # Number of classes
 
-# Assign random letters from A to Z as labels
-random_labels = np.random.choice(list('ABCDEFGHIJKLMNOPQRSTUVWXYZ'), size=100000)
+# data
+source = pd.read_csv('coba.csv')
+random_strings=pd.concat([source['2bfs'], source['2alpha']])
+random_labels=pd.concat([source['label'], source['label']])
 
-# Convert characters to numeric values (optional preprocessing step)
-# No need to convert to float32 if directly processing as strings
-numbers = np.array([list(map(int, list(num.zfill(6)))) for num in random_numbers])
+# Tokenize the strings
+tokenizer = tf.keras.preprocessing.text.Tokenizer(char_level=True)
+tokenizer.fit_on_texts(random_strings)
+sequences = tokenizer.texts_to_sequences(random_strings)
+padded_sequences = tf.keras.preprocessing.sequence.pad_sequences(sequences, padding='post')
 
+# Convert labels to one-hot encoding
+labels = tf.keras.utils.to_categorical(random_labels, num_classes=num_classes)
 
-# Convert labels to numeric indices
-label_to_index = {label: i for i, label in enumerate(np.unique(random_labels))}
-indices = np.array([label_to_index[label] for label in random_labels])
+# Split data into training and testing sets
+train_sequences, test_sequences, train_labels, test_labels = train_test_split(
+    padded_sequences, labels, test_size=0.2, random_state=42)
 
-# Check shapes and types
-print(f'Numbers shape: {numbers.shape}, Numbers type: {numbers.dtype}')
-print(f'Indices shape: {indices.shape}, Indices type: {indices.dtype}')
+# Parameters for the model
+vocab_size = len(tokenizer.word_index) + 1  # +1 for padding token
+embedding_dim = 50  # Dimension of the embedding vector
 
-# Create TensorFlow Dataset and batch it
-batch_size = 32
-dataset = tf.data.Dataset.from_tensor_slices((numbers, indices)).batch(batch_size)
+# Check shapes
+print(f'Train sequences shape: {train_sequences.shape}')
+print(f'Test sequences shape: {test_sequences.shape}')
+print(f'Train labels shape: {train_labels.shape}')
+print(f'Test labels shape: {test_labels.shape}')
 
 # Define the model
 model = Sequential([
-    Dense(64, activation='relu', input_shape=(6,)),  # Input shape corrected to (4,)
+    Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_length),
+    LSTM(64),
     Dense(64, activation='relu'),
-    Dense(64, activation='relu'),
-    Dense(32, activation='relu'),
-    Dense(len(label_to_index), activation='softmax')  # Output layer with softmax activation
+    Dense(num_classes, activation='softmax')
 ])
 
 # Compile the model
 model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
+              loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Print model summary
 model.summary()
 
-# Split data into training and testing sets
-#train_numbers, test_numbers, train_indices, test_indices = train_test_split(numbers, indices, test_size=0.2, random_state=42)
-
-
 # Train the model
-epochs = 8000
-model.fit(dataset, epochs=epochs)
+epochs = 4000
+batch_size = 32
+model.fit(train_sequences, train_labels, epochs=epochs, batch_size=batch_size, validation_split=0.2)
 
-# Evaluate the model
-loss, accuracy = model.evaluate(dataset)
-print(f'Accuracy: {accuracy}')
+# Evaluate the model on the test dataset
+loss, accuracy = model.evaluate(test_sequences, test_labels)
+print(f'Accuracy on test data: {accuracy}')
 
-def predict(num):
-    nums= list(map(int, list(num)))
-    test_number = np.array([[nums]]).astype(np.float32) / 9999.0  # Normalize test input
-    predicted_index = np.argmax(model.predict(test_number))
-    predicted_label = list(label_to_index.keys())[predicted_index]
-    print(f'Predicted label: {predicted_label}')
-
+pickle.dump(model, 'rasm-lstm.model', 'wb')
 
 # Example prediction
-test_number = np.array([[0, 2, 7, 0]]).astype(np.float32) / 9999.0  # Normalize test input
-predicted_index = np.argmax(model.predict(test_number))
-predicted_label = list(label_to_index.keys())[predicted_index]
-print(f'Predicted label: {predicted_label}')
+def predict(string):
+    sequence = tokenizer.texts_to_sequences([string])
+    padded_sequence = tf.keras.preprocessing.sequence.pad_sequences(sequence, maxlen=max_length, padding='post')
+    predicted_index = np.argmax(model.predict(padded_sequence))
+    print(f'Predicted class: {predicted_index}')
+
+# Test the prediction function
+predict("222223") # alif
+
 
 

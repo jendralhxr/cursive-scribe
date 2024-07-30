@@ -225,7 +225,7 @@ print("LCS results:", lcs_results)
 # one which works
 from itertools import product
 
-def lcs_multiple(*strings):
+def lcs_multiple(strings):
     if not strings:
         return []
 
@@ -274,3 +274,65 @@ def lcs_multiple(*strings):
 strings = ["AGGTAB", "GXTXAYB", "AGXGTAYB"]
 lcs_results = lcs_multiple(*strings)
 print("LCS results:", lcs_results)
+
+
+#-----
+
+from itertools import product
+from collections import defaultdict
+
+def lcs_multiple(strings):
+    if not strings:
+        return []
+
+    num_strings = len(strings)
+    lengths = [len(s) for s in strings]
+
+    # Create a multi-dimensional array to store lengths of LCS and sets of LCS substrings with counts
+    dp = {}
+    for indices in product(*(range(length + 1) for length in lengths)):
+        dp[indices] = (0, defaultdict(int))
+
+    # Build the dp array in bottom-up fashion
+    for indices in product(*(range(length + 1) for length in lengths)):
+        if all(index == 0 for index in indices):
+            continue
+
+        max_length = 0
+        max_subseqs = defaultdict(int)
+        for i in range(num_strings):
+            if indices[i] > 0:
+                prev_indices = indices[:i] + (indices[i] - 1,) + indices[i + 1:]
+                if dp[prev_indices][0] > max_length:
+                    max_length = dp[prev_indices][0]
+                    max_subseqs = dp[prev_indices][1].copy()
+
+                elif dp[prev_indices][0] == max_length:
+                    for subseq, count in dp[prev_indices][1].items():
+                        max_subseqs[subseq] += count
+
+        current_chars = [strings[i][indices[i] - 1] for i in range(num_strings) if indices[i] > 0]
+        if len(current_chars) == num_strings and all(char == current_chars[0] for char in current_chars):
+            prev_indices = tuple(index - 1 for index in indices)
+            new_subseqs = defaultdict(int)
+            for subseq, count in dp[prev_indices][1].items() or {("", 1)}:
+                new_subseqs[subseq + current_chars[0]] = count
+
+            if dp[prev_indices][0] + 1 > max_length:
+                max_length = dp[prev_indices][0] + 1
+                max_subseqs = new_subseqs
+
+            elif dp[prev_indices][0] + 1 == max_length:
+                for subseq, count in new_subseqs.items():
+                    max_subseqs[subseq] += count
+
+        dp[indices] = (max_length, max_subseqs)
+
+    # The LCS with their counts is in dp[lengths]
+    _, lcs_dict = dp[tuple(lengths)]
+    return sorted(lcs_dict.items(), key=lambda x: (-x[1], x[0]))  # Sort by count (descending) and lexicographically
+
+# Example usage
+je = ['22222', 'aaaaa2222', 'c22']
+lcs_results = lcs_multiple(je)
+print("LCS results (substring, count):", lcs_results)

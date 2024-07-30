@@ -82,7 +82,6 @@ def lcs_multiple(strings):
         dp[indices] = (0, defaultdict(int))
 
     # Build the dp array in bottom-up fashion
-    found_common_substring = False
     for indices in product(*(range(length + 1) for length in lengths)):
         if all(index == 0 for index in indices):
             continue
@@ -102,7 +101,6 @@ def lcs_multiple(strings):
 
         current_chars = [strings[i][indices[i] - 1] for i in range(num_strings) if indices[i] > 0]
         if len(current_chars) == num_strings and all(char == current_chars[0] for char in current_chars):
-            found_common_substring = True
             prev_indices = tuple(index - 1 for index in indices)
             new_subseqs = defaultdict(int)
             for subseq, count in dp[prev_indices][1].items() or {("", 1)}:
@@ -118,21 +116,20 @@ def lcs_multiple(strings):
 
         dp[indices] = (max_length, max_subseqs)
 
-    # If no common substring is found
-    if not found_common_substring:
-        return []
+    # Combine all substrings and their counts
+    all_subseqs = defaultdict(int)
+    for indices in dp:
+        for subseq, count in dp[indices][1].items():
+            all_subseqs[subseq] += count
 
-    # The LCS with their counts is in dp[lengths]
-    _, lcs_dict = dp[tuple(lengths)]
-    return sorted(lcs_dict.items(), key=lambda x: (-x[1], x[0]))  # Sort by count (descending) and lexicographically
+    # Filter out the common substrings (appear in all strings)
+    common_subseqs = {subseq: count for subseq, count in all_subseqs.items() if count == num_strings}
 
-# Example usage
-je = ['22222', 'aaaaa2222', 'c22']
+    if common_subseqs:
+        # If there are common substrings, return them sorted by count (descending) and lexicographically
+        return sorted(common_subseqs.items(), key=lambda x: (-x[1], x[0]))
+
+    # If no common substring, return top 6 substrings sorted by count (descending) and lexicographically
+    return sorted(all_subseqs.items(), key=lambda x: (-x[1], x[0]))[:6]
+
 lcs_results = lcs_multiple(je)
-print("LCS results (substring, count):", lcs_results)
-
-# Test with no common substring
-je_no_common = ['abc', 'def', 'ghi']
-lcs_results_no_common = lcs_multiple(je_no_common)
-print("LCS results (no common substring):", lcs_results_no_common)
-

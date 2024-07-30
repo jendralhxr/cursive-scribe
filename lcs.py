@@ -67,9 +67,9 @@ print(f"Jaro-Winkler distance between '{s1}' and '{s2}' is {jaro_winkler_distanc
 #-------
 
 from itertools import product
-from collections import defaultdict
+from collections import defaultdict, Counter
 
-def lcs_multiple(strings):
+def lcs_multiple(strings, min_length=3):
     if not strings:
         return []
 
@@ -117,19 +117,19 @@ def lcs_multiple(strings):
         dp[indices] = (max_length, max_subseqs)
 
     # Combine all substrings and their counts
-    all_subseqs = defaultdict(int)
+    all_subseqs = Counter()
     for indices in dp:
         for subseq, count in dp[indices][1].items():
-            all_subseqs[subseq] += count
+            if len(subseq) >= min_length:
+                all_subseqs[subseq] += count
 
     # Filter out the common substrings (appear in all strings)
-    common_subseqs = {subseq: count for subseq, count in all_subseqs.items() if count == num_strings}
+    common_subseqs = {subseq: count for subseq, count in all_subseqs.items() if count >= num_strings}
 
-    if common_subseqs:
+    if len(common_subseqs):
         # If there are common substrings, return them sorted by count (descending) and lexicographically
         return sorted(common_subseqs.items(), key=lambda x: (-x[1], x[0]))
-
+    else:
     # If no common substring, return top 6 substrings sorted by count (descending) and lexicographically
-    return sorted(all_subseqs.items(), key=lambda x: (-x[1], x[0]))[:6]
+        return sorted(all_subseqs.items(), key=lambda x: (-x[1], x[0]))[:6]
 
-lcs_results = lcs_multiple(je)

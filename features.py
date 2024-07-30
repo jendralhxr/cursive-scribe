@@ -703,7 +703,28 @@ hurf.add_node('5443', label='ی')
 #####
 
 
-import Levenshtein
+def levenshtein_distance(s1, s2):
+    # Populate the distance matrix with default values
+    rows = len(s1) + 1
+    cols = len(s2) + 1
+    distance_matrix = [[0 for x in range(cols)] for x in range(rows)]
+    for i in range(1, rows): distance_matrix[i][0] = i
+    for j in range(1, cols): distance_matrix[0][j] = j
+
+    # Compute Levenshtein distance
+    for i in range(1, rows):
+        for j in range(1, cols):
+            if s1[i-1] == s2[j-1]:
+                cost = 0
+            elif abs( ord(s1[i-1])%8 -ord(s2[i-1])%8 )==1:
+                cost = 0.5
+            else:
+                cost = 1
+            distance_matrix[i][j] = min(distance_matrix[i-1][j] + 1,    # Deletion
+                                        distance_matrix[i][j-1] + 1,    # Insertion
+                                        distance_matrix[i-1][j-1] + cost)  # Substitution
+
+    return distance_matrix[-1][-1]
 
 def fuzzy_substring_matching(template, long_string):
     if long_string!='':
@@ -715,7 +736,7 @@ def fuzzy_substring_matching(template, long_string):
         
         for i in range(len_long_string - len_template + 1):
             substring = long_string[i:i + len_template]
-            distance = Levenshtein.distance(template, substring) / len_template
+            distance = levenshtein_distance(template, substring) / len_template
             if distance < min_distance:
                 min_distance = distance
                 best_match = substring

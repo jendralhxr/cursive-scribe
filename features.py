@@ -813,37 +813,39 @@ for i in range(len(components)):
         
         remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
         print(remainder_stroke)
-        
-        #remainder_stroke='46775346-4+476444321'
-        rasm=''
-        while len(remainder_stroke)>=3 and remainder_stroke!='':
-            # find the substring with smalesst edit distance
-            lev_dist_min=1e9
-            hurf_min=''
-            template_min=''
-            remainder_min=''
-            for template, data in hurf.nodes(data=True):
-                if len(remainder_stroke)>=3: 
-                    hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
-                    if lev_dist_temp<lev_dist_min:
-                        template_min= template
-                        hurf_min=data['label']
-                        lev_dist_min= lev_dist_temp
-                        remainder_min= remainder_temp
-                        # adding rules for terminal hurf
-                else:
-                    remainder_stroke=''
-                    break
-            # found the best possible match
-            # distance selection can be applied here
-            if template_min!='':
-                rasm+=hurf_min
+                
+        rasm=stringtorasm(remainder_stroke)
+                
+        # using lookup table
+        # rasm=''
+        # while len(remainder_stroke)>=3 and remainder_stroke!='':
+        #     # find the substring with smalesst edit distance
+        #     lev_dist_min=1e9
+        #     hurf_min=''
+        #     template_min=''
+        #     remainder_min=''
+        #     for template, data in hurf.nodes(data=True):
+        #         if len(remainder_stroke)>=3: 
+        #             hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
+        #             if lev_dist_temp<lev_dist_min:
+        #                 template_min= template
+        #                 hurf_min=data['label']
+        #                 lev_dist_min= lev_dist_temp
+        #                 remainder_min= remainder_temp
+        #                 # adding rules for terminal hurf
+        #         else:
+        #             remainder_stroke=''
+        #             break
+        #     # found the best possible match
+        #     # distance selection can be applied here
+        #     if template_min!='':
+        #         rasm+=hurf_min
             
-            if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
-                remainder_stroke=''
-            else:
-                remainder_stroke= remainder_min
-            #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
+        #     if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
+        #         remainder_stroke=''
+        #     else:
+        #         remainder_stroke= remainder_min
+        #     #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
             
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         seed= pos[components[i].node_end]
@@ -856,7 +858,7 @@ for i in range(len(components)):
         ccv= np.asarray(pil_image)
         ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
         draw(ccv)
-        cv.imwrite(imagename+'c'+str(i).zfill(2)+'.png', ccv)
+        cv.imwrite(imagename+'lstm'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

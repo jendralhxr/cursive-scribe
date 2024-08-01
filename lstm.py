@@ -154,9 +154,14 @@ def stringtorasm(strokeorder):
             break
     return(rasm)
         
-        
-        
     
-
-
-
+dict={}
+def lcs_tabulate(*strings):
+    for string in strings:
+        for n in range(min_length, max_length+1):
+            if string[0:n] not in dict:
+                dict[string[0:n]]=1
+            else:
+                dict[string[0:n]]+=1
+                
+lcs_tabulate('2764364-', '33544-235', '34-4240', '34-433', '3567-5', '364-', '4-354', '4-373', '4-43', '40135-44', '415-3533', '5-3027', '54364', '6-4364', '6-55', '6-553', '6447', '65-43', '65-53')

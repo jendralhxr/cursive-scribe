@@ -137,4 +137,5 @@ def lcs_multiple(strings, min_length=3):
 
 def coba(*strings):
     for n in strings:
+        
         print(n)

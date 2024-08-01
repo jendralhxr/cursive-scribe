@@ -813,9 +813,13 @@ for i in range(len(components)):
         
         remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
         print(remainder_stroke)
-                
-        rasm=stringtorasm(remainder_stroke)
-                
+         
+        # using LSTM model
+        #rasm=stringtorasm_LSTM(remainder_stroke)
+        
+        # using LCS table
+        rasm= stringtorasm_LCS(remainder_stroke)
+
         # using lookup table
         # rasm=''
         # while len(remainder_stroke)>=3 and remainder_stroke!='':
@@ -840,13 +844,12 @@ for i in range(len(components)):
         #     # distance selection can be applied here
         #     if template_min!='':
         #         rasm+=hurf_min
-            
         #     if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
         #         remainder_stroke=''
         #     else:
         #         remainder_stroke= remainder_min
         #     #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
-            
+             
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         seed= pos[components[i].node_end]
         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
@@ -858,7 +861,7 @@ for i in range(len(components)):
         ccv= np.asarray(pil_image)
         ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
         draw(ccv)
-        cv.imwrite(imagename+'lstm'+str(i).zfill(2)+'.png', ccv)
+        cv.imwrite(imagename+'LCS'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

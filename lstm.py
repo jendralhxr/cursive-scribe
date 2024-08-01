@@ -126,7 +126,7 @@ hurf[36]= 'ی'
 hurf[37]= 'ڽ'
 
 
-def stringtorasm(strokeorder):
+def stringtorasm_LSTM(strokeorder):
     remainder_stroke= strokeorder
     rasm=''
     while len(remainder_stroke)>=2 and remainder_stroke!='':
@@ -147,7 +147,7 @@ def stringtorasm(strokeorder):
         hurf_best= hurf[label_best]
         rasm+= hurf_best
         if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
-            remainder_stroke=''
+            remainder_stroke=''tee_strin
         else:
             remainder_stroke= remainder_stroke[len_best:]
         if remainder_stroke=='':
@@ -155,13 +155,58 @@ def stringtorasm(strokeorder):
     return(rasm)
         
     
-dict={}
-def lcs_tabulate(*strings):
+def lcs_tabulate(strings):
+    #print(f"len {len(strings)}")
+    dict={}
     for string in strings:
-        for n in range(min_length, max_length+1):
+        lim= len(string)
+        if lim > max_length:
+            lim= max_length
+        for n in range(min_length, lim+1):
             if string[0:n] not in dict:
                 dict[string[0:n]]=1
             else:
                 dict[string[0:n]]+=1
-                
-lcs_tabulate('2764364-', '33544-235', '34-4240', '34-433', '3567-5', '364-', '4-354', '4-373', '4-43', '40135-44', '415-3533', '5-3027', '54364', '6-4364', '6-55', '6-553', '6447', '65-43', '65-53')
+    largest_keys = sorted(dict, key=dict.get, reverse=True)[: min_length+int(len(strings)/max_length*pow(PHI,2))]
+    return(largest_keys)    
+
+
+LCS = [{} for _ in range(40)]
+for i in range(0,40):
+    LCS[i]= lcs_tabulate(source[source['val'] == i]['rasm'])
+           
+from fuzzywuzzy import fuzz
+fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage
+
+
+def stringtorasm_LCS(strokeorder):
+    remainder_stroke= strokeorder
+    rasm=''
+    while len(remainder_stroke)>=2 and remainder_stroke!='':
+        label_best=''
+        eval_best=-1
+        len_best=-1
+        len_current=len(remainder_stroke)
+        for n in range(min_length, max_length+1):
+            if n>len_current:
+                break
+            tee_string= remainder_stroke[0:n]
+            for i in range(0, len(LCS)):
+                for j in range(0, len(LCS[i])):
+                    tee_eval= fuzz.ratio(tee_string, LCS[i][j]) *pow(PHI, len(tee_string))
+                    if tee_eval> eval_best:
+                        #print(f"length:{n} class:{label_best} score:{eval_best}")
+                        eval_best= tee_eval
+                        label_best= i
+                        len_best= n
+        hurf_best= hurf[label_best]
+        #print(f"BEST length:{n} class:{label_best} score:{eval_best}")
+        rasm+= hurf_best
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
+            remainder_stroke=''
+        else:
+            remainder_stroke= remainder_stroke[len_best:]
+        if remainder_stroke=='':
+            break
+    return(rasm)
+

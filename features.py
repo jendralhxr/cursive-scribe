@@ -703,7 +703,7 @@ hurf.add_node('5443', label='ی')
 #####
 
 
-def levenshtein_distance(s1, s2):
+def levenshteinX_distance(s1, s2):
     # Populate the distance matrix with default values
     rows = len(s1) + 1
     cols = len(s2) + 1
@@ -711,7 +711,6 @@ def levenshtein_distance(s1, s2):
     for i in range(1, rows): distance_matrix[i][0] = i
     for j in range(1, cols): distance_matrix[0][j] = j
 
-    # Compute Levenshtein distance
     for i in range(1, rows):
         for j in range(1, cols):
             if s1[i-1] == s2[j-1]:
@@ -736,7 +735,7 @@ def fuzzy_substring_matching(template, long_string):
         
         for i in range(len_long_string - len_template + 1):
             substring = long_string[i:i + len_template]
-            distance = levenshtein_distance(template, substring) / len_template
+            distance = levenshteinX_distance(template, substring) / len_template
             if distance < min_distance:
                 min_distance = distance
                 best_match = substring
@@ -797,6 +796,37 @@ def custom_bfs_dfs(graph, start_node):
 from PIL import ImageFont, ImageDraw, Image
 FONTSIZE= 24
 
+def stringtorasm_LEV(remainder_stroke):
+    rasm=''
+    while len(remainder_stroke)>=3 and remainder_stroke!='':
+        # find the substring with smalesst edit distance
+        lev_dist_min=1e9
+        hurf_min=''
+        template_min=''
+        remainder_min=''
+        for template, data in hurf.nodes(data=True):
+            if len(remainder_stroke)>=3: 
+                hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
+                if lev_dist_temp<lev_dist_min:
+                    template_min= template
+                    hurf_min=data['label']
+                    lev_dist_min= lev_dist_temp
+                    remainder_min= remainder_temp
+                    # adding rules for terminal hurf
+            else:
+                remainder_stroke=''
+                break
+        # found the best possible match
+        # distance selection can be applied here
+        if template_min!='':
+            rasm+=hurf_min
+        if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
+            remainder_stroke=''
+        else:
+            remainder_stroke= remainder_min
+        #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
+      
+
 for i in range(len(components)):
     if len(components[i].nodes)>3:
         if components[i].node_start==-1:
@@ -815,41 +845,13 @@ for i in range(len(components)):
         print(remainder_stroke)
          
         # using LSTM model
-        #rasm=stringtorasm_LSTM(remainder_stroke)
+        # rasm=stringtorasm_LSTM(remainder_stroke)
         
         # using LCS table
-        rasm= stringtorasm_LCS(remainder_stroke)
+        # rasm= stringtorasm_LCS(remainder_stroke)
 
-        # using lookup table
-        # rasm=''
-        # while len(remainder_stroke)>=3 and remainder_stroke!='':
-        #     # find the substring with smalesst edit distance
-        #     lev_dist_min=1e9
-        #     hurf_min=''
-        #     template_min=''
-        #     remainder_min=''
-        #     for template, data in hurf.nodes(data=True):
-        #         if len(remainder_stroke)>=3: 
-        #             hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
-        #             if lev_dist_temp<lev_dist_min:
-        #                 template_min= template
-        #                 hurf_min=data['label']
-        #                 lev_dist_min= lev_dist_temp
-        #                 remainder_min= remainder_temp
-        #                 # adding rules for terminal hurf
-        #         else:
-        #             remainder_stroke=''
-        #             break
-        #     # found the best possible match
-        #     # distance selection can be applied here
-        #     if template_min!='':
-        #         rasm+=hurf_min
-        #     if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
-        #         remainder_stroke=''
-        #     else:
-        #         remainder_stroke= remainder_min
-        #     #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
-             
+        rasm= stringtorasm_LEV(remainder_stroke)
+        
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         seed= pos[components[i].node_end]
         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))

@@ -713,9 +713,12 @@ def levenshteinX_distance(s1, s2):
 
     for i in range(1, rows):
         for j in range(1, cols):
+            diff= abs( ord(s1[i-1])%8-ord(s2[i-1])%8 )
+            if diff>4:
+				diff = 8-diff
             if s1[i-1] == s2[j-1]:
                 cost = 0
-            elif abs( ord(s1[i-1])%8 -ord(s2[i-1])%8 )==1:
+            elif diff==1:
                 cost = 0.5
             else:
                 cost = 1

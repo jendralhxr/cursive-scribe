@@ -398,7 +398,7 @@ def prune_edges(G, hop):
                     G.remove_edge(u, v)
         
         
-prune_edges(scribe, 2)
+#prune_edges(scribe, 2)
 
 degree_rasm= scribe.degree()
 scribe_dia= scribe.copy()
@@ -468,7 +468,18 @@ def extract_subgraph(G, start):
         connected_component = nx.node_connected_component(G, start)
         connected_subgraph = G.subgraph(connected_component)
     return connected_subgraph.copy()
-    
+
+def extract_subgraph2(G, start, end):
+    paths = list(nx.all_simple_paths(G, source=start, target=end))
+    nodes_in_paths = set()
+    edges_in_paths = set()
+    for path in paths:
+        nodes_in_paths.update(path)
+        edges_in_paths.update(zip(path, path[1:]))
+    subgraph = G.subgraph(nodes_in_paths).copy()
+    #subgraph = G.edge_subgraph(edges_in_paths).copy()
+    return subgraph
+  
 def edge_attributes(G):
     if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
         for u,v,k, attrs in G.edges(keys=True, data=True):
@@ -509,6 +520,9 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 
 #list(nx.bfs_edges(besar, source=29)) # simplified
 #list(nx.edge_bfs(besar, source=29)) # traverse sequence
+
+ra1=extract_subgraph2(scribe, 77, 182)
+ra2=extract_subgraph2(scribe, 38, 180)
 
 ######
 # isolated

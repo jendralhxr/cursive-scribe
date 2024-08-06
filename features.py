@@ -469,8 +469,9 @@ def extract_subgraph(G, start):
         connected_subgraph = G.subgraph(connected_component)
     return connected_subgraph.copy()
 
+
 def extract_subgraph2(G, start, end):
-    paths = list(nx.all_simple_paths(G, source=start, target=end))
+    paths = []
     nodes_in_paths = set()
     edges_in_paths = set()
     for path in paths:
@@ -479,6 +480,30 @@ def extract_subgraph2(G, start, end):
     subgraph = G.subgraph(nodes_in_paths).copy()
     #subgraph = G.edge_subgraph(edges_in_paths).copy()
     return subgraph
+
+def extract_subgraph3(G, start, end):
+    visited = set()
+    queue = [start, end]
+
+    while queue:
+        node = queue.pop(0)
+        crossing_start= all(start in path for path in nx.all_simple_paths(G, node, end))
+        crossing_end  = all(end in path for path in nx.all_simple_paths(G, node, start))
+        print(f"{node} s{crossing_start} e{crossing_end}")
+        
+        if node not in visited:
+            visited.add(node)
+    
+            # Add all neighbors that haven't been visited yet
+            for neighbor in G.neighbors(node):
+                if neighbor not in visited:
+                    queue.append(neighbor)
+
+    return visited
+    
+
+
+
   
 def edge_attributes(G):
     if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
@@ -520,6 +545,8 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 
 #list(nx.bfs_edges(besar, source=29)) # simplified
 #list(nx.edge_bfs(besar, source=29)) # traverse sequence
+
+
 
 ra1=extract_subgraph2(scribe, 77, 182)
 ra2=extract_subgraph2(scribe, 38, 180)
@@ -869,18 +896,18 @@ for i in range(len(components)):
 
         rasm= stringtorasm_LEV(remainder_stroke)
         
-        ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        seed= pos[components[i].node_end]
-        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
-        font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
-        drawPIL = ImageDraw.Draw(pil_image)
-        drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
-        # Convert back to Numpy array and switch back from RGB to BGR
-        ccv= np.asarray(pil_image)
-        ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        draw(ccv)
-        cv.imwrite(imagename+'LCS'+str(i).zfill(2)+'.png', ccv)
+        # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+        # seed= pos[components[i].node_end]
+        # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        # pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
+        # font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
+        # drawPIL = ImageDraw.Draw(pil_image)
+        # drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
+        # # Convert back to Numpy array and switch back from RGB to BGR
+        # ccv= np.asarray(pil_image)
+        # ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
+        # draw(ccv)
+        # cv.imwrite(imagename+'LCS'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

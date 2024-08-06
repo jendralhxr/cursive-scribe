@@ -482,29 +482,26 @@ def extract_subgraph2(G, start, end):
     return subgraph
 
 def extract_subgraph3(G, start, end):
-    visited = set()
+    visited = [start,end]
     queue = [start, end]
 
     while queue:
         node = queue.pop(0)
         crossing_start= all(start in path for path in nx.all_simple_paths(G, node, end))
         crossing_end  = all(end in path for path in nx.all_simple_paths(G, node, start))
-        print(f"{node} s{crossing_start} e{crossing_end}")
-        
-        if node not in visited:
-            visited.add(node)
+        #print(f"{node} s{crossing_start} e{crossing_end}")
+        if (node not in visited) and (crossing_start==False) and (crossing_end==False) \
+            or node==start  or node==end:
+            visited.append(node)
     
-            # Add all neighbors that haven't been visited yet
             for neighbor in G.neighbors(node):
                 if neighbor not in visited:
                     queue.append(neighbor)
-
-    return visited
     
+    subgraph = G.subgraph(visited).copy()
+    return subgraph
 
-
-
-  
+    
 def edge_attributes(G):
     if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
         for u,v,k, attrs in G.edges(keys=True, data=True):

@@ -132,10 +132,3 @@ def lcs_multiple(strings, min_length=3):
     else:
     # If no common substring, return top 6 substrings sorted by count (descending) and lexicographically
         return sorted(all_subseqs.items(), key=lambda x: (-x[1], x[0]))[:6]
-
-
-
-def coba(*strings):
-    for n in strings:
-        
-        print(n)

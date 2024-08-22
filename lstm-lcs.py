@@ -20,8 +20,8 @@ tokenizer = tf.keras.preprocessing.text.Tokenizer(char_level=True)
 
 # data
 source = pd.read_csv('coba.csv')
-random_strings=pd.concat([source['bfs'], source['bfsdfs']])
-random_labels=pd.concat([source['val'], source['val']])
+random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
+random_labels=pd.concat([source['label'], source['label']])
 
 # Tokenize the strings
 tokenizer.fit_on_texts(random_strings)
@@ -172,9 +172,10 @@ def lcs_tabulate(strings):
     return(largest_keys)    
 
 
+fieldstring= '2alpha-bfsdfs'
 LCS = [{} for _ in range(40)]
 for i in range(0,40):
-    LCS[i]= lcs_tabulate(source[source['val'] == i]['rasm'])
+    LCS[i]= lcs_tabulate(source[source['label'] == i][fieldstring])
            
 from fuzzywuzzy import fuzz
 #fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage Jaro-Winkler I guess

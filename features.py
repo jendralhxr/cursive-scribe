@@ -749,6 +749,7 @@ def levenshteinX_distance(s1, s2):
     for i in range(1, rows): distance_matrix[i][0] = i
     for j in range(1, cols): distance_matrix[0][j] = j
 
+    # value assignment    
     for i in range(1, rows):
         for j in range(1, cols):
             diff= abs( ord(s1[i-1])%8-ord(s2[i-1])%8 )
@@ -758,11 +759,14 @@ def levenshteinX_distance(s1, s2):
                 cost = 0
             elif diff==1:
                 cost = 0.5
+            elif diff==4:
+                cost = 0.25
             else:
                 cost = 1
             distance_matrix[i][j] = min(distance_matrix[i-1][j] + 1,    # Deletion
                                         distance_matrix[i][j-1] + 1,    # Insertion
                                         distance_matrix[i-1][j-1] + cost)  # Substitution
+            # may add other variants to accommodate compression
 
     return distance_matrix[-1][-1]
 

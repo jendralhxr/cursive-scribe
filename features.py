@@ -1,3 +1,4 @@
+# usage: python -u features.py <inputimage> | tee <outputrasm>
 # freeman code going anti-clockwise like trigonometrics angle
 #    3   2   1
 #      \ | /
@@ -543,10 +544,8 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 #list(nx.bfs_edges(besar, source=29)) # simplified
 #list(nx.edge_bfs(besar, source=29)) # traverse sequence
 
-
-
-ra1=extract_subgraph2(scribe, 77, 182)
-ra2=extract_subgraph2(scribe, 38, 180)
+#ra1=extract_subgraph2(scribe, 77, 182)
+#ra2=extract_subgraph2(scribe, 38, 180)
 
 ######
 # isolated
@@ -889,14 +888,15 @@ for i in range(len(components)):
         remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
         print(remainder_stroke)
          
+        # rule-based minimum feasible pattern
+        #rasm= stringtorasm_LEV(remainder_stroke)
+        
         # using LSTM model
         # rasm=stringtorasm_LSTM(remainder_stroke)
         
         # using LCS table
         # rasm= stringtorasm_LCS(remainder_stroke)
 
-        rasm= stringtorasm_LEV(remainder_stroke)
-        
         # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         # seed= pos[components[i].node_end]
         # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))

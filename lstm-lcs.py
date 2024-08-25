@@ -59,7 +59,7 @@ model.summary()
 # Train the model
 epochs = 4000
 batch_size = 32
-#model.fit(train_sequences, train_labels, epochs=epochs, batch_size=batch_size, validation_split=0.2)
+model.fit(train_sequences, train_labels, epochs=epochs, batch_size=batch_size, validation_split=0.2)
 
 def save_variables(filename, *args):
     with open(filename, 'wb') as f:
@@ -80,6 +80,13 @@ def predict(string):
     evals = model.predict(padded_sequence)
     predicted_index = np.argmax(evals)
     return( predicted_index, max(max(evals)) )
+
+# checking the weights
+# Access the final Dense layer
+# Get the weights of the final Dense layer
+final_dense_layer = model.layers[-1]
+weights = final_dense_layer.get_weights()
+
 
 # Test the prediction function
 # predict("222") # alif

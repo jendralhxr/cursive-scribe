@@ -739,62 +739,6 @@ hurf.add_node('5443', label='ی')
 
 #####
 
-
-def levenshteinX_distance(s1, s2):
-    # Populate the distance matrix with default values
-    rows = len(s1) + 1
-    cols = len(s2) + 1
-    distance_matrix = [[0 for x in range(cols)] for x in range(rows)]
-    for i in range(1, rows): distance_matrix[i][0] = i
-    for j in range(1, cols): distance_matrix[0][j] = j
-
-    # value assignment    
-    for i in range(1, rows):
-        for j in range(1, cols):
-            diff= abs( ord(s1[i-1])%8-ord(s2[i-1])%8 )
-            if diff>4:
-                diff= 8-diff
-            if s1[i-1] == s2[j-1]:
-                cost = 0
-            elif diff==1:
-                cost = 0.5
-            elif diff==4:
-                cost = 0.25
-            else:
-                cost = 1
-            distance_matrix[i][j] = min(distance_matrix[i-1][j] + 1,    # Deletion
-                                        distance_matrix[i][j-1] + 1,    # Insertion
-                                        distance_matrix[i-1][j-1] + cost)  # Substitution
-            # may add other variants to accommodate compression
-
-    return distance_matrix[-1][-1]
-
-def fuzzy_substring_matching(template, long_string):
-    if long_string!='':
-        min_distance = float('inf')
-        best_match = None
-        best_start_index = -1
-        len_template = len(template)
-        len_long_string = len(long_string)
-        
-        for i in range(len_long_string - len_template + 1):
-            substring = long_string[i:i + len_template]
-            distance = levenshteinX_distance(template, substring) / len_template
-            if distance < min_distance:
-                min_distance = distance
-                best_match = substring
-                #best_index = i
-        
-        #print(f"match: {long_string[:best_index]}")
-        #print(f"remainder: {long_string[best_start_index + len_template:]}")
-        if best_match is not None: # and perhahps min_distance threshold too
-            remainder = long_string[best_start_index + len_template:]
-        else:
-            remainder = ''
-        return best_match, min_distance, remainder
-
-from collections import deque
-
 def custom_bfs_dfs(graph, start_node):
     queue = deque([start_node])  # Initialize the queue with the start node
     visited = set([start_node])  # Set to keep track of visited nodes
@@ -839,37 +783,6 @@ def custom_bfs_dfs(graph, start_node):
 
 from PIL import ImageFont, ImageDraw, Image
 FONTSIZE= 24
-
-def stringtorasm_LEV(remainder_stroke):
-    rasm=''
-    while len(remainder_stroke)>=3 and remainder_stroke!='':
-        # find the substring with smalesst edit distance
-        lev_dist_min=1e9
-        hurf_min=''
-        template_min=''
-        remainder_min=''
-        for template, data in hurf.nodes(data=True):
-            if len(remainder_stroke)>=3: 
-                hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
-                if lev_dist_temp<lev_dist_min:
-                    template_min= template
-                    hurf_min=data['label']
-                    lev_dist_min= lev_dist_temp
-                    remainder_min= remainder_temp
-                    # adding rules for terminal hurf
-            else:
-                remainder_stroke=''
-                break
-        # found the best possible match
-        # distance selection can be applied here
-        if template_min!='':
-            rasm+=hurf_min
-        if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
-            remainder_stroke=''
-        else:
-            remainder_stroke= remainder_min
-        #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
-      
 
 for i in range(len(components)):
     if len(components[i].nodes)>3:

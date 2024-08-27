@@ -6,6 +6,10 @@ from sklearn.model_selection import train_test_split
 import pickle
 import pandas as pd
 
+# todo
+# and-or graph network (based on tabulated LCS?)
+# or perhaps a leaf node is a set of path with +/-1 variation
+
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
 # Generate random data

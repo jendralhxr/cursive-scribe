@@ -72,7 +72,9 @@ width= image.shape[1]
 
 #image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
-_, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
+kernel = np.ones((2,2),np.uint8)
+erosion = cv.erode(image_gray,kernel,iterations = 1)
+_, gray = cv.threshold(erosion, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #_, gray= cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
 
 cue= gray.copy()

@@ -470,4 +470,15 @@ def fuzzy_substring_matching(template, long_string):
             remainder = ''
         return best_match, min_distance, remainder
 
-from collections import deque
+import sys
+
+# Define the file path (replace 'your_file.txt' with your actual file name)
+file_path = sys.argv[1]
+
+with open(file_path, 'r') as file:
+    # Iterate over each line in the file
+    for line in file:
+        #print(line, end='')  # The 'end' argument avoids adding extra newlines
+        print(f"{stringtorasm_LCS(line)} ")
+        
+

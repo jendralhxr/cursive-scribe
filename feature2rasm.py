@@ -1,4 +1,15 @@
 # usage: python -u features.py <inputimage> | tee <outputrasm>
+import os
+#os.chdir("/shm")
+import cv2 as cv
+import numpy as np
+import matplotlib.pyplot as plt
+import networkx as nx
+import sys
+import math
+import heapq
+from collections import deque 
+
 # freeman code going anti-clockwise like trigonometrics angle
 #    3   2   1
 #      \ | /
@@ -16,7 +27,6 @@ THREVAL= 60
 CHANNEL= 2
 RESIZE_FACTOR=2
 SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
-
 
 def freeman(x, y):
     if (y==0):
@@ -42,16 +52,6 @@ def freeman(x, y):
         elif (y<0) and (abs(y)>abs(x)):
             return(6)
 
-import os
-#os.chdir("/shm")
-import cv2 as cv
-import numpy as np
-import matplotlib.pyplot as plt
-import networkx as nx
-import sys
-import math
-import heapq
-
 def draw(img): # draw the bitmap
     plt.figure(dpi=600)
     if (len(img.shape)==3):
@@ -59,7 +59,6 @@ def draw(img): # draw the bitmap
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
-
 filename= sys.argv[1]
 #filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
@@ -803,12 +802,11 @@ for i in range(len(components)):
         remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
         print(remainder_stroke)
          
+        # refer to rasm2hurf.py
         # rule-based minimum feasible pattern
         #rasm= stringtorasm_LEV(remainder_stroke)
-        
         # using LSTM model
         # rasm=stringtorasm_LSTM(remainder_stroke)
-        
         # using LCS table
         # rasm= stringtorasm_LCS(remainder_stroke)
 

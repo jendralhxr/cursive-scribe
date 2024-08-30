@@ -5,6 +5,7 @@ from tensorflow.keras.layers import Embedding, LSTM, Dense, Reshape, Lambda
 from sklearn.model_selection import train_test_split
 import pickle
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # todo
 # and-or graph network (based on tabulated LCS?)
@@ -26,7 +27,7 @@ tokenizer = tf.keras.preprocessing.text.Tokenizer(char_level=True)
 source = pd.read_csv('coba.csv')
 #random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
 #random_labels=pd.concat([source['label'], source['label']])
-random_strings=pd.concat([source['rasm2alpha']])
+random_strings=pd.concat([source['rasm']])
 random_labels=pd.concat([source['val']])
 
 
@@ -66,9 +67,20 @@ model.compile(optimizer='adam',
 model.summary()
 
 # Train the model
-epochs = 4000
+epochs = 8000
 batch_size = 32
-model.fit(train_sequences, train_labels, epochs=epochs, batch_size=batch_size, validation_split=0.2)
+#model.fit(train_sequences, train_labels, epochs=epochs, batch_size=batch_size, validation_split=0.2)
+history = model.fit(train_sequences, train_labels, 
+                    epochs=epochs, 
+                    batch_size=batch_size, 
+                    validation_split=0.2)
+
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+
 
 def save_variables(filename, *args):
     with open(filename, 'wb') as f:
@@ -136,13 +148,15 @@ hurf[36]= 'ی'
 hurf[37]= 'ڽ'
 
 # checking the weights Access the final Dense layer
-import matplotlib.pyplot as plt
-final_dense_layer = model.layers[-1]
-weights = final_dense_layer.get_weights()
-for i in range(0,40):
+weights, biases = model.layers[-2].get_weights()
+for i in range(0,num_classes):
     plt.figure()
-    plt.plot(weights[0][:,i])
-    plt.text(np.pi, 0, hurf[i], fontsize=20, ha='right', va='bottom', color='red')
+    plt.plot(weights[:,i])
+    if i==0:
+        label= 'space'
+    else:
+        label= hurf[i]
+    plt.text(np.pi, 0, label, fontsize=32, ha='left', va='bottom', color='red')
 
 
 
@@ -365,7 +379,7 @@ def lcs_multiple(strings, min_length=3):
         return sorted(all_subseqs.items(), key=lambda x: (-x[1], x[0]))[:6]
 
 
-def damerau_levenshtein_distance(s1, s2):
+def damerau_levenshtein_freeman_distance(s1, s2):
     d = {}
     len_str1 = len(s1)
     len_str2 = len(s2)
@@ -377,7 +391,19 @@ def damerau_levenshtein_distance(s1, s2):
 
     for i in range(len_str1):
         for j in range(len_str2):
-            cost = 0 if s1[i] == s2[j] else 1
+            #cost = 0 if s1[i] == s2[j] else 1
+            diff= abs( ord(s1[i-1])%8-ord(s2[i-1])%8 )
+            if diff>4:
+                diff= 8-diff
+            if s1[i-1] == s2[j-1]:
+                cost = 0
+            elif diff==1:
+                cost = 0.5
+            elif diff==4:
+                cost = 0.125
+            else:
+                cost = 1
+            
             d[(i, j)] = min(
                 d[(i - 1, j)] + 1,  # deletion
                 d[(i, j - 1)] + 1,  # insertion
@@ -387,44 +413,6 @@ def damerau_levenshtein_distance(s1, s2):
                 d[(i, j)] = min(d[(i, j)], d[i - 2, j - 2] + cost)  # transposition
 
     return d[len_str1 - 1, len_str2 - 1]
-
-# Example usage
-s1 = "example"
-s2 = "samples"
-distance = damerau_levenshtein_distance(s1, s2)
-print(f"The Damerau-Levenshtein distance between '{s1}' and '{s2}' is {distance}")
-
-
-def stringtorasm_LEV(remainder_stroke):
-    rasm=''
-    while len(remainder_stroke)>=3 and remainder_stroke!='':
-        # find the substring with smalesst edit distance
-        lev_dist_min=1e9
-        hurf_min=''
-        template_min=''
-        remainder_min=''
-        for template, data in hurf.nodes(data=True):
-            if len(remainder_stroke)>=3: 
-                hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
-                if lev_dist_temp<lev_dist_min:
-                    template_min= template
-                    hurf_min=data['label']
-                    lev_dist_min= lev_dist_temp
-                    remainder_min= remainder_temp
-                    # adding rules for terminal hurf
-            else:
-                remainder_stroke=''
-                break
-        # found the best possible match
-        # distance selection can be applied here
-        if template_min!='':
-            rasm+=hurf_min
-        if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
-            remainder_stroke=''
-        else:
-            remainder_stroke= remainder_min
-        #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
-
 
 
 def levenshteinX_distance(s1, s2):
@@ -480,9 +468,44 @@ def fuzzy_substring_matching(template, long_string):
             remainder = ''
         return best_match, min_distance, remainder
 
-import sys
+
+
+def stringtorasm_LEV(remainder_stroke):
+    rasm=''
+    while len(remainder_stroke)>=3 and remainder_stroke!='':
+        # find the substring with smalesst edit distance
+        lev_dist_min=1e9
+        hurf_min=''
+        template_min=''
+        remainder_min=''
+        for template, data in hurf.nodes(data=True):
+            if len(remainder_stroke)>=3: 
+                hurf_temp, lev_dist_temp, remainder_temp= fuzzy_substring_matching(template, remainder_stroke)
+                if lev_dist_temp<lev_dist_min:
+                    template_min= template
+                    hurf_min=data['label']
+                    lev_dist_min= lev_dist_temp
+                    remainder_min= remainder_temp
+                    # adding rules for terminal hurf
+            else:
+                remainder_stroke=''
+                break
+        # found the best possible match
+        # distance selection can be applied here
+        if template_min!='':
+            rasm+=hurf_min
+        if hurf_min=='ا' or hurf_min=='د' or hurf_min=='ذ' or hurf_min=='ر' or hurf_min=='ز' or hurf_min=='و':
+            remainder_stroke=''
+        else:
+            remainder_stroke= remainder_min
+        #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
+
+
+
+
 
 # Define the file path (replace 'your_file.txt' with your actual file name)
+import sys
 file_path = sys.argv[1]
 
 with open(file_path, 'r') as file:

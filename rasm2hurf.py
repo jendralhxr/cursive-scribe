@@ -24,8 +24,11 @@ tokenizer = tf.keras.preprocessing.text.Tokenizer(char_level=True)
 
 # data
 source = pd.read_csv('coba.csv')
-random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
-random_labels=pd.concat([source['label'], source['label']])
+#random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
+#random_labels=pd.concat([source['label'], source['label']])
+random_strings=pd.concat([source['rasm2alpha']])
+random_labels=pd.concat([source['val']])
+
 
 # Tokenize the strings
 tokenizer.fit_on_texts(random_strings)
@@ -85,11 +88,6 @@ def predict(string):
     predicted_index = np.argmax(evals)
     return( predicted_index, max(max(evals)) )
 
-# checking the weights
-# Access the final Dense layer
-# Get the weights of the final Dense layer
-final_dense_layer = model.layers[-1]
-weights = final_dense_layer.get_weights()
 
 
 # Test the prediction function
@@ -134,6 +132,16 @@ hurf[34]= 'ء'
 hurf[35]= 'ي'
 hurf[36]= 'ی'
 hurf[37]= 'ڽ'
+
+# checking the weights Access the final Dense layer
+import matplotlib.pyplot as plt
+final_dense_layer = model.layers[-1]
+weights = final_dense_layer.get_weights()
+for i in range(0,40):
+    plt.figure()
+    plt.plot(weights[0][:,i])
+    plt.text(np.pi, 0, hurf[i], fontsize=20, ha='right', va='bottom', color='red')
+
 
 
 def stringtorasm_LSTM(strokeorder):

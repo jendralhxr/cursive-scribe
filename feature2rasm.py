@@ -69,7 +69,7 @@ image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
 
-#image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
 kernel = np.ones((2,2),np.uint8)
 erosion = cv.erode(image_gray,kernel,iterations = 1)

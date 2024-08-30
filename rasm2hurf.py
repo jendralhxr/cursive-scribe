@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Embedding
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Reshape, Lambda
 from sklearn.model_selection import train_test_split
 import pickle
 import pandas as pd
@@ -52,7 +52,9 @@ model = Sequential([
     LSTM(64),
     Dense(64, activation='relu'),
     Dense(64, activation='relu'),
-    Dense(num_classes, activation='softmax')
+    Dense(max_length, activation='softmax'),
+    Dense(num_classes, activation='sigmoid'),
+    Lambda(lambda x: x * 8)            # Scale the output to range [0, 8]
 ])
 
 # Compile the model

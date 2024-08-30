@@ -190,7 +190,6 @@ def stringtorasm_LSTM(strokeorder):
         
 
 # LCS 
-    
 def lcs_tabulate(strings):
     #print(f"len {len(strings)}")
     dict={}
@@ -207,46 +206,14 @@ def lcs_tabulate(strings):
     return(largest_keys)    
 
 
-fieldstring= '2alpha-bfsdfs'
+fieldstring= 'rasm'
+fieldval= 'val'
 LCS = [{} for _ in range(40)]
 for i in range(0,40):
-    LCS[i]= lcs_tabulate(source[source['label'] == i][fieldstring])
+    LCS[i]= lcs_tabulate(source[source[fieldval] == i][fieldstring])
            
 from fuzzywuzzy import fuzz
 #fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage Jaro-Winkler I guess
-
-
-def stringtorasm_LCS(strokeorder):
-    remainder_stroke= strokeorder
-    rasm=''
-    while len(remainder_stroke)>=2 and remainder_stroke!='':
-        label_best=''
-        eval_best=-1
-        len_best=-1
-        len_current=len(remainder_stroke)
-        for n in range(min_length, max_length+1):
-            if n>len_current:
-                break
-            tee_string= remainder_stroke[0:n]
-            for i in range(0, len(LCS)):
-                for j in range(0, len(LCS[i])):
-                    tee_eval= fuzz.ratio(tee_string, LCS[i][j]) *pow(PHI, len(tee_string))
-                    if tee_eval> eval_best:
-                        #print(f"length:{n} class:{label_best} score:{eval_best}")
-                        eval_best= tee_eval
-                        label_best= i
-                        len_best= n
-        hurf_best= hurf[label_best]
-        #print(f"BEST length:{n} class:{label_best} score:{eval_best}")
-        rasm+= hurf_best
-        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
-            remainder_stroke=''
-        else:
-            remainder_stroke= remainder_stroke[len_best:]
-        if remainder_stroke=='':
-            break
-    return(rasm)
-
 
 def jaro_distance(s1, s2):
     if s1 == s2:
@@ -289,7 +256,7 @@ def jaro_distance(s1, s2):
     return (match / len_s1 + match / len_s2 + (match - t) / match) / 3.0
 
 
-def jaro_winkler_distance(s1, s2, p=0.1):
+def jaro_winkler_similarity(s1, s2, p=0.1):
     jaro_dist = jaro_distance(s1, s2)
 
     prefix = 0
@@ -303,10 +270,40 @@ def jaro_winkler_distance(s1, s2, p=0.1):
 
     return jaro_dist + (prefix * p * (1 - jaro_dist))
 
-# Example usage
-#s1 = "CRATE"
-#s2 = "TRACE"
-#print(f"Jaro-Winkler distance between '{s1}' and '{s2}' is {jaro_winkler_distance(s1, s2)}")
+
+
+def stringtorasm_LCS(strokeorder):
+    remainder_stroke= strokeorder
+    rasm=''
+    while len(remainder_stroke)>=2 and remainder_stroke!='':
+        label_best=''
+        eval_best=-1
+        len_best=-1
+        len_current=len(remainder_stroke)
+        for n in range(min_length, max_length+1):
+            if n>len_current:
+                break
+            tee_string= remainder_stroke[0:n]
+            for i in range(0, len(LCS)):
+                for j in range(0, len(LCS[i])):
+                    #tee_eval= fuzz.ratio(tee_string, LCS[i][j]) *pow(PHI, len(tee_string))
+                    tee_eval= jaro_winkler_similarity(tee_string, LCS[i][j], 0.1) *pow(PHI, len(tee_string))
+                    if tee_eval> eval_best:
+                        #print(f"length:{n} class:{label_best} score:{eval_best}")
+                        eval_best= tee_eval
+                        label_best= i
+                        len_best= n
+        hurf_best= hurf[label_best]
+        #print(f"BEST length:{n} class:{label_best} score:{eval_best}")
+        rasm+= hurf_best
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
+            remainder_stroke=''
+        else:
+            remainder_stroke= remainder_stroke[len_best:]
+        if remainder_stroke=='':
+            break
+    return(rasm)
+
 
 
 #-------

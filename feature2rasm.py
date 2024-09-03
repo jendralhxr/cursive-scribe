@@ -800,9 +800,11 @@ for i in range(len(components)):
             node_start= components[i].node_start
         scribe_dia.nodes[node_start]['color']= 'red'
         
+        # some cleaning
+        
         remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
         print(remainder_stroke)
-         
+        
         # refer to rasm2hurf.py
         # rule-based minimum feasible pattern
         #rasm= stringtorasm_LEV(remainder_stroke)
@@ -827,3 +829,13 @@ for i in range(len(components)):
 
 graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
+
+#### scratchpad
+G=extract_subgraph(scribe, 132)
+draw_graph_edgelabel(nx.minimum_spanning_tree(G, algorithm='kruskal')
+, 'pos_render', 2, None)
+draw_graph_edgelabel(nx.minimum_spanning_tree(G, algorithm='boruvka')
+, 'pos_render', 2, None)
+draw_graph_edgelabel(nx.minimum_spanning_tree(G, algorithm='prim')
+, 'pos_render', 2, None)
+draw_graph_edgelabel(prune_edges(G,2), 'pos_render', 2, None)

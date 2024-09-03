@@ -119,7 +119,7 @@ for n in range(len(moments)):
 
 # draw(render)
 
-# // image [pre-]processing ends here
+######## // image preprocessing ends here
 
 # generating nodes
 scribe= nx.Graph() # start anew, just in case
@@ -806,10 +806,10 @@ for i in range(len(components)):
                 smallest_degree_nodes = [node for node, _ in sorted(graph.degree(), key=lambda item: item[1])[:RASM_CANDIDATE]] 
                 node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1])
             else: 
-                # if stumpy, prefers starting close to median more to the right
+                # if stumpy, prefers starting close to median more to the right, but far away from centroid
                 rightmost_nodes= sorted([node for node in graph.nodes if node in pos], key=lambda node: pos[node][0], reverse=True)[:RASM_CANDIDATE]
                 smallest_degree_nodes = sorted(rightmost_nodes, key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
-                node_start = min(smallest_degree_nodes, key=lambda node: abs(pos[node][1] - components[i].centroid[1]))
+                node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[i].centroid))
             scribe.nodes[components[i].node_start]['color']= 'orange'
             scribe_dia.nodes[components[i].node_start]['color']= 'orange'
             components[i].node_start= node_start

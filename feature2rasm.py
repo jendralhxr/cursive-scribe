@@ -801,23 +801,22 @@ for i in range(len(components)):
         else: # actually optimizing the starting node
             scribe.nodes[components[i].node_start]['color']= 'orange'
             graph= extract_subgraph(scribe, components[i].node_start)
-            degrees = dict(graph.degree())
-            sorted_nodes_by_degree = sorted(degrees.items(), key=lambda item: item[1])
-            smallest_degree_nodes = sorted_nodes_by_degree[:RASM_CANDIDATE] 
-            smallest_degree_nodes = [node for node, _ in smallest_degree_nodes]
-            smallest_degree_nodes = [node for node in smallest_degree_nodes if (pos[node][0] > components[i].centroid[0])]
             if (components[i].rect[3]/components[i].rect[2] > pow(PHI,2)):
                 # if tall, prefer starting from top
+                smallest_degree_nodes = [node for node, _ in sorted(graph.degree(), key=lambda item: item[1])[:RASM_CANDIDATE]] 
                 node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1])
             else: 
-                # if stumpy, prefers starting close to median 
-                smallest_degree_nodes= sorted(smallest_degree_nodes, key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE/PHI)]
+                # if stumpy, prefers starting close to median more to the right
+                rightmost_nodes= sorted([node for node in graph.nodes if node in pos], key=lambda node: pos[node][0], reverse=True)[:RASM_CANDIDATE]
+                smallest_degree_nodes = sorted(rightmost_nodes, key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
                 node_start = min(smallest_degree_nodes, key=lambda node: abs(pos[node][1] - components[i].centroid[1]))
             scribe.nodes[components[i].node_start]['color']= 'orange'
+            scribe_dia.nodes[components[i].node_start]['color']= 'orange'
             components[i].node_start= node_start
             scribe.nodes[components[i].node_start]['color']= 'red'
+            scribe_dia.nodes[components[i].node_start]['color']= 'red'
         
-        scribe_dia.nodes[node_start]['color']= 'red'
+        #scribe_dia.nodes[node_start]['color']= 'red'
         
         # path finding
         remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
@@ -842,7 +841,7 @@ for i in range(len(components)):
         # Convert back to Numpy array and switch back from RGB to BGR
         ccv= np.asarray(pil_image)
         ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        draw(ccv)
+        #draw(ccv)
         #cv.imwrite(imagename+'LCS'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext

@@ -17,16 +17,18 @@ from collections import deque
 #      / | \
 #    5   6   7
 
-SLIC_SPACE= 3
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
-WHITESPACE_INTERVAL= 4
+RESIZE_FACTOR=2
+SLIC_SPACE= 3
+SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
+WHITESPACE_INTERVAL= 5
+
 RASM_EDGE_MAXDEG= 2
+RASM_CANDIDATE= 6
 
 THREVAL= 60
 CHANNEL= 2
-RESIZE_FACTOR=2
-SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
 
 def freeman(x, y):
     if (y==0):
@@ -788,20 +790,36 @@ FONTSIZE= 24
 
 for i in range(len(components)):
     if len(components[i].nodes)>3:
-        if components[i].node_start==-1:
-            node_pos=(0,0)
+        if components[i].node_start==-1: # in case of missing starting node
+            node_start_pos=(0,0)
             node_start=-1
             for n in components[i].nodes:
-                if pos[n][0] > node_pos[0]: # leftmost node as starting node if it is still missing
+                if pos[n][0] > node_start_pos[0]: # rightmost node as starting node if it is still missing
                     node_start= n
-                    node_pos= pos[n]
-            #node_start= components[i].nodes[0]
-        else:
-            node_start= components[i].node_start
+                    node_start_pos= pos[n]
+            scribe.nodes[node_start]['color']= 'red'
+        else: # actually optimizing the starting node
+            scribe.nodes[components[i].node_start]['color']= 'orange'
+            graph= extract_subgraph(scribe, components[i].node_start)
+            degrees = dict(graph.degree())
+            sorted_nodes_by_degree = sorted(degrees.items(), key=lambda item: item[1])
+            smallest_degree_nodes = sorted_nodes_by_degree[:RASM_CANDIDATE] 
+            smallest_degree_nodes = [node for node, _ in smallest_degree_nodes]
+            smallest_degree_nodes = [node for node in smallest_degree_nodes if (pos[node][0] > components[i].centroid[0])]
+            if (components[i].rect[3]/components[i].rect[2] > pow(PHI,2)):
+                # if tall, prefer starting from top
+                node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1])
+            else: 
+                # if stumpy, prefers starting close to median 
+                smallest_degree_nodes= sorted(smallest_degree_nodes, key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE/PHI)]
+                node_start = min(smallest_degree_nodes, key=lambda node: abs(pos[node][1] - components[i].centroid[1]))
+            scribe.nodes[components[i].node_start]['color']= 'orange'
+            components[i].node_start= node_start
+            scribe.nodes[components[i].node_start]['color']= 'red'
+        
         scribe_dia.nodes[node_start]['color']= 'red'
         
-        # some cleaning
-        
+        # path finding
         remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
         print(remainder_stroke)
         
@@ -832,10 +850,11 @@ draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
 
 #### scratchpad
 G=extract_subgraph(scribe, 132)
+draw_graph_edgelabel(G, 'pos_render', 2, None)
 draw_graph_edgelabel(nx.minimum_spanning_tree(G, algorithm='kruskal')
 , 'pos_render', 2, None)
 draw_graph_edgelabel(nx.minimum_spanning_tree(G, algorithm='boruvka')
 , 'pos_render', 2, None)
 draw_graph_edgelabel(nx.minimum_spanning_tree(G, algorithm='prim')
 , 'pos_render', 2, None)
-draw_graph_edgelabel(prune_edges(G,2), 'pos_render', 2, None)
+draw_graph_edgelabel(prune_edges(G, 2), 'pos_render', 2, None)

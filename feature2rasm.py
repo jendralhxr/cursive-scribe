@@ -551,197 +551,8 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 #ra1=extract_subgraph2(scribe, 77, 182)
 #ra2=extract_subgraph2(scribe, 38, 180)
 
-######
-# isolated
-hurf= nx.Graph()
-hurf.add_node('222',	 label='ا')
-hurf.add_node('642-',	 label='ب')
-hurf.add_node('642+',	 	label='ت')
-hurf.add_node('741+',	 	label='ة')
-hurf.add_node('471+',	 	label='ة')
-hurf.add_node('642+',	 	label='ث')
-hurf.add_node('642+',  label='ڽ')
-hurf.add_node('474-',	 label='ج')
-hurf.add_node('474-',	 label='چ')
-hurf.add_node('474',	 label='ح')
-hurf.add_node('474+', label='خ')
-hurf.add_node('074-',	 label='ج')
-hurf.add_node('074-',	 label='چ')
-hurf.add_node('074',	 label='ح')
-hurf.add_node('074+', label='خ')
-hurf.add_node('7744', label='د')
-hurf.add_node('7744+', label='ذ')
-hurf.add_node('655', label='ر')
-hurf.add_node('655+',  label='ز')
-hurf.add_node('5353', label='س')
-hurf.add_node('5353+', label='ش')
-hurf.add_node('645', label='ص')
-hurf.add_node('645+', label='ض')
-hurf.add_node('6422', label='ط')
-hurf.add_node('6422+', label='ظ')
-hurf.add_node('4605', label='ع')
-hurf.add_node('4605+', label='غ')
-hurf.add_node('4605+', label='ڠ')
-hurf.add_node('644+', label='ف')
-hurf.add_node('644+', label='ڤ')
-hurf.add_node('644+', label='ق')
-hurf.add_node('4674', label='ک')
-hurf.add_node('5574', label='ک')
-hurf.add_node('4674+', label='ݢ')
-hurf.add_node('5574+', label='ݢ')
-hurf.add_node('6644', label='ل')
-hurf.add_node('7466', label='م')
-hurf.add_node('642+',  label='ن')
-hurf.add_node('4175', label='و')
-hurf.add_node('4175+', label='ۏ')
-hurf.add_node('471', label='ه')
-hurf.add_node('741', label='ه')
-hurf.add_node('505', label='ء')
-hurf.add_node('054-', label='ي')
-hurf.add_node('0543', label='ی')
 
-# initial
-hurf.add_node('6434-', label='ب')
-hurf.add_node('6434+', label='ن')
-hurf.add_node('6434+', label='ت')
-hurf.add_node('6434+', label='ث')
-hurf.add_node('6434+', label='ڽ')
-hurf.add_node('6434-', label='ي')
-hurf.add_node('6434', label='ی')
-hurf.add_node('744-',	 label='ج')
-hurf.add_node('744-',	 label='چ')
-hurf.add_node('744',	 label='ح')
-hurf.add_node('744+', label='خ')
-hurf.add_node('0744-',	 label='ج')
-hurf.add_node('0744-',	 label='چ')
-hurf.add_node('0744',	 label='ح')
-hurf.add_node('0744+', label='خ')
-hurf.add_node('6464', label='س')
-hurf.add_node('6464+', label='ش')
-hurf.add_node('5744', label='ص')
-hurf.add_node('5744+', label='ض')
-hurf.add_node('5742', label='ط')
-hurf.add_node('5742+', label='ظ')
-hurf.add_node('5746', label='ط')
-hurf.add_node('5746', label='ظ')
-hurf.add_node('174', label='ع')
-hurf.add_node('174+',  label='غ')
-hurf.add_node('174+',  label='ڠ')
-hurf.add_node('164+',  label='ف')
-hurf.add_node('1644+', label='ڤ')
-hurf.add_node('1644+', label='ق')
-hurf.add_node('4674', label='ک')
-hurf.add_node('5574', label='ک')
-hurf.add_node('4674', label='ݢ')
-hurf.add_node('5574', label='ݢ')
-hurf.add_node('6644', label='ل')
-hurf.add_node('7444', label='م')
-hurf.add_node('3544', label='م')
-
-# medial
-hurf.add_node('2434-', label='ب')
-hurf.add_node('2434+', label='ن')
-hurf.add_node('2434+', label='ت')
-hurf.add_node('2434+', label='ث')
-hurf.add_node('2434+', label='ڽ')
-hurf.add_node('2434-', label='ي')
-hurf.add_node('2434', label='ی')
-hurf.add_node('344-',	 label='ج')
-hurf.add_node('344-',	 label='چ')
-hurf.add_node('344',	 label='ح')
-hurf.add_node('344+', label='خ')
-hurf.add_node('3434', label='س')
-hurf.add_node('3434+', label='ش')
-hurf.add_node('1164', label='ص')
-hurf.add_node('1164', label='ض')
-hurf.add_node('11622', label='ط')
-hurf.add_node('11622+', label='ظ')
-hurf.add_node('1166', label='ط')
-hurf.add_node('1166+', label='ظ')
-hurf.add_node('30544', label='ع')
-hurf.add_node('30544+', label='غ')
-hurf.add_node('30544+', label='ڠ')
-hurf.add_node('34544', label='ع')
-hurf.add_node('3454+', label='غ')
-hurf.add_node('3454+', label='ڠ')
-hurf.add_node('3464+', label='ف')
-hurf.add_node('3464+', label='ڤ')
-hurf.add_node('3464+', label='ق')
-hurf.add_node('4311', label='ک')
-hurf.add_node('4200', label='ک')
-hurf.add_node('4311', label='ݢ')
-hurf.add_node('4200', label='ݢ')
-hurf.add_node('6644', label='ل')
-hurf.add_node('7444', label='م')
-hurf.add_node('3544', label='م')
-
-# final
-hurf.add_node('466',	 label='ا')
-hurf.add_node('422',	 label='ا')
-hurf.add_node('6432-', label='ب')
-hurf.add_node('6432+', label='ت')
-hurf.add_node('6432+', label='ن')
-hurf.add_node('6432+', label='ث')
-hurf.add_node('6432+', label='ڽ')
-hurf.add_node('6431-', label='ب')
-hurf.add_node('6431+', label='ت')
-hurf.add_node('6431+', label='ن')
-hurf.add_node('6431+', label='ث')
-hurf.add_node('6431+', label='ڽ')
-hurf.add_node('2250+', label='ة')
-hurf.add_node('2410+', label='ة')
-hurf.add_node('2250', label='ه')
-hurf.add_node('2410', label='ه')
-hurf.add_node('2251+', label='ة')
-hurf.add_node('2411+', label='ة')
-hurf.add_node('2251', label='ه')
-hurf.add_node('2411', label='ه')
-hurf.add_node('3467-', label='ج')
-hurf.add_node('3467-', label='چ')
-hurf.add_node('3467', label='ح')
-hurf.add_node('3467+', label='خ')
-hurf.add_node('3505-', label='ج')
-hurf.add_node('3505-', label='چ')
-hurf.add_node('3505', label='ح')
-hurf.add_node('3505+', label='خ')
-hurf.add_node('3501-', label='ج')
-hurf.add_node('3501-', label='چ')
-hurf.add_node('3501', label='ح')
-hurf.add_node('3501+', label='خ')
-hurf.add_node('3344', label='د')
-hurf.add_node('3344+', label='ذ')
-hurf.add_node('3555', label='ر')
-hurf.add_node('3555+', label='ز')
-hurf.add_node('3434', label='س')
-hurf.add_node('3434+', label='ش')
-hurf.add_node('3545', label='ص')
-hurf.add_node('3545+', label='ض')
-hurf.add_node('1542', label='ط')
-hurf.add_node('1542+', label='ظ')
-hurf.add_node('41422', label='ط')
-hurf.add_node('41422+', label='ظ')
-hurf.add_node('3067', label='ع')
-hurf.add_node('3067', label='غ')
-hurf.add_node('3067+', label='ڠ')
-hurf.add_node('1644+', label='ف')
-hurf.add_node('3043+', label='ڤ')
-hurf.add_node('3043+', label='ق')
-hurf.add_node('4422', label='ک')
-hurf.add_node('4466', label='ک')
-hurf.add_node('4422+', label='ݢ')
-hurf.add_node('4466+', label='ݢ')
-hurf.add_node('2254', label='ل')
-hurf.add_node('5466', label='ل')
-hurf.add_node('7466', label='م')
-hurf.add_node('3566', label='م')
-hurf.add_node('4175', label='و')
-hurf.add_node('4175+', label='ۏ')
-hurf.add_node('5543-', label='ي')
-hurf.add_node('5543', label='ی')
-hurf.add_node('5443-', label='ي')
-hurf.add_node('5443', label='ی')
-
-#####
+###### graph construction from line image ends here
 
 def custom_bfs_dfs(graph, start_node):
     queue = deque([start_node])  # Initialize the queue with the start node
@@ -769,6 +580,8 @@ def custom_bfs_dfs(graph, start_node):
             node = queue.popleft()  # Get the next node from the BFS queue
         neighbors = list(graph.neighbors(node))  # Get neighbors of the current node
         unvisited_neighbors = [neighbor for neighbor in neighbors if neighbor not in visited]
+        unvisited_neighbors.sort(key=lambda x: pos[x][0], reverse=True)
+        #unvisited_neighbors.sort(key=lambda x: pos[x][0])
         
         # print all the branch first then traverse
         if unvisited_neighbors:
@@ -783,7 +596,6 @@ def custom_bfs_dfs(graph, start_node):
                     queue.append(neighbor)  # Add the neighbor to the BFS queue
 
     return edges
-
 
 from PIL import ImageFont, ImageDraw, Image
 FONTSIZE= 24
@@ -841,19 +653,125 @@ for i in range(len(components)):
         # Convert back to Numpy array and switch back from RGB to BGR
         ccv= np.asarray(pil_image)
         ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        #draw(ccv)
-        #cv.imwrite(imagename+'LCS'+str(i).zfill(2)+'.png', ccv)
+        draw(ccv)
+        #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, "sungguh-graph3.png")
+#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
 
 #### scratchpad
+path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
+
+
+def non_returning_tspNORE(graph, start_node):
+    visited_nodes = set()  # Set to keep track of visited nodes
+    visited_edges = set()  # Set to keep track of visited edges
+    tour = []  # List to store the edges of the tour
+
+    def dfs(node):
+        visited_nodes.add(node)
+        neighbors = sorted(graph.neighbors(node), key=lambda neighbor: pos[neighbor][0], reverse=True)
+        for neighbor in neighbors:
+            edge = (node, neighbor) if node < neighbor else (neighbor, node)  # Normalize edge (undirected graph)
+            if edge not in visited_edges:
+                # Mark this edge as visited
+                visited_edges.add(edge)
+                # Store the edge in the tour
+                tour.append(edge)
+                # Continue DFS traversal on the neighbor
+                if neighbor not in visited_nodes:
+                    dfs(neighbor)
+
+    # Start the DFS traversal from the start node
+    dfs(start_node)
+
+    # Return the tour (edges traversed in the TSP-like traversal)
+    return tour
+
+def non_returning_tsp(graph, start_node):
+    visited_nodes = set()  # Set to keep track of visited nodes
+    tour = []  # List to store the edges of the tour
+
+    def dfs(node):
+        visited_nodes.add(node)
+        neighbors = sorted(graph.neighbors(node), key=lambda neighbor: pos[neighbor][0], reverse=True)
+        for neighbor in neighbors:
+            edge = (node, neighbor) if node < neighbor else (neighbor, node)  # Normalize edge (undirected graph)
+            
+            # Store the edge in the tour even if it's been visited
+            tour.append(edge)
+            #print(f"Traversing edge: {edge}")
+            
+            # Continue DFS traversal on the neighbor
+            if neighbor not in visited_nodes:
+                dfs(neighbor)
+
+    # Start the DFS traversal from the start node
+    dfs(start_node)
+
+    cond_tour = []
+    for t in tour:
+        if t not in cond_tour :
+            cond_tour .append(t)
+        
+    #return tour
+    return cond_tour
+
+
+# kalo keciiil
+i=2
 G=extract_subgraph(scribe, 132)
-draw_graph_edgelabel(G, 'pos_render', 2, None)
-draw_graph_edgelabel(nx.minimum_spanning_tree(G, algorithm='kruskal')
-, 'pos_render', 2, None)
-draw_graph_edgelabel(nx.minimum_spanning_tree(G, algorithm='boruvka')
-, 'pos_render', 2, None)
-draw_graph_edgelabel(nx.minimum_spanning_tree(G, algorithm='prim')
-, 'pos_render', 2, None)
-draw_graph_edgelabel(prune_edges(G, 2), 'pos_render', 2, None)
+draw_graph_edgelabel(G, 'pos_render', 2, "ntsp-sungguh3-asis.png")
+path_vane_edges(G, list(non_returning_tsp(G, components[i].node_start)))
+
+Gk= nx.minimum_spanning_tree(G, algorithm='kruskal')
+draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-kruskal.png")
+path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
+
+Gk= nx.minimum_spanning_tree(G, algorithm='boruvka')
+draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-boruvka.png")
+path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
+
+Gk= nx.minimum_spanning_tree(G, algorithm='prim')
+draw_graph_edgelabel(Gk, 'pos_render', 2, "TSPrepeat-sungguh3-prim.png")
+path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
+
+Gk= prune_edges(G, 2)
+draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop2.png")
+path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
+
+Gk= prune_edges(G, 5)
+draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop5.png")
+path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
+
+
+
+
+
+
+# kalo gede
+i=1
+G=extract_subgraph(scribe, 431)
+draw_graph_edgelabel(G, 'pos_render', 2, "sungguh3-asis.png")
+path_vane_edges(G, list(custom_bfs_dfs(G, components[i].node_start)))
+
+Gk= nx.minimum_spanning_tree(G, algorithm='kruskal')
+draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-kruskal.png")
+path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+
+Gk= nx.minimum_spanning_tree(G, algorithm='boruvka')
+draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-boruvka.png")
+path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+
+Gk= nx.minimum_spanning_tree(G, algorithm='prim')
+draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-prim.png")
+path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+
+Gk= prune_edges(G, 2)
+draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-hop2.png")
+path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+
+Gk= prune_edges(G, 4)
+draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-hop4.png")
+path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))

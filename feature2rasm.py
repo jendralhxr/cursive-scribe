@@ -657,121 +657,121 @@ for i in range(len(components)):
         #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, "sungguh-graph3.png")
-#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
+#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, "sungguh-graph3.png")
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
 
-#### scratchpad
-path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
+# #### scratchpad
+# path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
 
 
-def non_returning_tspNORE(graph, start_node):
-    visited_nodes = set()  # Set to keep track of visited nodes
-    visited_edges = set()  # Set to keep track of visited edges
-    tour = []  # List to store the edges of the tour
+# def non_returning_tspNORE(graph, start_node):
+#     visited_nodes = set()  # Set to keep track of visited nodes
+#     visited_edges = set()  # Set to keep track of visited edges
+#     tour = []  # List to store the edges of the tour
 
-    def dfs(node):
-        visited_nodes.add(node)
-        neighbors = sorted(graph.neighbors(node), key=lambda neighbor: pos[neighbor][0], reverse=True)
-        for neighbor in neighbors:
-            edge = (node, neighbor) if node < neighbor else (neighbor, node)  # Normalize edge (undirected graph)
-            if edge not in visited_edges:
-                # Mark this edge as visited
-                visited_edges.add(edge)
-                # Store the edge in the tour
-                tour.append(edge)
-                # Continue DFS traversal on the neighbor
-                if neighbor not in visited_nodes:
-                    dfs(neighbor)
+#     def dfs(node):
+#         visited_nodes.add(node)
+#         neighbors = sorted(graph.neighbors(node), key=lambda neighbor: pos[neighbor][0], reverse=True)
+#         for neighbor in neighbors:
+#             edge = (node, neighbor) if node < neighbor else (neighbor, node)  # Normalize edge (undirected graph)
+#             if edge not in visited_edges:
+#                 # Mark this edge as visited
+#                 visited_edges.add(edge)
+#                 # Store the edge in the tour
+#                 tour.append(edge)
+#                 # Continue DFS traversal on the neighbor
+#                 if neighbor not in visited_nodes:
+#                     dfs(neighbor)
 
-    # Start the DFS traversal from the start node
-    dfs(start_node)
+#     # Start the DFS traversal from the start node
+#     dfs(start_node)
 
-    # Return the tour (edges traversed in the TSP-like traversal)
-    return tour
+#     # Return the tour (edges traversed in the TSP-like traversal)
+#     return tour
 
-def non_returning_tsp(graph, start_node):
-    visited_nodes = set()  # Set to keep track of visited nodes
-    tour = []  # List to store the edges of the tour
+# def non_returning_tsp(graph, start_node):
+#     visited_nodes = set()  # Set to keep track of visited nodes
+#     tour = []  # List to store the edges of the tour
 
-    def dfs(node):
-        visited_nodes.add(node)
-        neighbors = sorted(graph.neighbors(node), key=lambda neighbor: pos[neighbor][0], reverse=True)
-        for neighbor in neighbors:
-            edge = (node, neighbor) if node < neighbor else (neighbor, node)  # Normalize edge (undirected graph)
+#     def dfs(node):
+#         visited_nodes.add(node)
+#         neighbors = sorted(graph.neighbors(node), key=lambda neighbor: pos[neighbor][0], reverse=True)
+#         for neighbor in neighbors:
+#             edge = (node, neighbor) if node < neighbor else (neighbor, node)  # Normalize edge (undirected graph)
             
-            # Store the edge in the tour even if it's been visited
-            tour.append(edge)
-            #print(f"Traversing edge: {edge}")
+#             # Store the edge in the tour even if it's been visited
+#             tour.append(edge)
+#             #print(f"Traversing edge: {edge}")
             
-            # Continue DFS traversal on the neighbor
-            if neighbor not in visited_nodes:
-                dfs(neighbor)
+#             # Continue DFS traversal on the neighbor
+#             if neighbor not in visited_nodes:
+#                 dfs(neighbor)
 
-    # Start the DFS traversal from the start node
-    dfs(start_node)
+#     # Start the DFS traversal from the start node
+#     dfs(start_node)
 
-    cond_tour = []
-    for t in tour:
-        if t not in cond_tour :
-            cond_tour .append(t)
+#     cond_tour = []
+#     for t in tour:
+#         if t not in cond_tour :
+#             cond_tour .append(t)
         
-    #return tour
-    return cond_tour
+#     #return tour
+#     return cond_tour
 
 
-# kalo keciiil
-i=2
-G=extract_subgraph(scribe, 132)
-draw_graph_edgelabel(G, 'pos_render', 2, "ntsp-sungguh3-asis.png")
-path_vane_edges(G, list(non_returning_tsp(G, components[i].node_start)))
+# # kalo keciiil
+# i=2
+# G=extract_subgraph(scribe, 132)
+# draw_graph_edgelabel(G, 'pos_render', 2, "ntsp-sungguh3-asis.png")
+# path_vane_edges(G, list(non_returning_tsp(G, components[i].node_start)))
 
-Gk= nx.minimum_spanning_tree(G, algorithm='kruskal')
-draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-kruskal.png")
-path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
+# Gk= nx.minimum_spanning_tree(G, algorithm='kruskal')
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-kruskal.png")
+# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
 
-Gk= nx.minimum_spanning_tree(G, algorithm='boruvka')
-draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-boruvka.png")
-path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
+# Gk= nx.minimum_spanning_tree(G, algorithm='boruvka')
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-boruvka.png")
+# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
 
-Gk= nx.minimum_spanning_tree(G, algorithm='prim')
-draw_graph_edgelabel(Gk, 'pos_render', 2, "TSPrepeat-sungguh3-prim.png")
-path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
+# Gk= nx.minimum_spanning_tree(G, algorithm='prim')
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "TSPrepeat-sungguh3-prim.png")
+# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
 
-Gk= prune_edges(G, 2)
-draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop2.png")
-path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
+# Gk= prune_edges(G, 2)
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop2.png")
+# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
 
-Gk= prune_edges(G, 5)
-draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop5.png")
-path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
-
-
-
+# Gk= prune_edges(G, 5)
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop5.png")
+# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
 
 
 
-# kalo gede
-i=1
-G=extract_subgraph(scribe, 431)
-draw_graph_edgelabel(G, 'pos_render', 2, "sungguh3-asis.png")
-path_vane_edges(G, list(custom_bfs_dfs(G, components[i].node_start)))
 
-Gk= nx.minimum_spanning_tree(G, algorithm='kruskal')
-draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-kruskal.png")
-path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
 
-Gk= nx.minimum_spanning_tree(G, algorithm='boruvka')
-draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-boruvka.png")
-path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
 
-Gk= nx.minimum_spanning_tree(G, algorithm='prim')
-draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-prim.png")
-path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+# # kalo gede
+# i=1
+# G=extract_subgraph(scribe, 431)
+# draw_graph_edgelabel(G, 'pos_render', 2, "sungguh3-asis.png")
+# path_vane_edges(G, list(custom_bfs_dfs(G, components[i].node_start)))
 
-Gk= prune_edges(G, 2)
-draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-hop2.png")
-path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+# Gk= nx.minimum_spanning_tree(G, algorithm='kruskal')
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-kruskal.png")
+# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
 
-Gk= prune_edges(G, 4)
-draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-hop4.png")
-path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+# Gk= nx.minimum_spanning_tree(G, algorithm='boruvka')
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-boruvka.png")
+# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+
+# Gk= nx.minimum_spanning_tree(G, algorithm='prim')
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-prim.png")
+# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+
+# Gk= prune_edges(G, 2)
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-hop2.png")
+# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+
+# Gk= prune_edges(G, 4)
+# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-hop4.png")
+# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))

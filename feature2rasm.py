@@ -597,6 +597,28 @@ def custom_bfs_dfs(graph, start_node):
 
     return edges
 
+def bfs_with_closest_priority(G, start_node, pos):
+    visited = set()  # Track visited nodes
+    priority_queue = []  # Use heapq for priority queue
+    heapq.heappush(priority_queue, (0, start_node))  # Push the start node with priority 0
+    
+    while priority_queue:
+        # Get the node with the highest priority (smallest distance)
+        _, current_node = heapq.heappop(priority_queue)
+        
+        if current_node not in visited:
+            visited.add(current_node)
+            #print(f"Visited {current_node}")  # Do something with the node
+            
+            # Explore neighbors
+            for neighbor in G.neighbors(current_node):
+                if neighbor not in visited:
+                    distance = pdistance(pos[neighbor], pos[neighbor])
+                    heapq.heappush(priority_queue, (distance, neighbor))
+
+
+
+# drawing the rasm graph
 from PIL import ImageFont, ImageDraw, Image
 FONTSIZE= 24
 

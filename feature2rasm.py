@@ -22,7 +22,7 @@ PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 RESIZE_FACTOR=2
 SLIC_SPACE= 3
 SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
-WHITESPACE_INTERVAL= 5
+WHITESPACE_INTERVAL= 4
 
 RASM_EDGE_MAXDEG= 2
 RASM_CANDIDATE= 6
@@ -328,7 +328,7 @@ def line_iterator(img, point0, point1):
                 has_dark= True
                 break
         #print(f"{n} space {has_dark}")
-        if has_dark==True: # would prefer separated stroke
+        if has_dark==False: # would prefer joint stroke
             break
     return has_dark
     
@@ -660,7 +660,8 @@ for i in range(len(components)):
         #scribe_dia.nodes[node_start]['color']= 'red'
         
         # path finding
-        remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
+        #remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
+        remainder_stroke= path_vane_edges(scribe, list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start)))
         print(remainder_stroke)
         
         # refer to rasm2hurf.py

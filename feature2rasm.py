@@ -597,10 +597,12 @@ def custom_bfs_dfs(graph, start_node):
 
     return edges
 
-def bfs_with_closest_priority(G, start_node, pos):
-    visited = set()  # Track visited nodes
+def bfs_with_closest_priority(G, start_node):
+    visited = set()  # track visited nodes
+    edges = [] # traversed edges
     priority_queue = []  # Use heapq for priority queue
     heapq.heappush(priority_queue, (0, start_node))  # Push the start node with priority 0
+    
     
     while priority_queue:
         # Get the node with the highest priority (smallest distance)
@@ -615,6 +617,11 @@ def bfs_with_closest_priority(G, start_node, pos):
                 if neighbor not in visited:
                     distance = pdistance(pos[neighbor], pos[neighbor])
                     heapq.heappush(priority_queue, (distance, neighbor))
+                    edges.append((current_node, neighbor))
+    
+    # try either, should be good enough
+    #return visited
+    return edges
 
 
 

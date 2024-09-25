@@ -648,9 +648,11 @@ for i in range(len(components)):
                 node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1])
             else: 
                 # if stumpy, prefers starting close to median more to the right, but far away from centroid
-                rightmost_nodes= sorted([node for node in graph.nodes if node in pos], key=lambda node: pos[node][0], reverse=True)[:RASM_CANDIDATE]
-                smallest_degree_nodes = sorted(rightmost_nodes, key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
-                node_start = min(smallest_degree_nodes, key=lambda node: pdistance(pos[node], (pos[node][0],components[i].centroid[1]) ))
+                rightmost_nodes= sorted([node for node in graph.nodes if node in pos], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE*pow(PHI,2))]
+                smallest_degree_nodes = sorted(rightmost_nodes, key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE*pow(PHI,1))]
+                furthest_nodes = sorted(smallest_degree_nodes, key=lambda node:  pdistance(pos[node], pos[components[i].node_end]) )[:int(RASM_CANDIDATE/PHI)]
+                node_start = min(furthest_nodes, key=lambda node: pdistance(pos[node], (pos[node][0],components[i].centroid[1]) ))
+                
             scribe.nodes[components[i].node_start]['color']= 'orange'
             scribe_dia.nodes[components[i].node_start]['color']= 'orange'
             components[i].node_start= node_start

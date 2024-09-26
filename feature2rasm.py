@@ -83,8 +83,14 @@ eroded_image = cv.erode(image_gray, kernel, iterations=1)
 edge_mask = cv.bitwise_not(edges)
 selective_eroded = cv.bitwise_and(eroded_image, eroded_image, mask=edge_mask)
 
+cv.imwrite('/shm/kope.png', selective_eroded)
 _, gray = cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_OTSU) # less smear
-#_, gray= cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
+
+ret, gray= cv.threshold(selective_eroded,127,THREVAL,cv.THRESH_BINARY)
+#_, gray = cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_OTSU) # less smear
+#_, gray= cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_TRIANGLE) # works better with dynamic-selective erosion
+#draw(gray)
+
 
 cue= gray.copy()
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)

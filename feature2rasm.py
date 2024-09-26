@@ -73,9 +73,17 @@ width= image.shape[1]
 
 image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
-kernel = np.ones((2,2),np.uint8)
-erosion = cv.erode(image_gray,kernel,iterations = 1)
-_, gray = cv.threshold(erosion, 0, THREVAL, cv.THRESH_OTSU) # less smear
+
+kernel_size=2
+canny_threshold1=100
+canny_threshold2=200
+edges = cv.Canny(image_gray, canny_threshold1, canny_threshold2)
+kernel = np.ones((kernel_size, kernel_size), np.uint8)
+eroded_image = cv.erode(image_gray, kernel, iterations=1)
+edge_mask = cv.bitwise_not(edges)
+selective_eroded = cv.bitwise_and(eroded_image, eroded_image, mask=edge_mask)
+
+_, gray = cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #_, gray= cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
 
 cue= gray.copy()
@@ -328,7 +336,7 @@ def line_iterator(img, point0, point1):
                 has_dark= True
                 break
         #print(f"{n} space {has_dark}")
-        if has_dark==False: # would prefer joint stroke
+        if has_dark==True: # would prefer separate strokes (Zulhaj)
             break
     return has_dark
     
@@ -776,11 +784,6 @@ draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
 # Gk= prune_edges(G, 5)
 # draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop5.png")
 # path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
-
-
-
-
-
 
 # # kalo gede
 # i=1

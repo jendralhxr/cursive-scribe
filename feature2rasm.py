@@ -403,7 +403,8 @@ def prune_edges(graph, hop):
                     G.remove_edge(u, v)
     return(G)
 
-#scribe= prune_edges(scribe, 2)
+#scribe= prune_edges(scribe, 3)
+#scribe= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
 
 degree_rasm= scribe.degree()
 scribe_dia= scribe.copy()
@@ -631,6 +632,9 @@ FONTSIZE= 24
 
 for i in range(len(components)):
     if len(components[i].nodes)>3:
+        scribe.nodes[components[i].node_start]['color']= 'orange'
+        scribe_dia.nodes[components[i].node_start]['color']= 'orange'
+        
         if components[i].node_start==-1: # in case of missing starting node
             node_start_pos=(0,0)
             node_start=-1
@@ -640,7 +644,6 @@ for i in range(len(components)):
                     node_start_pos= pos[n]
             scribe.nodes[node_start]['color']= 'red'
         else: # actually optimizing the starting node
-            scribe.nodes[components[i].node_start]['color']= 'orange'
             graph= extract_subgraph(scribe, components[i].node_start)
             if (components[i].rect[3]/components[i].rect[2] > pow(PHI,2)):
                 # if tall, prefer starting from top
@@ -648,18 +651,15 @@ for i in range(len(components)):
                 node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1])
             else: 
                 # if stumpy, prefers starting close to median more to the right, but far away from centroid
-                rightmost_nodes= sorted([node for node in graph.nodes if node in pos], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE*pow(PHI,2))]
-                smallest_degree_nodes = sorted(rightmost_nodes, key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE*pow(PHI,1))]
-                furthest_nodes = sorted(smallest_degree_nodes, key=lambda node:  pdistance(pos[node], pos[components[i].node_end]) )[:int(RASM_CANDIDATE/PHI)]
-                node_start = min(furthest_nodes, key=lambda node: pdistance(pos[node], (pos[node][0],components[i].centroid[1]) ))
-                
-            scribe.nodes[components[i].node_start]['color']= 'orange'
-            scribe_dia.nodes[components[i].node_start]['color']= 'orange'
-            components[i].node_start= node_start
-            scribe.nodes[components[i].node_start]['color']= 'red'
-            scribe_dia.nodes[components[i].node_start]['color']= 'red'
+                smallest_degree_nodes = sorted([node for node in graph.nodes if node in pos], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE*PHI)]
+                farthest_nodes = sorted([node for node in smallest_degree_nodes if pos[node][0] > (components[i].centroid[0]-SLIC_SPACE)],key=lambda node: pdistance(pos[node], pos[components[i].node_end]))[:int(RASM_CANDIDATE)]
+                #rightmost_nodes= sorted(farthest_nodes, key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE/PHI)]
+                #node_start = max(farthest_nodes, key=lambda node: pdistance(pos[node], (pos[node][0],components[i].centroid[1]) ))
+                node_start = min(farthest_nodes, key=lambda node: pos[node][1] )
         
-        #scribe_dia.nodes[node_start]['color']= 'red'
+        components[i].node_start= node_start
+        scribe.nodes[components[i].node_start]['color']= 'red'
+        scribe_dia.nodes[components[i].node_start]['color']= 'red'
         
         # path finding
         #remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))

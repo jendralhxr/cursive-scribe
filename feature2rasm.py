@@ -74,23 +74,19 @@ width= image.shape[1]
 image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
 
-kernel_size=2
-canny_threshold1=100
-canny_threshold2=200
-edges = cv.Canny(image_gray, canny_threshold1, canny_threshold2)
-kernel = np.ones((kernel_size, kernel_size), np.uint8)
-eroded_image = cv.erode(image_gray, kernel, iterations=1)
-edge_mask = cv.bitwise_not(edges)
-selective_eroded = cv.bitwise_and(eroded_image, eroded_image, mask=edge_mask)
-
-cv.imwrite('/shm/kope.png', selective_eroded)
-_, gray = cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_OTSU) # less smear
-
-ret, gray= cv.threshold(selective_eroded,127,THREVAL,cv.THRESH_BINARY)
-#_, gray = cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_OTSU) # less smear
+_, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #_, gray= cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_TRIANGLE) # works better with dynamic-selective erosion
 #draw(gray)
 
+kernel_size=2
+canny_threshold1=100
+canny_threshold2=200
+edges = cv.Canny(gray, canny_threshold1, canny_threshold2)
+kernel = np.ones((kernel_size, kernel_size), np.uint8)
+eroded_image = cv.erode(gray, kernel, iterations=1)
+edge_mask = cv.bitwise_not(edges)
+selective_eroded = cv.bitwise_and(eroded_image, eroded_image, mask=edge_mask)
+ret, gray= cv.threshold(selective_eroded,1,THREVAL,cv.THRESH_BINARY)
 
 cue= gray.copy()
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
@@ -665,11 +661,11 @@ for i in range(len(components)):
                 node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1])
             else: 
                 # if stumpy, prefers starting close to median more to the right, but far away from centroid
-                smallest_degree_nodes = sorted([node for node in graph.nodes if node in pos], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE*PHI)]
-                farthest_nodes = sorted([node for node in smallest_degree_nodes if pos[node][0] > (components[i].centroid[0]-SLIC_SPACE)],key=lambda node: pdistance(pos[node], pos[components[i].node_end]))[:int(RASM_CANDIDATE)]
-                #rightmost_nodes= sorted(farthest_nodes, key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE/PHI)]
-                #node_start = max(farthest_nodes, key=lambda node: pdistance(pos[node], (pos[node][0],components[i].centroid[1]) ))
-                node_start = min(farthest_nodes, key=lambda node: pos[node][1] )
+                rightmost_nodes= sorted([node for node in graph.nodes if pos[node][0] > (components[i].centroid[0]-SLIC_SPACE)], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE*PHI)]
+                topmost_nodes = sorted([node for node in rightmost_nodes],key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
+                smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
+                node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[i].centroid))
+                #node_start = max(rightmost_nodes, key=lambda node: pos[node][1] )
         
         components[i].node_start= node_start
         scribe.nodes[components[i].node_start]['color']= 'red'
@@ -699,11 +695,11 @@ for i in range(len(components)):
         # Convert back to Numpy array and switch back from RGB to BGR
         ccv= np.asarray(pil_image)
         ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        draw(ccv)
+        #draw(ccv)
         #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
-#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, "sungguh-graph3.png")
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/test.png')
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
 
 # #### scratchpad

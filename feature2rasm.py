@@ -641,19 +641,16 @@ from PIL import ImageFont, ImageDraw, Image
 FONTSIZE= 24
 
 for i in range(len(components)):
-    if len(components[i].nodes)>3:
-        scribe.nodes[components[i].node_start]['color']= 'orange'
-        scribe_dia.nodes[components[i].node_start]['color']= 'orange'
-        
+    if len(components[i].nodes)>2: # small alifs are often sometimes only 2-nodes big
         if components[i].node_start==-1: # in case of missing starting node
-            node_start_pos=(0,0)
-            node_start=-1
+            #node_start_pos=(0,0)
+            components[i].node_start=components[i].nodes[0]
             for n in components[i].nodes:
-                if pos[n][0] > node_start_pos[0]: # rightmost node as starting node if it is still missing
-                    node_start= n
-                    node_start_pos= pos[n]
-            scribe.nodes[node_start]['color']= 'red'
+                if pos[n][0] > pos[components[i].node_start][0]: # rightmost node as starting node if it is still missing
+                    components[i].node_start= n
         else: # actually optimizing the starting node
+            scribe.nodes[components[i].node_start]['color']= 'orange'
+            scribe_dia.nodes[components[i].node_start]['color']= 'orange'
             graph= extract_subgraph(scribe, components[i].node_start)
             if (components[i].rect[3]/components[i].rect[2] > pow(PHI,2)):
                 # if tall, prefer starting from top
@@ -684,22 +681,22 @@ for i in range(len(components)):
         # using LCS table
         # rasm= stringtorasm_LCS(remainder_stroke)
 
-        ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        seed= pos[components[i].node_end]
-        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
-        font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
-        drawPIL = ImageDraw.Draw(pil_image)
-        #drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
-        drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), str(i), font=font, fill=(0, 200, 0))
-        # Convert back to Numpy array and switch back from RGB to BGR
-        ccv= np.asarray(pil_image)
-        ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        #draw(ccv)
-        #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
+        # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+        # seed= pos[components[i].node_end]
+        # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        # pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
+        # font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
+        # drawPIL = ImageDraw.Draw(pil_image)
+        # #drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
+        # drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), str(i), font=font, fill=(0, 200, 0))
+        # # Convert back to Numpy array and switch back from RGB to BGR
+        # ccv= np.asarray(pil_image)
+        # ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
+        # draw(ccv)
+        # #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/test.png')
+#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/test.png')
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
 
 # #### scratchpad

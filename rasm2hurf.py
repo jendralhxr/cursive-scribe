@@ -17,7 +17,6 @@ PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 np.random.seed(42)
 
 # Parameters
-num_samples = 1000
 min_length= 2
 max_length = 12  # Max length of the strings
 num_classes = 40  # Number of classes
@@ -30,6 +29,16 @@ source = pd.read_csv('coba.csv')
 random_strings=pd.concat([source['rasm']])
 random_labels=pd.concat([source['val']])
 
+hurf_mapping = source.set_index('val')['hurf'].to_dict()
+val_distribution = source['val'].value_counts()
+val_distribution.index = val_distribution.index.map(hurf_mapping)
+# Plotting the distribution using matplotlib
+plt.figure(figsize=(10, 6))
+val_distribution.plot(kind='bar')
+plt.xlabel('Hurf Labels')
+plt.ylabel('Count')
+plt.xticks(rotation=45)
+plt.show()
 
 # Tokenize the strings
 tokenizer.fit_on_texts(random_strings)
@@ -67,19 +76,20 @@ model.compile(optimizer='adam',
 model.summary()
 
 # Train the model
-epochs = 8000
+epochs = 24000
 batch_size = 32
 #model.fit(train_sequences, train_labels, epochs=epochs, batch_size=batch_size, validation_split=0.2)
 history = model.fit(train_sequences, train_labels, 
                     epochs=epochs, 
                     batch_size=batch_size, 
-                    validation_split=0.2)
+                    validation_split=0.1)
 
 plt.plot(history.history['accuracy'], label='Training Accuracy')
 plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
+
 
 
 def save_variables(filename, *args):
@@ -213,7 +223,7 @@ for i in range(0,40):
     LCS[i]= lcs_tabulate(source[source[fieldval] == i][fieldstring])
            
 from fuzzywuzzy import fuzz
-#fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage Jaro-Winkler I guess
+#fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage Jaro-Winkler, I guess
 
 def jaro_distance(s1, s2):
     if s1 == s2:

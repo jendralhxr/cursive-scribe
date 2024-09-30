@@ -203,6 +203,12 @@ def stringtorasm_LSTM(strokeorder):
         
 
 #### LCS lcs
+
+import seaborn as sns
+
+
+LCS_NUM= 60
+
 def lcs_tabulate(strings):
     #print(f"len {len(strings)}")
     dict={}
@@ -216,40 +222,42 @@ def lcs_tabulate(strings):
             else:
                 dict[string[0:n]]+=1
     #largest_keys = sorted(dict, key=dict.get, reverse=True)[: min_length+int(len(strings)/max_length*pow(PHI,2))]
-    largest_keys = sorted(dict, key=dict.get, reverse=True)[:40]
+    largest_keys = sorted(dict, key=dict.get, reverse=True)[:LCS_NUM]
     return(largest_keys)    
 
 
 fieldstring= 'rasm'
 fieldval= 'val'
-LCS = [{} for _ in range(40)]
-for i in range(0,40):
+LCS = [{} for _ in range(LCS_NUM)]
+for i in range(0,LCS_NUM):
     LCS[i]= lcs_tabulate(source[source[fieldval] == i][fieldstring])
           
 # length heatmap
-llcs = [[0] * 40 for _ in range(40)]
+llcs = [[0] * LCS_NUM for _ in range(num_classes)]
 
 # Fill llcs with the lengths of the elements in LCS
-for j in range(1, 40):
-    for i in range(1, 40):
+for j in range(0, num_classes):
+    for i in range(0, LCS_NUM):
         if i < len(LCS[j]) and LCS[j][i]:  # Ensure the element exists in LCS
-            llcs[j][i] = len(LCS[j][i])
+            llcs[j][i-1] = len(LCS[j][i])
         else:
             llcs[j][i] = 0  # Set length to 0 if there's no element
-            
-plt.imshow(llcs, cmap='hot', interpolation='nearest')
-plt.colorbar()  # Show color scale
-plt.title('common subsequence length')
-plt.show()
 
+sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 hurf_mapping = source.set_index('val')['hurf'].to_dict()
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(len(hurf_mapping)), labels=hurf_mapping.values(), rotation=45)
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
-plt.colorbar()
-plt.show()
+plt.show()      
 
-sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+  
+#plt.colorbar()
+#plt.imshow(llcs, cmap='hot', interpolation='nearest')
+#plt.colorbar()  # Show color scale
+#plt.title('common subsequence length')
+#plt.show()
+
+
 
 from fuzzywuzzy import fuzz
 #fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage Jaro-Winkler, I guess

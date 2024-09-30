@@ -23,7 +23,7 @@ num_classes = 40  # Number of classes
 tokenizer = tf.keras.preprocessing.text.Tokenizer(char_level=True)
 
 # data
-source = pd.read_csv('coba.csv')
+source = pd.read_csv('olah.csv')
 #random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
 #random_labels=pd.concat([source['label'], source['label']])
 random_strings=pd.concat([source['rasm']])
@@ -112,8 +112,6 @@ def predict(string):
     predicted_index = np.argmax(evals)
     return( predicted_index, max(max(evals)) )
 
-
-
 # Test the prediction function
 # predict("222") # alif
 
@@ -156,6 +154,12 @@ hurf[34]= 'ء'
 hurf[35]= 'ي'
 hurf[36]= 'ی'
 hurf[37]= 'ڽ'
+hurf[32]= 'ۏ'
+hurf[33]= 'ه'
+hurf[34]= 'ء'
+hurf[35]= 'ي'
+hurf[36]= 'ی'
+hurf[37]= 'ڽ'
 
 # checking the weights Access the final Dense layer
 weights, biases = model.layers[-2].get_weights()
@@ -167,8 +171,6 @@ for i in range(0,num_classes):
     else:
         label= hurf[i]
     plt.text(np.pi, 0, label, fontsize=32, ha='left', va='bottom', color='red')
-
-
 
 def stringtorasm_LSTM(strokeorder):
     remainder_stroke= strokeorder
@@ -199,20 +201,21 @@ def stringtorasm_LSTM(strokeorder):
     return(rasm)
         
 
-# LCS 
+#### LCS 
 def lcs_tabulate(strings):
     #print(f"len {len(strings)}")
     dict={}
     for string in strings:
         lim= len(string)
-        if lim > max_length:
-            lim= max_length
+        #if lim > max_length:
+        #    lim= max_length
         for n in range(min_length, lim+1):
             if string[0:n] not in dict:
                 dict[string[0:n]]=1
             else:
                 dict[string[0:n]]+=1
-    largest_keys = sorted(dict, key=dict.get, reverse=True)[: min_length+int(len(strings)/max_length*pow(PHI,2))]
+    #largest_keys = sorted(dict, key=dict.get, reverse=True)[: min_length+int(len(strings)/max_length*pow(PHI,2))]
+    largest_keys = sorted(dict, key=dict.get, reverse=True)[:40]
     return(largest_keys)    
 
 

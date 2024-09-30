@@ -40,6 +40,7 @@ plt.ylabel('Count')
 plt.xticks(rotation=45)
 plt.show()
 
+
 # Tokenize the strings
 tokenizer.fit_on_texts(random_strings)
 sequences = tokenizer.texts_to_sequences(random_strings)
@@ -201,7 +202,7 @@ def stringtorasm_LSTM(strokeorder):
     return(rasm)
         
 
-#### LCS 
+#### LCS lcs
 def lcs_tabulate(strings):
     #print(f"len {len(strings)}")
     dict={}
@@ -224,7 +225,32 @@ fieldval= 'val'
 LCS = [{} for _ in range(40)]
 for i in range(0,40):
     LCS[i]= lcs_tabulate(source[source[fieldval] == i][fieldstring])
-           
+          
+# length heatmap
+llcs = [[0] * 40 for _ in range(40)]
+
+# Fill llcs with the lengths of the elements in LCS
+for j in range(1, 40):
+    for i in range(1, 40):
+        if i < len(LCS[j]) and LCS[j][i]:  # Ensure the element exists in LCS
+            llcs[j][i] = len(LCS[j][i])
+        else:
+            llcs[j][i] = 0  # Set length to 0 if there's no element
+            
+plt.imshow(llcs, cmap='hot', interpolation='nearest')
+plt.colorbar()  # Show color scale
+plt.title('common subsequence length')
+plt.show()
+
+hurf_mapping = source.set_index('val')['hurf'].to_dict()
+plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
+plt.yticks(ticks=range(len(hurf_mapping)), labels=hurf_mapping.values(), rotation=45)
+# plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
+plt.colorbar()
+plt.show()
+
+sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+
 from fuzzywuzzy import fuzz
 #fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage Jaro-Winkler, I guess
 

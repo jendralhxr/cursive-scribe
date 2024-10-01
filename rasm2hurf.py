@@ -239,10 +239,8 @@ for i in range(0,source.shape[0]):
 
 top_LCS = {}
 for hurf_class, rasm_seq in score.items():
-    # Sort students by score in descending order
-    sorted_students = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)
-    # Get the top N students
-    top_LCS[hurf_class] = [student for student in sorted_students[:LCS_FREQ] if student['score'] >= LCS_MIN]
+    sorted_token = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)
+    top_LCS[hurf_class] = [token for token in sorted_token[:LCS_FREQ] if token['score'] >= LCS_MIN]
 
         
                  

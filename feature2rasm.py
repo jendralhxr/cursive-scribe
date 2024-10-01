@@ -705,6 +705,7 @@ for i in range(len(components)):
         # seed= pos[components[i].node_end]
         # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
         # pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
+        # font = ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf", FONTSIZE)
         # font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
         # drawPIL = ImageDraw.Draw(pil_image)
         # #drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))

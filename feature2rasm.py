@@ -338,7 +338,8 @@ def line_iterator(img, point0, point1):
                 has_dark= True
                 break
         #print(f"{n} space {has_dark}")
-        if has_dark==True: # would prefer separate strokes (Zulhaj)
+        # early break upon absence of background pixel means preferrring connected stroke
+        if has_dark==False: # would prefer connected strokes (Zulhaj)
             break
     return has_dark
     
@@ -358,7 +359,7 @@ for k in range(len(components)):
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
             has_dark= line_iterator(cue, src['pos_bitmap'], dst['pos_bitmap'])
             # add the checking for line segment
-            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2) and has_dark==False:
+            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2): #and has_dark==False:
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]

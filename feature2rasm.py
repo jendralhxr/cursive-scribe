@@ -142,7 +142,7 @@ for n in range(num_slic):
         cy= int( np.mean( [array[1] for array in moments[n]] ))
         if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
-            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='orange', rasm=True)
+            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 
@@ -392,9 +392,6 @@ for k in range(len(components)):
                 if filled[2]==False and filled[1]==False and i==(3-RASM_EDGE_MAXDEG):
                     break
                     
-                    
-
-
 degree_rasm= scribe.degree()
 
 def prune_edges(graph, hop):
@@ -418,6 +415,20 @@ def prune_edges(graph, hop):
 
 degree_rasm= scribe.degree()
 scribe_dia= scribe.copy()
+
+def hex_or(color1, color2):
+    int1 = int(color1.lstrip('#'), 16)
+    int2 = int(color2.lstrip('#'), 16)
+    result_int = int1 | int2
+    result_hex = f'#{result_int:06X}'
+    return result_hex
+
+def hex_and(color1, color2):
+    int1 = int(color1.lstrip('#'), 16)
+    int2 = int(color2.lstrip('#'), 16)
+    return int1 & int2
+    
+
 
 # finding diacritics connection for small components
 # and update extreme nodes for large components
@@ -447,11 +458,12 @@ for k in range(len(components)):
         if closest_dist<SLIC_SPACE*pow(PHI,4):
             scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
             if closest_vane==6: # diacritics over
-                scribe.nodes[closest_node]['color']='#0080FF'
-                scribe_dia.nodes[closest_node]['color']='#0080FF'
+                scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#0000FF')
+                scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#0000FF')
             else: # diacritics below
-                scribe.nodes[closest_node]['color']='#8000FF'
-                scribe_dia.nodes[closest_node]['color']='#8000FF'
+                scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#000080')
+                scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#000080')
+    
     else: # large ones, updating the starting node
         raddist_start=[]
         # calculate the distances
@@ -468,8 +480,8 @@ for k in range(len(components)):
                 if degree_rasm(e[1])==d and e[1]!=-1:
                     #print(f'comp{k}_start: {components[k].node_start} -> {e[1]}')
                     components[k].node_start= e[1]
-                    scribe.nodes[components[k].node_start]['color']= 'red'
-                    scribe_dia.nodes[components[k].node_start]['color']= 'red'
+                    scribe.nodes[components[k].node_start]['color']= '#F00000'
+                    scribe_dia.nodes[components[k].node_start]['color']= '#F00000'
                     flag= True
                     break
             if flag:
@@ -543,6 +555,7 @@ def get_edge_colors_of_node(G, node):
 def path_vane_edges(G, path): # if path is written is written as series of edges
     pathstring=''
     for n in path:
+        # vane code
         src= G.nodes()[n[0]]
         dst= G.nodes()[n[1]]
         tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
@@ -550,27 +563,27 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         scribe_dia.edges[n]['vane']=tvane
         if (G.edges[n]['color']=='#00FF00'): # main stroke
             pathstring+=str(tvane)
-        # else: #substroke
-        #     if tvane==2:
-        #         pathstring+='+'
-        #     else:
-        #         pathstring+='-'
-        # TODOTHIS
-        # rework this
-        if dst['color']=='#8000FF': # diacritics over
-            pathstring+='+'
-        if dst['color']=='#0080FF': # diacritics below
-            pathstring+='-'
+        
+        # diacritics mark
+        # may need duplicate check so that not printed twice if node is revisited from another edge(s)
+        diacolor= hex_and(src['color'], '#0000FF')
+        if diacolor:
+            if diacolor == 255:
+                pathstring+='-'
+            elif diacolor == 128:
+                pathstring+='+'
+        else:
+            diacolor= hex_and(dst['color'], '#0000FF')
+            if diacolor:
+                if diacolor == 255:
+                    pathstring+='-'
+                elif diacolor == 128:
+                    pathstring+='+'
     return pathstring
 
-#list(nx.bfs_edges(besar, source=29)) # simplified
-#list(nx.edge_bfs(besar, source=29)) # traverse sequence
-
-#ra1=extract_subgraph2(scribe, 77, 182)
-#ra2=extract_subgraph2(scribe, 38, 180)
-
-
 ###### graph construction from line image ends here
+
+###### path finding routines starts here
 
 def custom_bfs_dfs(graph, start_node):
     queue = deque([start_node])  # Initialize the queue with the start node
@@ -637,8 +650,8 @@ def bfs_with_closest_priority(G, start_node):
                     edges.append((current_node, neighbor))
     
     # try either, should be good enough
-    #return visited
-    return edges
+    #return visited # if handling the nodes
+    return edges # if handling the edges
 
 
 
@@ -655,8 +668,8 @@ for i in range(len(components)):
                 if pos[n][0] > pos[components[i].node_start][0]: # rightmost node as starting node if it is still missing
                     components[i].node_start= n
         else: # actually optimizing the starting node
-            scribe.nodes[components[i].node_start]['color']= 'orange'
-            scribe_dia.nodes[components[i].node_start]['color']= 'orange'
+            scribe.nodes[components[i].node_start]['color']= '#FFA500'
+            scribe_dia.nodes[components[i].node_start]['color']= '#FFA500'
             graph= extract_subgraph(scribe, components[i].node_start)
             if (components[i].rect[3]/components[i].rect[2] > pow(PHI,2)):
                 # if tall, prefer starting from top
@@ -671,8 +684,8 @@ for i in range(len(components)):
                 #node_start = max(rightmost_nodes, key=lambda node: pos[node][1] )
         
         components[i].node_start= node_start
-        scribe.nodes[components[i].node_start]['color']= 'red'
-        scribe_dia.nodes[components[i].node_start]['color']= 'red'
+        scribe.nodes[components[i].node_start]['color']= '#F00000'
+        scribe_dia.nodes[components[i].node_start]['color']= '#F00000'
         
         # path finding
         #remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
@@ -702,8 +715,8 @@ for i in range(len(components)):
         # #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
-#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/test.png')
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/test.png')
+#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
 
 # #### scratchpad
 # path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))

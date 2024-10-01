@@ -207,32 +207,53 @@ def stringtorasm_LSTM(strokeorder):
 import seaborn as sns
 
 
-LCS_NUM= 60
+LCS_FREQ= 12
+LCS_MIN= 2
 
-def lcs_tabulate(strings):
-    #print(f"len {len(strings)}")
-    dict={}
-    for string in strings:
-        lim= len(string)
-        #if lim > max_length:
-        #    lim= max_length
-        for n in range(min_length, lim+1):
-            if string[0:n] not in dict:
-                dict[string[0:n]]=1
-            else:
-                dict[string[0:n]]+=1
-    #largest_keys = sorted(dict, key=dict.get, reverse=True)[: min_length+int(len(strings)/max_length*pow(PHI,2))]
-    largest_keys = sorted(dict, key=dict.get, reverse=True)[:LCS_NUM]
-    return(largest_keys)    
+score = {f'{i}': [] for i in range(0, num_classes)}
 
+def update_rasm_score(hurf_class, rasm_seq):
+    if hurf_class in score:
+        for chaincode in score[hurf_class]:
+            if chaincode['seq'] == rasm_seq:
+                chaincode['score'] += 1  
+                return True  # Successfully updated
+        score[hurf_class].append({'seq': rasm_seq, 'score': 1})
+        return False  
+    return False  
+
+
+def lcs_tabulate(val, string):
+    length= len(string)
+    for i in range(length):
+        for j in range(i + 1, length + 1):
+            substring = string[i:j]
+            if len(substring) > 2:
+                update_rasm_score(str(val), substring)
 
 fieldstring= 'rasm'
 fieldval= 'val'
-LCS = [{} for _ in range(LCS_NUM)]
-for i in range(0,LCS_NUM):
-    LCS[i]= lcs_tabulate(source[source[fieldval] == i][fieldstring])
+for i in range(0,source.shape[0]):
+    #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
+    lcs_tabulate(source[fieldval][i], source[fieldstring][i])
+
+top_LCS = {}
+for hurf_class, rasm_seq in score.items():
+    # Sort students by score in descending order
+    sorted_students = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)
+    # Get the top N students
+    top_LCS[hurf_class] = [student for student in sorted_students[:LCS_FREQ] if student['score'] >= LCS_MIN]
+
+        
+                 
+    #largest_keys = sorted(dict, key=dict.get, reverse=True)[: min_length+int(len(strings)/max_length*pow(PHI,2))]
+    #largest_keys = sorted(dict, key=dict.get, reverse=True)[:LCS_NUM]
+    #return(largest_keys)    
+
+
           
-# length heatmap
+
+LCS = [{} for _ in range(LCS_NUM)]
 llcs = [[0] * LCS_NUM for _ in range(num_classes)]
 
 # Fill llcs with the lengths of the elements in LCS

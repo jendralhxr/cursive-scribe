@@ -535,6 +535,11 @@ def path_vane_nodes(G, path): # if path is written as series of nodes
         pathstring+=str(tvane)
     return pathstring
 
+def get_edge_colors_of_node(G, node):
+    edges = G.edges(node, data=True)
+    colors = [(edge[0], edge[1], edge[2].get('color', 'No color assigned')) for edge in edges]
+    return colors
+
 def path_vane_edges(G, path): # if path is written is written as series of edges
     pathstring=''
     for n in path:
@@ -550,6 +555,8 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         #         pathstring+='+'
         #     else:
         #         pathstring+='-'
+        # TODOTHIS
+        # rework this
         if dst['color']=='#8000FF': # diacritics over
             pathstring+='+'
         if dst['color']=='#0080FF': # diacritics below
@@ -613,8 +620,7 @@ def bfs_with_closest_priority(G, start_node):
     edges = [] # traversed edges
     priority_queue = []  # Use heapq for priority queue
     heapq.heappush(priority_queue, (0, start_node))  # Push the start node with priority 0
-    
-    
+        
     while priority_queue:
         # Get the node with the highest priority (smallest distance)
         _, current_node = heapq.heappop(priority_queue)

@@ -242,27 +242,18 @@ for hurf_class, rasm_seq in score.items():
     sorted_token = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)
     top_LCS[hurf_class] = [token for token in sorted_token[:LCS_FREQ] if token['score'] >= LCS_MIN]
 
-        
-                 
-    #largest_keys = sorted(dict, key=dict.get, reverse=True)[: min_length+int(len(strings)/max_length*pow(PHI,2))]
-    #largest_keys = sorted(dict, key=dict.get, reverse=True)[:LCS_NUM]
-    #return(largest_keys)    
-
-
-          
-
-LCS = [{} for _ in range(LCS_NUM)]
-llcs = [[0] * LCS_NUM for _ in range(num_classes)]
+llcs = array = np.zeros((num_classes, LCS_FREQ))
+slcs = array = np.zeros((num_classes, LCS_FREQ))
 
 # Fill llcs with the lengths of the elements in LCS
 for j in range(0, num_classes):
-    for i in range(0, LCS_NUM):
-        if i < len(LCS[j]) and LCS[j][i]:  # Ensure the element exists in LCS
-            llcs[j][i-1] = len(LCS[j][i])
-        else:
-            llcs[j][i] = 0  # Set length to 0 if there's no element
-
+    if top_LCS[str(j)] is not None:
+        for i in range(0, len(top_LCS[str(j)]) ):
+            llcs[j][i] = len(top_LCS[str(j)][i])
+            slcs[j][i] = top_LCS[str(j)][i]['score']
+        
 sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+sns.heatmap(slcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 hurf_mapping = source.set_index('val')['hurf'].to_dict()
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(len(hurf_mapping)), labels=hurf_mapping.values(), rotation=45)
@@ -284,17 +275,12 @@ from fuzzywuzzy import fuzz
 def jaro_distance(s1, s2):
     if s1 == s2:
         return 1.0
-
     len_s1 = len(s1)
     len_s2 = len(s2)
-
     max_dist = int(max(len_s1, len_s2) / 2) - 1
-
     match = 0
-
     hash_s1 = [0] * len_s1
     hash_s2 = [0] * len_s2
-
     for i in range(len_s1):
         for j in range(max(0, i - max_dist), min(len_s2, i + max_dist + 1)):
             if s1[i] == s2[j] and hash_s2[j] == 0:
@@ -302,13 +288,10 @@ def jaro_distance(s1, s2):
                 hash_s2[j] = 1
                 match += 1
                 break
-
     if match == 0:
         return 0.0
-
     t = 0
     point = 0
-
     for i in range(len_s1):
         if hash_s1[i]:
             while hash_s2[point] == 0:
@@ -316,27 +299,28 @@ def jaro_distance(s1, s2):
             if s1[i] != s2[point]:
                 t += 1
             point += 1
-
     t /= 2
-
     return (match / len_s1 + match / len_s2 + (match - t) / match) / 3.0
 
 
 def jaro_winkler_similarity(s1, s2, p=0.1):
     jaro_dist = jaro_distance(s1, s2)
-
     prefix = 0
     for i in range(min(len(s1), len(s2))):
         if s1[i] == s2[i]:
             prefix += 1
         else:
             break
-
     prefix = min(4, prefix)
-
     return jaro_dist + (prefix * p * (1 - jaro_dist))
 
 
+# Fill llcs with the lengths of the elements in LCS
+for j in range(0, num_classes):
+    if top_LCS[str(j)] is not None:
+        for i in range(0, len(top_LCS[str(j)]) ):
+            llcs[j][i] = len(top_LCS[str(j)][i])
+            slcs[j][i] = top_LCS[str(j)][i]['score']
 
 def stringtorasm_LCS(strokeorder):
     remainder_stroke= strokeorder
@@ -350,15 +334,16 @@ def stringtorasm_LCS(strokeorder):
             if n>len_current:
                 break
             tee_string= remainder_stroke[0:n]
-            for i in range(0, len(LCS)):
-                for j in range(0, len(LCS[i])):
-                    #tee_eval= fuzz.ratio(tee_string, LCS[i][j]) *pow(PHI, len(tee_string))
-                    tee_eval= jaro_winkler_similarity(tee_string, LCS[i][j], 0.1) *pow(PHI, len(tee_string))
-                    if tee_eval> eval_best:
-                        #print(f"length:{n} class:{label_best} score:{eval_best}")
-                        eval_best= tee_eval
-                        label_best= i
-                        len_best= n
+            for j in range(0, num_classes):
+                if top_LCS[str(j)] is not None:
+                    for i in range(0, len(top_LCS[str(j)]) ):
+                        #tee_eval= fuzz.ratio(tee_string, LCS[i][j]) *pow(PHI, len(tee_string))
+                        tee_eval= jaro_winkler_similarity(tee_string, top_LCS[str(j)][i]['seq'], 0.1) *pow(PHI, len(tee_string))
+                        if tee_eval> eval_best:
+                            #print(f"length:{n} class:{label_best} score:{eval_best}")
+                            eval_best= tee_eval
+                            label_best= i
+                            len_best= n
         hurf_best= hurf[label_best]
         #print(f"BEST length:{n} class:{label_best} score:{eval_best}")
         rasm+= hurf_best

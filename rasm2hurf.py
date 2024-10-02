@@ -242,6 +242,20 @@ for hurf_class, rasm_seq in score.items():
     sorted_token = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)
     top_LCS[hurf_class] = [token for token in sorted_token[:LCS_FREQ] if token['score'] >= LCS_MIN]
 
+# check for duplicates
+
+from collections import defaultdict
+seq_indices = defaultdict(list)
+for key, entries in top_LCS.items():
+    for i, entry in enumerate(entries):
+        #seq_indices[entry['seq']].append(key)
+        seq_indices[entry['seq']].append(hurf[int(key)])
+duplicates_with_indices = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
+
+
+
+
+
 llcs = array = np.zeros((num_classes, LCS_FREQ))
 slcs = array = np.zeros((num_classes, LCS_FREQ))
 
@@ -249,17 +263,18 @@ slcs = array = np.zeros((num_classes, LCS_FREQ))
 for j in range(0, num_classes):
     if top_LCS[str(j)] is not None:
         for i in range(0, len(top_LCS[str(j)]) ):
-            llcs[j][i] = len(top_LCS[str(j)][i])
+            llcs[j][i] = len(top_LCS[str(j)][i]['seq'])
             slcs[j][i] = top_LCS[str(j)][i]['score']
-        
-#hurf_mapping = hurf
-#sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-sns.heatmap(slcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+
+# appearance frequency    
+plt.figure(figsize=(10, 8), dpi=300)  # Set the figure size and DPI
+sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+#sns.heatmap(slcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(40), labels=hurf, rotation=20, fontsize=6)
-plt.yticks(ticks=range(len(hurf_mapping)), labels=hurf_mapping.values(), rotation=45)
+plt.xticks(fontsize=6, rotation=45)
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
-plt.show()      
+  
 
   
 #plt.colorbar()

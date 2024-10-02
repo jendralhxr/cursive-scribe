@@ -252,10 +252,11 @@ for j in range(0, num_classes):
             llcs[j][i] = len(top_LCS[str(j)][i])
             slcs[j][i] = top_LCS[str(j)][i]['score']
         
-sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+#hurf_mapping = hurf
+#sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 sns.heatmap(slcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-hurf_mapping = source.set_index('val')['hurf'].to_dict()
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
+plt.yticks(ticks=range(40), labels=hurf, rotation=20, fontsize=6)
 plt.yticks(ticks=range(len(hurf_mapping)), labels=hurf_mapping.values(), rotation=45)
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 plt.show()      

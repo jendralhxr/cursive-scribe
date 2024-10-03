@@ -13,6 +13,52 @@ import matplotlib.pyplot as plt
 
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 
+# the hurf lookup
+hurf= [''] * 40
+hurf[1]= 'ا'
+hurf[2]= 'ب'
+hurf[3]= 'ت'
+hurf[4]= 'ة'
+hurf[5]= 'ث'
+hurf[6]= 'ج'
+hurf[7]= 'چ'
+hurf[8]= 'ح'
+hurf[9]= 'خ'
+hurf[10]= 'د'
+hurf[11]= 'ذ'
+hurf[12]= 'ر'
+hurf[13]= 'ز'
+hurf[14]= 'س'
+hurf[15]= 'ش'
+hurf[16]= 'ص'
+hurf[17]= 'ض'
+hurf[18]= 'ط'
+hurf[19]= 'ظ'
+hurf[20]= 'ع'
+hurf[21]= 'غ'
+hurf[22]= 'ڠ'
+hurf[23]= 'ف'
+hurf[24]= 'ڤ'
+hurf[25]= 'ق'
+hurf[26]= 'ک'
+hurf[27]= 'ݢ'
+hurf[28]= 'ل'
+hurf[29]= 'م'
+hurf[30]= 'ن'
+hurf[31]= 'و'
+hurf[32]= 'ۏ'
+hurf[33]= 'ه'
+hurf[34]= 'ء'
+hurf[35]= 'ي'
+hurf[36]= 'ی'
+hurf[37]= 'ڽ'
+hurf[32]= 'ۏ'
+hurf[33]= 'ه'
+hurf[34]= 'ء'
+hurf[35]= 'ي'
+hurf[36]= 'ی'
+hurf[37]= 'ڽ'
+
 # Generate random data
 np.random.seed(42)
 
@@ -91,8 +137,6 @@ plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
 
-
-
 def save_variables(filename, *args):
     with open(filename, 'wb') as f:
         pickle.dump(args, f)
@@ -116,53 +160,7 @@ def predict(string):
 # Test the prediction function
 # predict("222") # alif
 
-# the hurf lookup
-hurf= [''] * 40
-hurf[1]= 'ا'
-hurf[2]= 'ب'
-hurf[3]= 'ت'
-hurf[4]= 'ة'
-hurf[5]= 'ث'
-hurf[6]= 'ج'
-hurf[7]= 'چ'
-hurf[8]= 'ح'
-hurf[9]= 'خ'
-hurf[10]= 'د'
-hurf[11]= 'ذ'
-hurf[12]= 'ر'
-hurf[13]= 'ز'
-hurf[14]= 'س'
-hurf[15]= 'ش'
-hurf[16]= 'ص'
-hurf[17]= 'ض'
-hurf[18]= 'ط'
-hurf[19]= 'ظ'
-hurf[20]= 'ع'
-hurf[21]= 'غ'
-hurf[22]= 'ڠ'
-hurf[23]= 'ف'
-hurf[24]= 'ڤ'
-hurf[25]= 'ق'
-hurf[26]= 'ک'
-hurf[27]= 'ݢ'
-hurf[28]= 'ل'
-hurf[29]= 'م'
-hurf[30]= 'ن'
-hurf[31]= 'و'
-hurf[32]= 'ۏ'
-hurf[33]= 'ه'
-hurf[34]= 'ء'
-hurf[35]= 'ي'
-hurf[36]= 'ی'
-hurf[37]= 'ڽ'
-hurf[32]= 'ۏ'
-hurf[33]= 'ه'
-hurf[34]= 'ء'
-hurf[35]= 'ي'
-hurf[36]= 'ی'
-hurf[37]= 'ڽ'
-
-# checking the weights Access the final Dense layer
+# checking the weights of the final Dense layer
 weights, biases = model.layers[-2].get_weights()
 for i in range(0,num_classes):
     plt.figure()
@@ -202,10 +200,10 @@ def stringtorasm_LSTM(strokeorder):
     return(rasm)
         
 
-#### LCS lcs
+#### LCS 
 
 import seaborn as sns
-
+from collections import defaultdict
 
 LCS_FREQ= 12
 LCS_MIN= 2
@@ -242,9 +240,8 @@ for hurf_class, rasm_seq in score.items():
     sorted_token = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)
     top_LCS[hurf_class] = [token for token in sorted_token[:LCS_FREQ] if token['score'] >= LCS_MIN]
 
-# check for duplicates
 
-from collections import defaultdict
+# check for duplicates
 seq_indices = defaultdict(list)
 for key, entries in top_LCS.items():
     for i, entry in enumerate(entries):
@@ -253,38 +250,33 @@ for key, entries in top_LCS.items():
 duplicates_with_indices = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
 
+llcs = np.zeros((num_classes, LCS_FREQ))
+slcs = np.zeros((num_classes, LCS_FREQ))
+alcs = [["" for i in range(LCS_FREQ)] for j in range(num_classes)]
 
-
-
-llcs = array = np.zeros((num_classes, LCS_FREQ))
-slcs = array = np.zeros((num_classes, LCS_FREQ))
-
-# Fill llcs with the lengths of the elements in LCS
 for j in range(0, num_classes):
     if top_LCS[str(j)] is not None:
         for i in range(0, len(top_LCS[str(j)]) ):
-            llcs[j][i] = len(top_LCS[str(j)][i]['seq'])
-            slcs[j][i] = top_LCS[str(j)][i]['score']
+            llcs[j][i] = len(top_LCS[str(j)][i]['seq']) # length of each substring
+            slcs[j][i] = top_LCS[str(j)][i]['score'] # apperance frequency of each substring
+            alcs[j][i] = top_LCS[str(j)][i]['seq'] # the substring itself
 
-# appearance frequency    
-plt.figure(figsize=(10, 8), dpi=300)  # Set the figure size and DPI
-sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+#plt.figure(dpi=300)
+#sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 #sns.heatmap(slcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+sns.set_theme(rc={'figure.figsize':(2.5,8)})
+plt.figure(dpi=300)
+sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 300, 10), "format": "%.0f"})
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
-plt.yticks(ticks=range(40), labels=hurf, rotation=20, fontsize=6)
+plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=45)
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
-  
-
-  
-#plt.colorbar()
-#plt.imshow(llcs, cmap='hot', interpolation='nearest')
-#plt.colorbar()  # Show color scale
-#plt.title('common subsequence length')
+#ax = plt.gca()
+#for tick in ax.get_yticklabels():
+#    tick.set_y(tick.get_position()[1] + 400)  # Move tick labels down
 #plt.show()
 
-
-
+  
 from fuzzywuzzy import fuzz
 #fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage Jaro-Winkler, I guess
 
@@ -468,45 +460,18 @@ def damerau_levenshtein_freeman_distance(s1, s2):
             else:
                 cost = 1
             
+            # levenshtein part            
             d[(i, j)] = min(
                 d[(i - 1, j)] + 1,  # deletion
                 d[(i, j - 1)] + 1,  # insertion
                 d[(i - 1, j - 1)] + cost,  # substitution
             )
+            # damerau part
             if i > 0 and j > 0 and s1[i] == s2[j - 1] and s1[i - 1] == s2[j]:
-                d[(i, j)] = min(d[(i, j)], d[i - 2, j - 2] + cost)  # transposition
+                d[(i, j)] = min(d[(i, j)], d[i - 2, j - 2] + cost)  # transposition, 
 
     return d[len_str1 - 1, len_str2 - 1]
 
-
-def levenshteinX_distance(s1, s2):
-    # Populate the distance matrix with default values
-    rows = len(s1) + 1
-    cols = len(s2) + 1
-    distance_matrix = [[0 for x in range(cols)] for x in range(rows)]
-    for i in range(1, rows): distance_matrix[i][0] = i
-    for j in range(1, cols): distance_matrix[0][j] = j
-
-    # value assignment    
-    for i in range(1, rows):
-        for j in range(1, cols):
-            diff= abs( ord(s1[i-1])%8-ord(s2[i-1])%8 )
-            if diff>4:
-                diff= 8-diff
-            if s1[i-1] == s2[j-1]:
-                cost = 0
-            elif diff==1:
-                cost = 0.5
-            elif diff==4:
-                cost = 0.25
-            else:
-                cost = 1
-            distance_matrix[i][j] = min(distance_matrix[i-1][j] + 1,    # Deletion
-                                        distance_matrix[i][j-1] + 1,    # Insertion
-                                        distance_matrix[i-1][j-1] + cost)  # Substitution
-            # may add other variants to accommodate compression
-
-    return distance_matrix[-1][-1]
 
 def fuzzy_substring_matching(template, long_string):
     if long_string!='':
@@ -518,7 +483,7 @@ def fuzzy_substring_matching(template, long_string):
         
         for i in range(len_long_string - len_template + 1):
             substring = long_string[i:i + len_template]
-            distance = levenshteinX_distance(template, substring) / len_template
+            distance = damerau_levenshtein_freeman_distance(template, substring) / len_template
             if distance < min_distance:
                 min_distance = distance
                 best_match = substring
@@ -531,7 +496,6 @@ def fuzzy_substring_matching(template, long_string):
         else:
             remainder = ''
         return best_match, min_distance, remainder
-
 
 
 def stringtorasm_LEV(remainder_stroke):
@@ -563,8 +527,6 @@ def stringtorasm_LEV(remainder_stroke):
         else:
             remainder_stroke= remainder_min
         #print(f"current match: {hurf_min} ({template_min}) from dist {lev_dist_min}, rasm is {rasm}, remainder is {remainder_stroke}")    
-
-
 
 
 

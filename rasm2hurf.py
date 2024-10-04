@@ -224,6 +224,7 @@ def update_rasm_score(hurf_class, rasm_seq):
 
 
 def lcs_tabulate(val, string):
+    appearance[val] += 1
     length= len(string)
     for i in range(length):
         for j in range(i + 1, length + 1):
@@ -260,14 +261,14 @@ for j in range(0, num_classes):
     if top_LCS[str(j)] is not None:
         for i in range(0, len(top_LCS[str(j)]) ):
             llcs[j][i] = len(top_LCS[str(j)][i]['seq']) # length of each substring
-            slcs[j][i] = top_LCS[str(j)][i]['score'] # apperance frequency of each substring
+            slcs[j][i] = top_LCS[str(j)][i]['score']/appearance[j] # apperance frequency of each substring
             alcs[j][i] = top_LCS[str(j)][i]['seq'] # the substring itself
 
 plt.figure(dpi=300)
 #sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 #sns.heatmap(slcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 sns.set_theme(rc={'figure.figsize':(8,8)})
-sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 300, 10), "format": "%.0f"})
+sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.1), "format": "%.1f"})
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=45)
@@ -278,7 +279,25 @@ plt.savefig("/shm/heatmap-lcs.png")
 #    tick.set_y(tick.get_position()[1] + 400)  # Move tick labels down
 #plt.show()
 
-  
+counts, bins = np.histogram(slcs.flatten(), bins=LCS_FREQ)
+adjusted_counts = counts / np.count_nonzero(slcs)
+plt.bar(bins[:-1], adjusted_counts, width=np.diff(bins), edgecolor='black', align='edge')
+# Adding labels
+plt.xlabel("Probability of subsequence appearance for each hurf")
+plt.ylabel("Adjusted Probability of subsequence from the kitab")
+distribution_threshold = 1-1/PHI
+plt.axvline(x=distribution_threshold, color='red', linestyle='--', linewidth=2, label='x=0.381966')
+# Annotate the vertical line
+plt.annotate("1-(1/φ)", 
+             xy=(distribution_threshold, 0),  # Position of the annotation (x, y)
+             xytext=(distribution_threshold + 0.05, 0.3),  # Position of the text (adjust as needed)
+             #arrowprops=dict(facecolor='black', arrowstyle='->'),  # Arrow pointing to the line
+             fontsize=12, color='black')
+
+
+##### fuzzy things start here
+
+ 
 from fuzzywuzzy import fuzz
 #fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage Jaro-Winkler, I guess
 

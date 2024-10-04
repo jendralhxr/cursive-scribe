@@ -1,8 +1,5 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dense, Reshape, Lambda
-from sklearn.model_selection import train_test_split
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -66,7 +63,6 @@ np.random.seed(42)
 min_length= 2
 max_length = 12  # Max length of the strings
 num_classes = 40  # Number of classes
-tokenizer = tf.keras.preprocessing.text.Tokenizer(char_level=True)
 
 # data
 source = pd.read_csv('olah.csv')
@@ -75,6 +71,11 @@ source = pd.read_csv('olah.csv')
 random_strings=pd.concat([source['rasm']])
 random_labels=pd.concat([source['val']])
 
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Reshape, Lambda
+from sklearn.model_selection import train_test_split
+
+tokenizer = tf.keras.preprocessing.text.Tokenizer(char_level=True)
 hurf_mapping = source.set_index('val')['hurf'].to_dict()
 val_distribution = source['val'].value_counts()
 val_distribution.index = val_distribution.index.map(hurf_mapping)
@@ -205,10 +206,11 @@ def stringtorasm_LSTM(strokeorder):
 import seaborn as sns
 from collections import defaultdict
 
-LCS_FREQ= 12
+LCS_FREQ= 18
 LCS_MIN= 2
 
 score = {f'{i}': [] for i in range(0, num_classes)}
+appearance = np.zeros(40, dtype=float)
 
 def update_rasm_score(hurf_class, rasm_seq):
     if hurf_class in score:
@@ -261,15 +263,15 @@ for j in range(0, num_classes):
             slcs[j][i] = top_LCS[str(j)][i]['score'] # apperance frequency of each substring
             alcs[j][i] = top_LCS[str(j)][i]['seq'] # the substring itself
 
-#plt.figure(dpi=300)
+plt.figure(dpi=300)
 #sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 #sns.heatmap(slcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-sns.set_theme(rc={'figure.figsize':(2.5,8)})
-plt.figure(dpi=300)
+sns.set_theme(rc={'figure.figsize':(8,8)})
 sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 300, 10), "format": "%.0f"})
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=45)
+plt.savefig("/shm/heatmap-lcs.png")
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 #ax = plt.gca()
 #for tick in ax.get_yticklabels():

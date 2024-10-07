@@ -317,6 +317,12 @@ def jaro_distance(s1, s2):
                 hash_s2[j] = 1
                 match += 1
                 break
+            # considering freeman code
+            elif abs(ord(s1[i])-ord(s2[j]))==1 :
+                hash_s1[i] += 0.5
+                hash_s2[j] += 0.5
+                
+                
     if match == 0:
         return 0.0
     t = 0

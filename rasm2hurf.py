@@ -385,7 +385,7 @@ def myjaro(s1,s2):
     weight += (1.0 - weight) * tmp
     return weight
 
-MC_RETRY_MAX= 1000
+MC_RETRY_MAX= 1e4
 
 def stringtorasm_MC(chaincode):
     remainder_stroke= chaincode
@@ -423,7 +423,7 @@ def stringtorasm_MC(chaincode):
                                   lcs_lookup.replace(' ', '').replace('+', '').replace('-', '')) \
                             *pow(1, len(tee_tmp)) * lcs_prob
                             # SHALL WE FACTOR IN THE SUBSTRING PROBABILITY TOO? i.e. slcs
-                    print(f"ret{mc_retry} class{mc_class} score{score}: {tee_tmp} {lcs_lookup} @ {lcs_prob}")
+                    #print(f"ret{mc_retry}\tclass{mc_class}\tscore{score:.2f}\t{tee_tmp}\t{lcs_lookup} @{lcs_prob:.2f}")
                     if score>score_best:
                         score_best= score
                         len_best= m
@@ -433,7 +433,7 @@ def stringtorasm_MC(chaincode):
             mc_retry= mc_retry+1 # up can be incremented anywhere in the nesting
         
         hurf_best= hurf[class_best]
-        print(f"BEST class{class_best} ({hurf_best})score{score_best}: {tee_best} {lookup_best}")
+        print(f"BEST class{class_best} ({hurf_best})\tscore{score_best:.2f}\t{tee_best}\t{lookup_best}")
         
         # MAY allow to skip of evaluation if we are unsure
         # if eval_best > 0.5 and len_current<LENGTH_MIN*PHI:

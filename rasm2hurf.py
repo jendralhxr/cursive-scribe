@@ -1,5 +1,4 @@
 import numpy as np
-import tensorflow as tf
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -75,6 +74,8 @@ random_labels=pd.concat([source['val']])
 #source['rasm'].str.len().max()
 
 
+
+import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Embedding, LSTM, Dense, Reshape, Lambda
 from sklearn.model_selection import train_test_split
@@ -90,7 +91,6 @@ plt.xlabel('Hurf Labels')
 plt.ylabel('Count')
 plt.xticks(rotation=45)
 plt.show()
-
 
 # Tokenize the strings
 tokenizer.fit_on_texts(random_strings)
@@ -269,6 +269,7 @@ for j in range(0, NUM_CLASSES):
             slcs[j][i] = top_LCS[str(j)][i]['score']/appearance[j] # apperance frequency of each substring
             alcs[j][i] = top_LCS[str(j)][i]['seq'] # the substring itself
 
+# important to plot these graphs
 plt.figure(dpi=300)
 sns.set_theme(rc={'figure.figsize':(8,8)})
 # sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
@@ -421,7 +422,7 @@ def stringtorasm_MC(chaincode):
                     # similarity eval, HOPE for the best
                     score= myjaro(tee_tmp.replace(' ', '').replace('+', '').replace('-', ''), \
                                   lcs_lookup.replace(' ', '').replace('+', '').replace('-', '')) \
-                            *pow(1, len(tee_tmp)) * lcs_prob
+                            *pow(PHI, len(tee_tmp)) * lcs_prob
                             # SHALL WE FACTOR IN THE SUBSTRING PROBABILITY TOO? i.e. slcs
                     #print(f"ret{mc_retry}\tclass{mc_class}\tscore{score:.2f}\t{tee_tmp}\t{lcs_lookup} @{lcs_prob:.2f}")
                     if score>score_best:
@@ -430,6 +431,7 @@ def stringtorasm_MC(chaincode):
                         class_best= mc_class
                         tee_best=tee_tmp
                         lookup_best=lcs_lookup
+            print(f"ret {mc_retry}\tclass {mc_class}/{class_best}\tscore {score:.2f}/{score_best:.2f}\t{tee_best}")
             mc_retry= mc_retry+1 # up can be incremented anywhere in the nesting
         
         hurf_best= hurf[class_best]
@@ -447,6 +449,35 @@ def stringtorasm_MC(chaincode):
             break
     return(rasm)
 
+
+import sys
+from contextlib import contextmanager
+
+class DualOutput:
+    def __init__(self, file):
+        self.file = file
+
+    def write(self, message):
+        self.file.write(message)
+        # Also write to standard output
+        sys.__stdout__.write(message)
+
+    def flush(self):
+        self.file.flush()
+        sys.__stdout__.flush()
+
+@contextmanager
+def redirect_stdout_to_file_and_console(file_path):
+    with open(file_path, 'w') as f:
+        original_stdout = sys.stdout  # Save the original stdout
+        sys.stdout = DualOutput(f)    # Redirect to DualOutput
+        yield  # Control goes to the block of code that uses this context manager
+        sys.stdout = original_stdout  # Restore original stdout after the block
+
+# Use the context manager
+with redirect_stdout_to_file_and_console('/shm/markicob2.txt'):
+    stringtorasm_MC("564304+4053+434675440")
+    
 
 
 

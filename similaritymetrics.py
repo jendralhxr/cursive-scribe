@@ -26,60 +26,15 @@ print("Bag:", textdistance.bag.similarity(str1, str2))
 str1 = "665-5405" # ya of some sort
 str2 = "567544-37-" # ya of some sort
 
+
 def myjaro(s1,s2):
-    s1= s1.translate(str.maketrans('', '', '-+ '))
-    s2= s2.translate(str.maketrans('', '', '-+ '))
-    if s1 == s2:
-        result=1.0
-    len_s1 = len(s1)
-    len_s2 = len(s2)
-    max_dist = int(max(len_s1, len_s2) / 2) - 1
-    match = 0
-    hash_s1 = [0] * len_s1
-    hash_s2 = [0] * len_s2
-    for i in range(len_s1):
-        for j in range(max(0, i - max_dist), min(len_s2, i + max_dist + 1)):
-            if s1[i] == s2[j] and hash_s2[j] == 0:
-                hash_s1[i] = 1
-                hash_s2[j] = 1
-                match += 1
-                print(f'match {i} {j} char{s1[i]}:')
-                break
-            elif abs(ord(s1[i])-ord(s2[j]))==1 or abs(ord(s1[i])-ord(s2[j]))==7:
-                #hash_s1[i] = 1
-                #hash_s2[j] = 1
-                match += 0.5
-                print(f'half match {i} {j} char{s1[i]}')
-                break
-    if match == 0:
-        result=0.0
-    else:
-        print(f"score {match}")
-    t = 0
-    point = 0
-    for i in range(len_s1):
-        if hash_s1[i]:
-            while hash_s2[point] == 0:
-                point += 1
-            if s1[i] != s2[point]:
-                t += 1
-            point += 1
-    t /= 2
-    if match==0:
-        match=1e-9
-    result= (match / len_s1 + match / len_s2 + (match - t) / match) / 3.0
-    #print(result)
-    return(result)
-
-
-def aslijw(s1,s2):
     prefix_weight: float = 0.1
-    
     s1_len = len(s1)
     s2_len = len(s2)
 
     if not s1_len or not s2_len:
-        return 0.0
+        result= 0
+        #return 0.0
 
     min_len = min(s1_len, s2_len)
     search_range = max(s1_len, s2_len)
@@ -92,18 +47,27 @@ def aslijw(s1,s2):
 
     # looking only within search range, count & flag matched pairs
     common_chars = 0
+    almost_common_chars= 0
     for i, s1_ch in enumerate(s1):
         low = max(0, i - search_range)
         hi = min(i + search_range, s2_len - 1)
         for j in range(low, hi + 1):
+            #print(f"eval s1[{i}]:{s1[i]} s2[{j}]:{s2[j]}")
             if not s2_flags[j] and s2[j] == s1_ch:
                 s1_flags[i] = s2_flags[j] = True
                 common_chars += 1
+                #print(f"com {i}-{j}: {s1_ch}")
                 break
-
-    # short circuit if no characters match
-    if not common_chars:
-        return 0.0
+            if abs(ord(s1[i])-ord(s2[j]))==1 or abs(ord(s1[i])-ord(s2[j]))==7:
+                almost_common_chars += 1
+                #print(f"almostcom {i}-{j}: {s1[i]}")
+                break
+            
+    if almost_common_chars and not common_chars:
+        common_chars=1e-12
+    if not common_chars and not almost_common_chars:
+        #return 0.0
+        result=0
 
     # count transpositions
     k = trans_count = 0
@@ -120,7 +84,8 @@ def aslijw(s1,s2):
     # adjust for similarities in nonmatched characters
     weight = common_chars / s1_len + common_chars / s2_len
     weight += (common_chars - trans_count) / common_chars
-    weight /= 3
+    weight += (almost_common_chars) / (s1_len+s2_len) /4
+    weight /= 4
 
     # # stop to boost if strings are not similar
     # if not self.winklerize:
@@ -130,7 +95,7 @@ def aslijw(s1,s2):
 
     # winkler modification
     # adjust for up to first 4 chars in common
-    j = min(min_len, 4)
+    j = min(min_len, 3)
     i = 0
     while i < j and s1[i] == s2[i]:
         i += 1

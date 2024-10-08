@@ -60,9 +60,9 @@ hurf[37]= 'ڽ'
 np.random.seed(42)
 
 # Parameters
-min_length= 2
-max_length = 12  # Max length of the strings
-num_classes = 40  # Number of classes
+LENGTH_MIN= 2
+LENGTH_MAX = 12  # Max length of the strings
+NUM_CLASSES = 40  # Number of classes
 
 # data
 source = pd.read_csv('olah.csv')
@@ -70,6 +70,10 @@ source = pd.read_csv('olah.csv')
 #random_labels=pd.concat([source['label'], source['label']])
 random_strings=pd.concat([source['rasm']])
 random_labels=pd.concat([source['val']])
+#source['rasm'].str.len().mean()
+#source['rasm'].str.len().min()
+#source['rasm'].str.len().max()
+
 
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Embedding, LSTM, Dense, Reshape, Lambda
@@ -94,7 +98,7 @@ sequences = tokenizer.texts_to_sequences(random_strings)
 padded_sequences = tf.keras.preprocessing.sequence.pad_sequences(sequences, padding='post')
 
 # Convert labels to one-hot encoding
-labels = tf.keras.utils.to_categorical(random_labels, num_classes=num_classes)
+labels = tf.keras.utils.to_categorical(random_labels, NUM_CLASSES=NUM_CLASSES)
 
 # Split data into training and testing sets
 train_sequences, test_sequences, train_labels, test_labels = train_test_split(
@@ -106,12 +110,12 @@ embedding_dim = 50  # Dimension of the embedding vector
 
 # Define the model
 model = Sequential([
-    Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=max_length),
+    Embedding(input_dim=vocab_size, output_dim=embedding_dim, input_length=LENGTH_MAX),
     LSTM(64),
     Dense(64, activation='relu'),
     Dense(64, activation='relu'),
-    Dense(max_length, activation='softmax'),
-    Dense(num_classes, activation='sigmoid'),
+    Dense(LENGTH_MAX, activation='softmax'),
+    Dense(NUM_CLASSES, activation='sigmoid'),
     Lambda(lambda x: x * 8)            # Scale the output to range [0, 8]
 ])
 
@@ -153,7 +157,7 @@ print(f'Accuracy on test data: {accuracy}')
 
 def predict(string):
     sequence = tokenizer.texts_to_sequences([string])
-    padded_sequence = tf.keras.preprocessing.sequence.pad_sequences(sequence, maxlen=max_length, padding='post')
+    padded_sequence = tf.keras.preprocessing.sequence.pad_sequences(sequence, maxlen=LENGTH_MAX, padding='post')
     evals = model.predict(padded_sequence)
     predicted_index = np.argmax(evals)
     return( predicted_index, max(max(evals)) )
@@ -163,7 +167,7 @@ def predict(string):
 
 # checking the weights of the final Dense layer
 weights, biases = model.layers[-2].get_weights()
-for i in range(0,num_classes):
+for i in range(0,NUM_CLASSES):
     plt.figure()
     plt.plot(weights[:,i])
     if i==0:
@@ -180,7 +184,7 @@ def stringtorasm_LSTM(strokeorder):
         eval_best=0
         len_best=-1
         len_current=len(remainder_stroke)
-        for n in range(min_length, max_length+1):
+        for n in range(LENGTH_MIN, LENGTH_MAX+1):
             if n>len_current:
                 break
             tee_string= remainder_stroke[0:n]
@@ -199,6 +203,7 @@ def stringtorasm_LSTM(strokeorder):
         if remainder_stroke=='':
             break
     return(rasm)
+
         
 
 #### LCS 
@@ -209,7 +214,7 @@ from collections import defaultdict
 LCS_FREQ= 18
 LCS_MIN= 2
 
-score = {f'{i}': [] for i in range(0, num_classes)}
+score = {f'{i}': [] for i in range(0, NUM_CLASSES)}
 appearance = np.zeros(40, dtype=float)
 
 def update_rasm_score(hurf_class, rasm_seq):
@@ -253,11 +258,11 @@ for key, entries in top_LCS.items():
 duplicates_with_indices = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
 
-llcs = np.zeros((num_classes, LCS_FREQ))
-slcs = np.zeros((num_classes, LCS_FREQ))
-alcs = [["" for i in range(LCS_FREQ)] for j in range(num_classes)]
+llcs = np.zeros((NUM_CLASSES, LCS_FREQ))
+slcs = np.zeros((NUM_CLASSES, LCS_FREQ))
+alcs = [["" for i in range(LCS_FREQ)] for j in range(NUM_CLASSES)]
 
-for j in range(0, num_classes):
+for j in range(0, NUM_CLASSES):
     if top_LCS[str(j)] is not None:
         for i in range(0, len(top_LCS[str(j)]) ):
             llcs[j][i] = len(top_LCS[str(j)][i]['seq']) # length of each substring
@@ -265,9 +270,8 @@ for j in range(0, num_classes):
             alcs[j][i] = top_LCS[str(j)][i]['seq'] # the substring itself
 
 plt.figure(dpi=300)
-#sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-#sns.heatmap(slcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 sns.set_theme(rc={'figure.figsize':(8,8)})
+# sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.1), "format": "%.1f"})
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
@@ -295,68 +299,157 @@ plt.annotate("1-(1/φ)",
              fontsize=12, color='black')
 
 
-##### fuzzy things start here
+def myjaro(s1,s2):
+    prefix_weight: float = 0.1
+    s1_len = len(s1)
+    s2_len = len(s2)
 
- 
-from fuzzywuzzy import fuzz
-#fuzz.ratio("kitten", "sitting")  # Output: Similarity percentage Jaro-Winkler, I guess
-
-def jaro_distance(s1, s2):
-    if s1 == s2:
-        return 1.0
-    len_s1 = len(s1)
-    len_s2 = len(s2)
-    max_dist = int(max(len_s1, len_s2) / 2) - 1
-    match = 0
-    hash_s1 = [0] * len_s1
-    hash_s2 = [0] * len_s2
-    for i in range(len_s1):
-        for j in range(max(0, i - max_dist), min(len_s2, i + max_dist + 1)):
-            if s1[i] == s2[j] and hash_s2[j] == 0:
-                hash_s1[i] = 1
-                hash_s2[j] = 1
-                match += 1
-                break
-            # considering freeman code
-            elif abs(ord(s1[i])-ord(s2[j]))==1 :
-                hash_s1[i] += 0.5
-                hash_s2[j] += 0.5
-                
-                
-    if match == 0:
+    if not s1_len or not s2_len:
+        #result= 0
         return 0.0
-    t = 0
-    point = 0
-    for i in range(len_s1):
-        if hash_s1[i]:
-            while hash_s2[point] == 0:
-                point += 1
-            if s1[i] != s2[point]:
-                t += 1
-            point += 1
-    t /= 2
-    return (match / len_s1 + match / len_s2 + (match - t) / match) / 3.0
 
+    min_len = min(s1_len, s2_len)
+    search_range = max(s1_len, s2_len)
+    search_range = (search_range // 2) - 1
+    if search_range < 0:
+        search_range = 0
 
-def jaro_winkler_similarity(s1, s2, p=0.1):
-    jaro_dist = jaro_distance(s1, s2)
-    prefix = 0
-    for i in range(min(len(s1), len(s2))):
-        if s1[i] == s2[i]:
-            prefix += 1
+    s1_flags = [False] * s1_len
+    s2_flags = [False] * s2_len
+
+    # looking only within search range, count & flag matched pairs
+    common_chars = 0
+    almost_common_chars= 0
+    for i, s1_ch in enumerate(s1):
+        low = max(0, i - search_range)
+        hi = min(i + search_range, s2_len - 1)
+        for j in range(low, hi + 1):
+            #print(f"eval s1[{i}]:{s1[i]} s2[{j}]:{s2[j]}")
+            if not s2_flags[j] and s2[j] == s1_ch:
+                s1_flags[i] = s2_flags[j] = True
+                common_chars += 1
+                #print(f"com {i}-{j}: {s1_ch}")
+                break
+            if abs(ord(s1[i])-ord(s2[j]))==1 or abs(ord(s1[i])-ord(s2[j]))==7:
+                almost_common_chars += 1
+                #print(f"almostcom {i}-{j}: {s1[i]}")
+                break
+            
+    if almost_common_chars and not common_chars:
+        common_chars=1e-12
+    if not common_chars and not almost_common_chars:
+        return 0.0
+        #result=0
+
+    # count transpositions
+    k = trans_count = 0
+    for i, s1_f in enumerate(s1_flags):
+        if s1_f:
+            for j in range(k, s2_len):
+                if s2_flags[j]:
+                    k = j + 1
+                    break
+            if s1[i] != s2[j]:
+                trans_count += 1
+    trans_count //= 2
+
+    # adjust for similarities in nonmatched characters
+    weight = common_chars / s1_len + common_chars / s2_len
+    weight += (common_chars - trans_count) / common_chars
+    weight += (almost_common_chars) / (s1_len+s2_len) /4
+    weight /= 4
+
+    # # stop to boost if strings are not similar
+    # if not self.winklerize:
+    #     return weight
+    # if weight <= 0.7:
+    #     return weight
+
+    # winkler modification
+    # adjust for up to first 4 chars in common
+    j = min(min_len, 3)
+    i = 0
+    while i < j and s1[i] == s2[i]:
+        i += 1
+    if i:
+        weight += i * prefix_weight * (1.0 - weight)
+
+    # optionally adjust for long strings
+    # after agreeing beginning chars, at least two or more must agree and
+    # agreed characters must be > half of remaining characters
+    # if not self.long_tolerance or min_len <= 4:
+    #     return weight
+    if common_chars <= i + 1 or 2 * common_chars < min_len + i:
+        return weight
+    tmp = (common_chars - i - 1) / (s1_len + s2_len - i * 2 + 2)
+    weight += (1.0 - weight) * tmp
+    return weight
+
+MC_RETRY_MAX= 2000
+
+def stringtorasm_MC(chaincode):
+    remainder_stroke= chaincode
+    rasm=''
+    while len(remainder_stroke)>=2 and remainder_stroke!='':
+        tee_best=''
+        lookup_best=''
+        class_best=-1
+        score_best=-1
+        len_best=-1
+        len_current=len(remainder_stroke)
+        mc_retry= 0
+        for n in range(LENGTH_MIN, int(LENGTH_MAX*PHI)):
+            if n>len_current:
+                break
+            tee_string= remainder_stroke[0:n]
+        while(mc_retry < MC_RETRY_MAX):
+            _ = ''
+            while _=='': # avoid empty hurf class
+                mc_class= int(np.random.rand()*NUM_CLASSES)
+                _=alcs[mc_class][0]
+            # append random CS from the class until reaches sufficient length for lookup string
+            lcs_lookup=''
+            while len(lcs_lookup) < LENGTH_MAX*PHI*PHI:
+                mc_index= int(np.random.rand()*LCS_FREQ)
+                if alcs[mc_class][mc_index] != '':
+                    lcs_lookup+= alcs[mc_class][mc_index]
+            for m in range(LENGTH_MIN, len(tee_string), 2):
+                for n in range(m, len(lcs_lookup), 2):
+                    tee_tmp= tee_string[0:m]
+                    lcs_tmp= lcs_lookup[0:n]
+                    # similarity eval, pick the best
+                    score= myjaro(tee_tmp.replace(' ', '').replace('+', '').replace('-', ''), \
+                                  lcs_tmp.replace(' ', '').replace('+', '').replace('-', '')) #\
+                            #*pow(PHI, min(len(tee_tmp), len(lcs_tmp)))
+                    #print(f"ret{mc_retry} class{mc_class} score{score}: {tee_tmp} {lcs_tmp}")
+                    if score>score_best:
+                        score_best= score
+                        len_best= m
+                        class_best= mc_class
+                        tee_best=tee_tmp
+                        lookup_best=lcs_tmp
+            mc_retry= mc_retry+1 # up can be incremented anywhere
+        
+        print(f"class{class_best} score{score_best}: {tee_best} {lookup_best}")
+        hurf_best= hurf[class_best]
+        #print(f"BEST length:{n} class:{label_best} score:{eval_best}")
+        
+        # MAY allow to skip of evaluation if we are unsure
+        # if eval_best > 0.5 and len_current<LENGTH_MIN*PHI:
+        #     rasm+= hurf_best
+        rasm+= hurf_best
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
+            remainder_stroke=''
         else:
+            remainder_stroke= remainder_stroke[len_best:]
+        if remainder_stroke=='':
             break
-    prefix = min(4, prefix)
-    return jaro_dist + (prefix * p * (1 - jaro_dist))
+    return(rasm)
 
 
-# Fill llcs with the lengths of the elements in LCS
-for j in range(0, num_classes):
-    if top_LCS[str(j)] is not None:
-        for i in range(0, len(top_LCS[str(j)]) ):
-            llcs[j][i] = len(top_LCS[str(j)][i])
-            slcs[j][i] = top_LCS[str(j)][i]['score']
 
+
+import textdistance
 def stringtorasm_LCS(strokeorder):
     remainder_stroke= strokeorder
     rasm=''
@@ -365,15 +458,15 @@ def stringtorasm_LCS(strokeorder):
         eval_best=-1
         len_best=-1
         len_current=len(remainder_stroke)
-        for n in range(min_length, max_length+1):
+        for n in range(LENGTH_MIN, LENGTH_MAX+1):
             if n>len_current:
                 break
             tee_string= remainder_stroke[0:n]
-            for j in range(0, num_classes):
+            for j in range(0, NUM_CLASSES):
                 if top_LCS[str(j)] is not None:
                     for i in range(0, len(top_LCS[str(j)]) ):
                         #tee_eval= fuzz.ratio(tee_string, LCS[i][j]) *pow(PHI, len(tee_string))
-                        tee_eval= jaro_winkler_similarity(tee_string, top_LCS[str(j)][i]['seq'], 0.1) *pow(PHI, len(tee_string))
+                        tee_eval= textdistance.jaro.similarity(tee_string, top_LCS[str(j)][i]['seq'], 0.1) *pow(PHI, len(tee_string))
                         if tee_eval> eval_best:
                             #print(f"length:{n} class:{label_best} score:{eval_best}")
                             eval_best= tee_eval
@@ -397,7 +490,7 @@ def stringtorasm_LCS(strokeorder):
 from itertools import product
 from collections import defaultdict, Counter
 
-def lcs_multiple(strings, min_length=3):
+def lcs_multiple(strings, LENGTH_MIN=3):
     if not strings:
         return []
 
@@ -414,16 +507,16 @@ def lcs_multiple(strings, min_length=3):
         if all(index == 0 for index in indices):
             continue
 
-        max_length = 0
+        LENGTH_MAX = 0
         max_subseqs = defaultdict(int)
         for i in range(num_strings):
             if indices[i] > 0:
                 prev_indices = indices[:i] + (indices[i] - 1,) + indices[i + 1:]
-                if dp[prev_indices][0] > max_length:
-                    max_length = dp[prev_indices][0]
+                if dp[prev_indices][0] > LENGTH_MAX:
+                    LENGTH_MAX = dp[prev_indices][0]
                     max_subseqs = dp[prev_indices][1].copy()
 
-                elif dp[prev_indices][0] == max_length:
+                elif dp[prev_indices][0] == LENGTH_MAX:
                     for subseq, count in dp[prev_indices][1].items():
                         max_subseqs[subseq] += count
 
@@ -434,21 +527,21 @@ def lcs_multiple(strings, min_length=3):
             for subseq, count in dp[prev_indices][1].items() or {("", 1)}:
                 new_subseqs[subseq + current_chars[0]] = count
 
-            if dp[prev_indices][0] + 1 > max_length:
-                max_length = dp[prev_indices][0] + 1
+            if dp[prev_indices][0] + 1 > LENGTH_MAX:
+                LENGTH_MAX = dp[prev_indices][0] + 1
                 max_subseqs = new_subseqs
 
-            elif dp[prev_indices][0] + 1 == max_length:
+            elif dp[prev_indices][0] + 1 == LENGTH_MAX:
                 for subseq, count in new_subseqs.items():
                     max_subseqs[subseq] += count
 
-        dp[indices] = (max_length, max_subseqs)
+        dp[indices] = (LENGTH_MAX, max_subseqs)
 
     # Combine all substrings and their counts
     all_subseqs = Counter()
     for indices in dp:
         for subseq, count in dp[indices][1].items():
-            if len(subseq) >= min_length:
+            if len(subseq) >= LENGTH_MIN:
                 all_subseqs[subseq] += count
 
     # Filter out the common substrings (appear in all strings)

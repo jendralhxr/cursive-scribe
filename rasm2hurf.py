@@ -211,7 +211,7 @@ def stringtorasm_LSTM(strokeorder):
 import seaborn as sns
 from collections import defaultdict
 
-LCS_FREQ= 18
+LCS_FREQ= 12
 LCS_MIN= 2
 
 score = {f'{i}': [] for i in range(0, NUM_CLASSES)}
@@ -357,7 +357,7 @@ def myjaro(s1,s2):
     weight = common_chars / s1_len + common_chars / s2_len
     weight += (common_chars - trans_count) / common_chars
     weight += (almost_common_chars) / (s1_len+s2_len) /4
-    weight /= 4
+    weight /= 3
 
     # # stop to boost if strings are not similar
     # if not self.winklerize:
@@ -385,7 +385,7 @@ def myjaro(s1,s2):
     weight += (1.0 - weight) * tmp
     return weight
 
-MC_RETRY_MAX= 2000
+MC_RETRY_MAX= 1000
 
 def stringtorasm_MC(chaincode):
     remainder_stroke= chaincode
@@ -407,32 +407,33 @@ def stringtorasm_MC(chaincode):
             while _=='': # avoid empty hurf class
                 mc_class= int(np.random.rand()*NUM_CLASSES)
                 _=alcs[mc_class][0]
-            # append random CS from the class until reaches sufficient length for lookup string
-            lcs_lookup=''
-            while len(lcs_lookup) < LENGTH_MAX*PHI*PHI:
-                mc_index= int(np.random.rand()*LCS_FREQ)
-                if alcs[mc_class][mc_index] != '':
-                    lcs_lookup+= alcs[mc_class][mc_index]
-            for m in range(LENGTH_MIN, len(tee_string), 2):
-                for n in range(m, len(lcs_lookup), 2):
-                    tee_tmp= tee_string[0:m]
-                    lcs_tmp= lcs_lookup[0:n]
-                    # similarity eval, pick the best
+                lcs_lookup=''
+                lcs_prob=1
+            
+            for m in range(LENGTH_MIN, len(tee_string), 1):
+                tee_tmp= tee_string[0:m]
+                
+                while len(lcs_lookup) < LENGTH_MAX*PHI*PHI:
+                    mc_index= int(np.random.rand()*LCS_FREQ)
+                    if alcs[mc_class][mc_index] != '':
+                        lcs_lookup += alcs[mc_class][mc_index]
+                        lcs_prob *= slcs[mc_class][mc_index]
+                    # similarity eval, HOPE for the best
                     score= myjaro(tee_tmp.replace(' ', '').replace('+', '').replace('-', ''), \
-                                  lcs_tmp.replace(' ', '').replace('+', '').replace('-', '')) #\
-                            #*pow(PHI, min(len(tee_tmp), len(lcs_tmp)))
-                    #print(f"ret{mc_retry} class{mc_class} score{score}: {tee_tmp} {lcs_tmp}")
+                                  lcs_lookup.replace(' ', '').replace('+', '').replace('-', '')) \
+                            *pow(1, len(tee_tmp)) * lcs_prob
+                            # SHALL WE FACTOR IN THE SUBSTRING PROBABILITY TOO? i.e. slcs
+                    print(f"ret{mc_retry} class{mc_class} score{score}: {tee_tmp} {lcs_lookup} @ {lcs_prob}")
                     if score>score_best:
                         score_best= score
                         len_best= m
                         class_best= mc_class
                         tee_best=tee_tmp
-                        lookup_best=lcs_tmp
-            mc_retry= mc_retry+1 # up can be incremented anywhere
+                        lookup_best=lcs_lookup
+            mc_retry= mc_retry+1 # up can be incremented anywhere in the nesting
         
-        print(f"class{class_best} score{score_best}: {tee_best} {lookup_best}")
         hurf_best= hurf[class_best]
-        #print(f"BEST length:{n} class:{label_best} score:{eval_best}")
+        print(f"BEST class{class_best} ({hurf_best})score{score_best}: {tee_best} {lookup_best}")
         
         # MAY allow to skip of evaluation if we are unsure
         # if eval_best > 0.5 and len_current<LENGTH_MIN*PHI:

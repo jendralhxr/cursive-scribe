@@ -424,14 +424,16 @@ def stringtorasm_MC(chaincode):
                                   lcs_lookup.replace(' ', '').replace('+', '').replace('-', '')) \
                             *pow(PHI, len(tee_tmp)) * lcs_prob
                             # SHALL WE FACTOR IN THE SUBSTRING PROBABILITY TOO? i.e. slcs
+                    if score==0:
+                        break
                     #print(f"ret{mc_retry}\tclass{mc_class}\tscore{score:.2f}\t{tee_tmp}\t{lcs_lookup} @{lcs_prob:.2f}")
-                    if score>score_best:
+                    elif score>score_best:
                         score_best= score
                         len_best= m
                         class_best= mc_class
                         tee_best=tee_tmp
                         lookup_best=lcs_lookup
-            print(f"ret {mc_retry}\tclass {mc_class}/{class_best}\tscore {score:.2f}/{score_best:.2f}\t{tee_best}")
+                        print(f"ret {mc_retry}\tclass {class_best} ({hurf[class_best]})\tscore {score_best:.2f}\t{tee_best}")
             mc_retry= mc_retry+1 # up can be incremented anywhere in the nesting
         
         hurf_best= hurf[class_best]
@@ -475,7 +477,7 @@ def redirect_stdout_to_file_and_console(file_path):
         sys.stdout = original_stdout  # Restore original stdout after the block
 
 # Use the context manager
-with redirect_stdout_to_file_and_console('/shm/markicob2.txt'):
+with redirect_stdout_to_file_and_console('/shm/markicob3.txt'):
     stringtorasm_MC("564304+4053+434675440")
     
 

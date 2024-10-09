@@ -585,7 +585,7 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 ###### graph construction from line image ends here
 
 ###### path finding routines starts here
-
+# breadth-first search
 def custom_bfs_dfs(graph, start_node):
     queue = deque([start_node])  # Initialize the queue with the start node
     visited = set([start_node])  # Set to keep track of visited nodes

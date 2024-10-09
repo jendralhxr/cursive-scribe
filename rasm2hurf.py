@@ -211,7 +211,7 @@ def stringtorasm_LSTM(strokeorder):
 import seaborn as sns
 from collections import defaultdict
 
-LCS_FREQ= 12
+LCS_FREQ= 18
 LCS_MIN= 2
 
 score = {f'{i}': [] for i in range(0, NUM_CLASSES)}
@@ -241,7 +241,7 @@ fieldstring= 'rasm'
 fieldval= 'val'
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
-    lcs_tabulate(source[fieldval][i], source[fieldstring][i])
+    lcs_tabulate(int(source[fieldval][i]), str(source[fieldstring][i]).replace(' ', ''))
 
 top_LCS = {}
 for hurf_class, rasm_seq in score.items():
@@ -271,7 +271,13 @@ for j in range(0, NUM_CLASSES):
 
 # important to plot these graphs
 plt.figure(dpi=300)
-sns.set_theme(rc={'figure.figsize':(8,8)})
+sns.set_theme(rc={
+    'figure.figsize': (8, 8),
+    'font.family': ['Noto Naskh Arabic', 'Noto Sans'],
+    'font.size': 6,  # Adjust font size if necessary
+    'xtick.labelsize': 6,
+    'ytick.labelsize': 6
+})
 # sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.1), "format": "%.1f"})
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
@@ -325,13 +331,13 @@ def myjaro(s1,s2):
         low = max(0, i - search_range)
         hi = min(i + search_range, s2_len - 1)
         for j in range(low, hi + 1):
-            #print(f"eval s1[{i}]:{s1[i]} s2[{j}]:{s2[j]}")
+            #print(f"eval s1[{i}]:{s1[i]} s2[{j}].replace(' ', ''):{s2[j]}")
             if not s2_flags[j] and s2[j] == s1_ch:
                 s1_flags[i] = s2_flags[j] = True
                 common_chars += 1
                 #print(f"com {i}-{j}: {s1_ch}")
                 break
-            if abs(ord(s1[i])-ord(s2[j]))==1 or abs(ord(s1[i])-ord(s2[j]))==7:
+            if abs(ord(s1[i])-ord(s2[j]))==1 or abs(ord(s1[i])-ord(s2[j]))==4 or abs(ord(s1[i])-ord(s2[j]))==7:
                 almost_common_chars += 1
                 #print(f"almostcom {i}-{j}: {s1[i]}")
                 break
@@ -388,6 +394,9 @@ def myjaro(s1,s2):
 
 MC_RETRY_MAX= 1e4
 
+
+appearance = np.zeros(40, dtype=float)
+
 def stringtorasm_MC(chaincode):
     remainder_stroke= chaincode
     rasm=''
@@ -411,6 +420,7 @@ def stringtorasm_MC(chaincode):
                 lcs_lookup=''
                 lcs_prob=1
             
+            appearance[mc_class] += 1
             for m in range(LENGTH_MIN, len(tee_string), 1):
                 tee_tmp= tee_string[0:m]
                 
@@ -422,7 +432,8 @@ def stringtorasm_MC(chaincode):
                     # similarity eval, HOPE for the best
                     score= myjaro(tee_tmp.replace(' ', '').replace('+', '').replace('-', ''), \
                                   lcs_lookup.replace(' ', '').replace('+', '').replace('-', '')) \
-                            *pow(PHI, len(tee_tmp)) * lcs_prob
+                            *pow(PHI, len(tee_tmp)) #\ # penalty for shorter chain should should be applied?
+                                #* lcs_prob # may not be needed since will skew to those rare hurfs
                             # SHALL WE FACTOR IN THE SUBSTRING PROBABILITY TOO? i.e. slcs
                     if score==0:
                         break

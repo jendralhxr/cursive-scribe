@@ -211,7 +211,7 @@ def stringtorasm_LSTM(strokeorder):
 import seaborn as sns
 from collections import defaultdict
 
-LCS_FREQ= 18
+LCS_FREQ= 32
 LCS_MIN= 2
 
 score = {f'{i}': [] for i in range(0, NUM_CLASSES)}
@@ -278,8 +278,8 @@ sns.set_theme(rc={
     'xtick.labelsize': 6,
     'ytick.labelsize': 6
 })
-sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-#sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.1), "format": "%.1f"})
+#sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.1), "format": "%.1f"})
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=45)

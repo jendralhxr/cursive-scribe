@@ -64,7 +64,7 @@ LENGTH_MAX = 12  # Max length of the strings
 NUM_CLASSES = 40  # Number of classes
 
 # data
-source = pd.read_csv('olah.csv')
+source = pd.read_csv('olah.csv').drop_duplicates()
 #random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
 #random_labels=pd.concat([source['label'], source['label']])
 random_strings=pd.concat([source['rasm']])
@@ -211,7 +211,7 @@ def stringtorasm_LSTM(strokeorder):
 import seaborn as sns
 from collections import defaultdict
 
-LCS_FREQ= 32
+LCS_FREQ= 16
 LCS_MIN= 2
 
 score = {f'{i}': [] for i in range(0, NUM_CLASSES)}
@@ -282,8 +282,8 @@ sns.set_theme(rc={
     'xtick.labelsize': 6,
     'ytick.labelsize': 6
 })
-#sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.1), "format": "%.1f"})
+sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+#sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.1f"})
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=45)
@@ -303,7 +303,7 @@ plt.ylabel("Adjusted Probability of subsequence from the kitab")
 distribution_threshold = 1-1/PHI
 plt.axvline(x=distribution_threshold, color='red', linestyle='--', linewidth=2, label='x=0.381966')
 # Annotate the vertical line
-plt.annotate("1-(1/φ)", 
+plt.annotate("1-(1/φ)",
              xy=(distribution_threshold, 0),  # Position of the annotation (x, y)
              xytext=(distribution_threshold + 0.05, 0.3),  # Position of the text (adjust as needed)
              #arrowprops=dict(facecolor='black', arrowstyle='->'),  # Arrow pointing to the line
@@ -401,9 +401,10 @@ MC_RETRY_MAX= 1e4
 
 appearance = np.zeros(40, dtype=float)
 
-def stringtorasm_MC(chaincode):
+def stringtorasm_MC_substring(chaincode):
     remainder_stroke= chaincode
     rasm=''
+    appearance = np.zeros(40, dtype=float)
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         tee_best=''
         lookup_best=''
@@ -428,6 +429,7 @@ def stringtorasm_MC(chaincode):
             for m in range(LENGTH_MIN, len(tee_string), 1):
                 tee_tmp= tee_string[0:m]
                 
+                # TODO: compare to source.seq rather than the SUBSTRINGs
                 while len(lcs_lookup) < LENGTH_MAX*PHI*PHI:
                     mc_index= int(np.random.rand()*LCS_FREQ)
                     if alcs[mc_class][mc_index] != '':
@@ -448,7 +450,7 @@ def stringtorasm_MC(chaincode):
                         class_best= mc_class
                         tee_best=tee_tmp
                         lookup_best=lcs_lookup
-                        print(f"ret {mc_retry}\tclass {class_best} ({hurf[class_best]})\tscore {score_best:.2f}\t{tee_best}")
+                        print(f"ret {mc_retry}\tclass {class_best} ({hurf[class_best]})\tscore {score_best:.2f}\t{tee_best} {lcs_lookup}")
             mc_retry= mc_retry+1 # up can be incremented anywhere in the nesting
         
         hurf_best= hurf[class_best]
@@ -465,6 +467,58 @@ def stringtorasm_MC(chaincode):
         if remainder_stroke=='':
             break
     return(rasm)
+
+def stringtorasm_MC_wholestring(chaincode):
+    appearance = np.zeros(40, dtype=float)
+    remainder_stroke= chaincode
+    rasm=''
+    while len(remainder_stroke)>=2 and remainder_stroke!='':
+        tee_best=''
+        lookup_best=''
+        class_best=-1
+        score_best=-1
+        len_best=-1
+        len_current=len(remainder_stroke)
+        mc_retry= 0
+        for n in range(LENGTH_MIN, int(LENGTH_MAX*PHI)):
+            if n>len_current:
+                break
+            tee_string= remainder_stroke[0:n]
+        while(mc_retry < MC_RETRY_MAX):
+            mc_index= int(np.random.rand()*len(source))
+            mc_string= source.iloc[mc_index][fieldstring]
+            mc_class= source.iloc[mc_index][fieldval]
+            appearance[mc_class] += 1
+            for m in range(LENGTH_MIN, len(tee_string), 1):
+                tee_tmp= tee_string[0:m]
+                score= myjaro(tee_tmp.replace(' ', '').replace('+', '').replace('-', ''), \
+                              mc_string.replace(' ', '').replace('+', '').replace('-', '')) #*pow(PHI, len(tee_tmp))
+                if score>score_best:
+                    score_best= score
+                    len_best= m
+                    class_best= mc_class
+                    tee_best=tee_tmp
+                    lookup_best=mc_string
+                    print(f"ret {mc_retry}\tclass {class_best} ({hurf[class_best]})\tscore {score_best:.2f}\t{tee_best} {mc_string}")
+            
+            mc_retry= mc_retry+1 # up can be incremented anywhere in the nesting
+        
+        hurf_best= hurf[class_best]
+        print(f"BEST class{class_best} ({hurf_best})\tscore{score_best:.2f}\t{tee_best}\t{lookup_best}")
+        
+        # MAY allow to skip of evaluation if we are unsure
+        # if eval_best > 0.5 and len_current<LENGTH_MIN*PHI:
+        #     rasm+= hurf_best
+        rasm+= hurf_best
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
+            remainder_stroke=''
+        else:
+            remainder_stroke= remainder_stroke[len_best:]
+        if remainder_stroke=='':
+            break
+    return(rasm)
+
+
 
 
 import sys

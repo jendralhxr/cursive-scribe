@@ -230,12 +230,16 @@ def update_rasm_score(hurf_class, rasm_seq):
 
 def lcs_tabulate(val, string):
     appearance[val] += 1
-    length= len(string)
+    length = len(string)
+    unique_substrings = set()  # Use a set to store unique substrings
+    
     for i in range(length):
         for j in range(i + 1, length + 1):
             substring = string[i:j]
-            if len(substring) > 2:
+            if len(substring) > 2 and substring not in unique_substrings:  # agar tidak overlap
+                unique_substrings.add(substring)  
                 update_rasm_score(str(val), substring)
+
 
 fieldstring= 'rasm'
 fieldval= 'val'

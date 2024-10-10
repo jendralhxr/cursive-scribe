@@ -492,7 +492,8 @@ def stringtorasm_MC_wholestring(chaincode):
             for m in range(LENGTH_MIN, len(tee_string), 1):
                 tee_tmp= tee_string[0:m]
                 score= myjaro(tee_tmp.replace(' ', '').replace('+', '').replace('-', ''), \
-                              mc_string.replace(' ', '').replace('+', '').replace('-', '')) #*pow(PHI, len(tee_tmp))
+                              mc_string.replace(' ', '').replace('+', '').replace('-', '')) # 
+                    # *pow(PHI, len(tee_tmp)) # not sure whether to push for long matching string
                 if score>score_best:
                     score_best= score
                     len_best= m

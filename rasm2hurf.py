@@ -48,12 +48,7 @@ hurf[34]= 'ء'
 hurf[35]= 'ي'
 hurf[36]= 'ی'
 hurf[37]= 'ڽ'
-hurf[32]= 'ۏ'
-hurf[33]= 'ه'
-hurf[34]= 'ء'
-hurf[35]= 'ي'
-hurf[36]= 'ی'
-hurf[37]= 'ڽ'
+
 
 # Generate random data
 np.random.seed(42)
@@ -245,7 +240,8 @@ fieldstring= 'rasm'
 fieldval= 'val'
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
-    lcs_tabulate(int(source[fieldval][i]), str(source[fieldstring][i]).replace(' ', ''))
+    lcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(' ', ''))
+    
 
 top_LCS = {}
 for hurf_class, rasm_seq in score.items():
@@ -259,7 +255,7 @@ for key, entries in top_LCS.items():
     for i, entry in enumerate(entries):
         #seq_indices[entry['seq']].append(key)
         seq_indices[entry['seq']].append(hurf[int(key)])
-duplicates_with_indices = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
+duplicates_LCS = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
 
 llcs = np.zeros((NUM_CLASSES, LCS_FREQ))
@@ -282,8 +278,8 @@ sns.set_theme(rc={
     'xtick.labelsize': 6,
     'ytick.labelsize': 6
 })
-sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-#sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.1f"})
+#sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.1f"})
 plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=45)
@@ -468,8 +464,11 @@ def stringtorasm_MC_substring(chaincode):
             break
     return(rasm)
 
+
+
+
+appearance = np.zeros(len(source), dtype=float)
 def stringtorasm_MC_wholestring(chaincode):
-    appearance = np.zeros(40, dtype=float)
     remainder_stroke= chaincode
     rasm=''
     while len(remainder_stroke)>=2 and remainder_stroke!='':
@@ -477,7 +476,12 @@ def stringtorasm_MC_wholestring(chaincode):
         lookup_best=''
         class_best=-1
         score_best=-1
-        len_best=-1
+        tee_best_terminus=''
+        lookup_best_terminus=''
+        class_best_terminus=-1
+        score_best_terminus=-1
+        
+        
         len_current=len(remainder_stroke)
         mc_retry= 0
         for n in range(LENGTH_MIN, int(LENGTH_MAX*PHI)):
@@ -489,35 +493,46 @@ def stringtorasm_MC_wholestring(chaincode):
             mc_string= source.iloc[mc_index][fieldstring]
             mc_class= source.iloc[mc_index][fieldval]
             appearance[mc_class] += 1
-            for m in range(LENGTH_MIN, len(tee_string), 1):
+            for m in range(len(tee_string), LENGTH_MIN-1, -1):
                 tee_tmp= tee_string[0:m]
                 score= myjaro(tee_tmp.replace(' ', '').replace('+', '').replace('-', ''), \
                               mc_string.replace(' ', '').replace('+', '').replace('-', '')) # 
                     # *pow(PHI, len(tee_tmp)) # not sure whether to push for long matching string
-                if score>score_best:
+                if score>score_best and (mc_class not in {1, 10, 11, 12, 13, 31, 32}):
                     score_best= score
-                    len_best= m
-                    class_best= mc_class
                     tee_best=tee_tmp
-                    lookup_best=mc_string
-                    print(f"ret {mc_retry}\tclass {class_best} ({hurf[class_best]})\tscore {score_best:.2f}\t{tee_best} {mc_string}")
+                    class_best= mc_class
+                    lookup_best= mc_string
+                    print(f"norm-ret {mc_retry}\tclass {class_best} ({hurf[class_best]})\tscore {score_best:.2f}\t{tee_best} {lookup_best}")
+                if score>score_best_terminus and (mc_class in {1, 10, 11, 12, 13, 31, 32}):
+                    score_best_terminus= score
+                    tee_best_terminus= tee_tmp
+                    class_best_terminus= mc_class
+                    lookup_best_terminus= mc_string
+                    print(f"term-ret {mc_retry}\tclass {class_best_terminus} ({hurf[class_best_terminus]})\tscore {score_best_terminus:.2f}\t{tee_best_terminus} {lookup_best_terminus}")
             
+            appearance[mc_class]+=1
             mc_retry= mc_retry+1 # up can be incremented anywhere in the nesting
         
         hurf_best= hurf[class_best]
         print(f"BEST class{class_best} ({hurf_best})\tscore{score_best:.2f}\t{tee_best}\t{lookup_best}")
         
-        # MAY allow to skip of evaluation if we are unsure
+        # MAY allow to skip of evaluation if we are unsure, but shall we?
         # if eval_best > 0.5 and len_current<LENGTH_MIN*PHI:
         #     rasm+= hurf_best
         rasm+= hurf_best
         if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
             remainder_stroke=''
         else:
-            remainder_stroke= remainder_stroke[len_best:]
+            remainder_stroke= remainder_stroke[len(tee_best):]
         if remainder_stroke=='':
             break
     return(rasm)
+
+
+
+appearance = np.zeros(len(source), dtype=float)
+stringtorasm_MC_wholestring('55507676674040402+106703+44+444030')
 
 
 
@@ -548,7 +563,7 @@ def redirect_stdout_to_file_and_console(file_path):
 
 # Use the context manager
 with redirect_stdout_to_file_and_console('/shm/markicob3.txt'):
-    stringtorasm_MC("564304+4053+434675440")
+    stringtorasm_MC_substring("564304+4053+434675440")
     
 
 

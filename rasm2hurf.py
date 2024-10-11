@@ -68,6 +68,13 @@ random_labels=pd.concat([source['val']])
 #source['rasm'].str.len().min()
 #source['rasm'].str.len().max()
 
+char_lengths = source['rasm'].apply(len)
+plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths) + 2), edgecolor='black')
+from scipy import stats
+mode_value = stats.mode(char_lengths)
+plt.xlabel('chaincode length')
+plt.ylabel('apperance')
+
 
 
 import tensorflow as tf
@@ -241,7 +248,8 @@ fieldval= 'val'
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
     lcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(' ', ''))
-    
+    ##
+
 
 top_LCS = {}
 for hurf_class, rasm_seq in score.items():
@@ -432,8 +440,8 @@ def stringtorasm_MC_substring(chaincode):
                         lcs_lookup += alcs[mc_class][mc_index]
                         lcs_prob *= slcs[mc_class][mc_index]
                     # similarity eval, HOPE for the best
-                    score= myjaro(tee_tmp.replace(' ', '').replace('+', '').replace('-', ''), \
-                                  lcs_lookup.replace(' ', '').replace('+', '').replace('-', '')) \
+                    score= myjaro(tee_tmp.replace(' ', ''), \
+                                  lcs_lookup.replace(' ', ''))\
                             *pow(PHI, len(tee_tmp)) #\ # penalty for shorter chain should should be applied?
                                 #* lcs_prob # may not be needed since will skew to those rare hurfs
                             # SHALL WE FACTOR IN THE SUBSTRING PROBABILITY TOO? i.e. slcs
@@ -492,7 +500,7 @@ def stringtorasm_MC_wholestring(chaincode):
             mc_index= int(np.random.rand()*len(source))
             mc_string= source.iloc[mc_index][fieldstring]
             mc_class= source.iloc[mc_index][fieldval]
-            appearance[mc_class] += 1
+            appearance[mc_index] += 1
             for m in range(len(tee_string), LENGTH_MIN-1, -1):
                 tee_tmp= tee_string[0:m]
                 score= myjaro(tee_tmp.replace(' ', '').replace('+', '').replace('-', ''), \
@@ -531,10 +539,15 @@ def stringtorasm_MC_wholestring(chaincode):
 
 
 
-appearance = np.zeros(len(source), dtype=float)
 stringtorasm_MC_wholestring('55507676674040402+106703+44+444030')
+appearance = np.zeros(len(source), dtype=float)
 
-
+mc_retry= 0
+while(mc_retry < MC_RETRY_MAX):
+    mc_index= int(np.random.rand()*len(source))
+    appearance[mc_index] += 1
+    mc_retry += 1
+    
 
 
 import sys

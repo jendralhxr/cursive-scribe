@@ -554,11 +554,14 @@ def draw_heatmap(data, xlabel, ylabel):
         'xtick.labelsize': 6,
         'ytick.labelsize': 6
     })
-    sns.heatmap(data, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
+    ax= sns.heatmap(data, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
     plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
     plt.xticks(fontsize=6)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+    for label in ax.get_yticklabels():
+        label.set_verticalalignment('top')  # 'bottom' moves the labels slightly down
+
    
 
 

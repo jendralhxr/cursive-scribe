@@ -77,6 +77,73 @@ for group_name, score in cumulative_scores.items():
     print(f"{group_name}: Average similarity score = {score:.4f}")
 
 
+import random
+import Levenshtein
+
+def random_mutation(string, mutation_rate=0.1):
+    """Randomly mutates a string by shuffling or making edits."""
+    mutated = list(string)
+    
+    for i in range(len(mutated)):
+        if random.random() < mutation_rate:
+            # Randomly delete or replace a character
+            if random.random() < 0.5:
+                # Replace with a random character
+                mutated[i] = chr(random.randint(97, 122))  # Random lowercase letter
+            else:
+                # Delete a character
+                mutated.pop(i)
+    
+    return ''.join(mutated)
+
+def monte_carlo_string_matching(target_string, groups, trials=1000, mutation_rate=0.1):
+    best_group = None
+    best_score = float('inf')  # Start with a high score (lower is better)
+    group_scores = {group_name: 0 for group_name in groups}  # Cumulative scores for each group
+
+    for _ in range(trials):
+        # Randomly mutate the target string
+        mutated_target = random_mutation(target_string, mutation_rate)
+
+        # Compare to all substrings in all groups
+        for group_name, substrings in groups.items():
+            for substring in substrings:
+                # Randomly mutate the substring for variety
+                mutated_substring = random_mutation(substring, mutation_rate)
+
+                # Calculate Levenshtein distance (or any other metric)
+                score = Levenshtein.distance(mutated_target, mutated_substring)
+                
+                # Normalize score by the length of the longer string to avoid bias
+                normalized_score = score / max(len(mutated_target), len(mutated_substring))
+
+                # Accumulate the score for the group
+                group_scores[group_name] += normalized_score
+
+                # Keep track of the best group found so far
+                if normalized_score < best_score:
+                    best_score = normalized_score
+                    best_group = group_name
+
+    # Return the group with the lowest cumulative score after all trials
+    return min(group_scores, key=group_scores.get), group_scores
+
+# Example usage
+groups = {
+    "Group 1": ["apple", "apelp", "pale"],
+    "Group 2": ["dog", "god", "dogs", "gdo"],
+    "Group 3": ["car", "arc", "racecar", "rac"],
+}
+
+target_string = "appel"
+
+best_group, group_scores = monte_carlo_string_matching(target_string, groups)
+
+print(f"The best match is in {best_group}")
+print(f"Group scores: {group_scores}")
+
+
+
 ####### ahocorasick
 
 import ahocorasick
@@ -107,6 +174,38 @@ target_string = "appel"
 
 matching_groups = find_matching_group_aho_corasick(target_string, automaton)
 print(f"The target string matches group(s): {matching_groups}")
+
+
+import ahocorasick
+
+def build_aho_corasick_automaton_variable(groups):
+    A = ahocorasick.Automaton()
+    for group_name, substrings in groups.items():
+        for substring in substrings:
+            A.add_word(substring, (group_name, substring))
+    A.make_automaton()
+    return A
+
+def find_matching_group_aho_corasick_variable(target_string, automaton):
+    matches = []
+    for end_index, (group_name, substring) in automaton.iter(target_string):
+        matches.append(group_name)
+    return set(matches) if matches else "No matching group"
+
+# Example usage
+groups = {
+    "Group 1": ["apple", "apelp", "pale"],
+    "Group 2": ["dog", "god", "dogs", "gdo"],
+    "Group 3": ["car", "arc", "racecar", "rac"],
+}
+
+automaton = build_aho_corasick_automaton_variable(groups)
+target_string = "appel"
+
+matching_groups = find_matching_group_aho_corasick_variable(target_string, automaton)
+print(f"The target string matches group(s): {matching_groups}")
+
+
 
 
 ####### cosine
@@ -153,3 +252,49 @@ target_string = "appel"
 best_group, best_score = find_best_group_cosine(target_string, groups)
 
 print(f"The best match is in {best_group} with a cosine similarity score of {best_score:.4f}")
+
+from collections import Counter
+import math
+
+def cosine_similarity_variable(str1, str2):
+    vec1 = Counter(str1)
+    vec2 = Counter(str2)
+    
+    # Calculate dot product and magnitude
+    intersection = set(vec1.keys()) & set(vec2.keys())
+    dot_product = sum([vec1[x] * vec2[x] for x in intersection])
+    
+    magnitude1 = math.sqrt(sum([val**2 for val in vec1.values()]))
+    magnitude2 = math.sqrt(sum([val**2 for val in vec2.values()]))
+    
+    if magnitude1 == 0 or magnitude2 == 0:
+        return 0.0
+    
+    return dot_product / (magnitude1 * magnitude2)
+
+def find_best_group_cosine_variable(target_string, groups):
+    best_group = None
+    best_score = 0
+
+    for group_name, substrings in groups.items():
+        for substring in substrings:
+            score = cosine_similarity_variable(target_string, substring)
+            if score > best_score:
+                best_score = score
+                best_group = group_name
+
+    return best_group, best_score
+
+# Example usage
+groups = {
+    "Group 1": ["apple", "apelp", "pale"],
+    "Group 2": ["dog", "god", "dogs", "gdo"],
+    "Group 3": ["car", "arc", "racecar", "rac"],
+}
+
+target_string = "appel"
+best_group, best_score = find_best_group_cosine_variable(target_string, groups)
+
+print(f"The best match is in {best_group} with a cosine similarity score of {best_score:.4f}")
+
+

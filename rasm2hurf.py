@@ -473,8 +473,6 @@ def stringtorasm_MC_substring(chaincode):
     return(rasm)
 
 
-
-
 appearance = np.zeros(len(source), dtype=float)
 def stringtorasm_MC_wholestring(chaincode):
     remainder_stroke= chaincode
@@ -488,8 +486,7 @@ def stringtorasm_MC_wholestring(chaincode):
         lookup_best_terminus=''
         class_best_terminus=-1
         score_best_terminus=-1
-        
-        
+                
         len_current=len(remainder_stroke)
         mc_retry= 0
         for n in range(LENGTH_MIN, int(LENGTH_MAX*PHI)):
@@ -538,16 +535,69 @@ def stringtorasm_MC_wholestring(chaincode):
     return(rasm)
 
 
-
 stringtorasm_MC_wholestring('55507676674040402+106703+44+444030')
 appearance = np.zeros(len(source), dtype=float)
 
-mc_retry= 0
-while(mc_retry < MC_RETRY_MAX):
-    mc_index= int(np.random.rand()*len(source))
-    appearance[mc_index] += 1
-    mc_retry += 1
+# mc_retry= 0
+# while(mc_retry < MC_RETRY_MAX):
+#     mc_index= int(np.random.rand()*len(source))
+#     appearance[mc_index] += 1
+#     mc_retry += 1
+
+import random    
+
+def draw_heatmap(data, xlabel, ylabel):
+    plt.figure(dpi=300)
+    sns.set_theme(rc={
+        'font.family': ['Noto Naskh Arabic', 'Noto Sans'],
+        'font.size': 6,  # Adjust font size if necessary
+        'xtick.labelsize': 6,
+        'ytick.labelsize': 6
+    })
+    sns.heatmap(data, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
+    plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
+    plt.xticks(fontsize=6)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+   
+
+
+def stringtorasm_MC_cumulative(chaincode):
+    remainder_stroke= chaincode
+    rasm=''
     
+    while len(remainder_stroke)>=2 and remainder_stroke!='':
+        len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
+        
+        score_mc = np.zeros((NUM_CLASSES, len_mc_max), dtype=float)
+        for len_mc in range(LENGTH_MIN, len_mc_max):
+            tee_string= remainder_stroke[0:len_mc]
+            mc_retry= 0
+            while(mc_retry < MC_RETRY_MAX):
+                random_class= random.choice(list(top_LCS))  # may also compare to the whole string
+                if len(top_LCS[random_class]) != 0:
+                    random_index = random.randint(0, len(top_LCS[random_class]) - 1)
+                    score_mc[int(random_class)][len_mc] += \
+                        myjaro(tee_string, top_LCS[random_class][random_index]['seq'])
+                    mc_retry += 1
+            
+        
+        len_best= 00;
+        class_best= 00;
+        
+        
+        
+        hurf_best= hurf[class_best]
+        rasm+= hurf_best
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
+            remainder_stroke=''
+        else:
+            remainder_stroke= remainder_stroke[len_best:]
+        if remainder_stroke=='':
+            break
+    return(rasm)
+
+
 
 
 import sys

@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # todo
-# and-or graph network (based on tabulated LCS?)
+# and-or graph network (based on tabulated fcs?)
 # or perhaps a leaf node is a set of path with +/-1 variation
 
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
@@ -208,13 +208,13 @@ def stringtorasm_LSTM(strokeorder):
 
         
 
-#### LCS 
+#### fcs 
 
 import seaborn as sns
 from collections import defaultdict
 
-LCS_FREQ= 16
-LCS_MIN= 2
+fcs_FREQ= 16
+fcs_MIN= 2
 
 score = {f'{i}': [] for i in range(0, NUM_CLASSES)}
 appearance = np.zeros(40, dtype=float)
@@ -230,7 +230,7 @@ def update_rasm_score(hurf_class, rasm_seq):
     return False  
 
 
-def lcs_tabulate(val, string):
+def fcs_tabulate(val, string):
     appearance[val] += 1
     length = len(string)
     unique_substrings = set()  # Use a set to store unique substrings
@@ -247,35 +247,35 @@ fieldstring= 'rasm'
 fieldval= 'val'
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
-    lcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(' ', ''))
+    fcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(' ', ''))
     ##
 
 
-top_LCS = {}
+top_fcs = {}
 for hurf_class, rasm_seq in score.items():
     sorted_token = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)
-    top_LCS[hurf_class] = [token for token in sorted_token[:LCS_FREQ] if token['score'] >= LCS_MIN]
+    top_fcs[hurf_class] = [token for token in sorted_token[:fcs_FREQ] if token['score'] >= fcs_MIN]
 
 
 # check for duplicates
 seq_indices = defaultdict(list)
-for key, entries in top_LCS.items():
+for key, entries in top_fcs.items():
     for i, entry in enumerate(entries):
         #seq_indices[entry['seq']].append(key)
         seq_indices[entry['seq']].append(hurf[int(key)])
-duplicates_LCS = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
+duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
 
-llcs = np.zeros((NUM_CLASSES, LCS_FREQ))
-slcs = np.zeros((NUM_CLASSES, LCS_FREQ))
-alcs = [["" for i in range(LCS_FREQ)] for j in range(NUM_CLASSES)]
+lfcs = np.zeros((NUM_CLASSES, fcs_FREQ))
+sfcs = np.zeros((NUM_CLASSES, fcs_FREQ))
+afcs = [["" for i in range(fcs_FREQ)] for j in range(NUM_CLASSES)]
 
 for j in range(0, NUM_CLASSES):
-    if top_LCS[str(j)] is not None:
-        for i in range(0, len(top_LCS[str(j)]) ):
-            llcs[j][i] = len(top_LCS[str(j)][i]['seq']) # length of each substring
-            slcs[j][i] = top_LCS[str(j)][i]['score']/appearance[j] # apperance frequency of each substring
-            alcs[j][i] = top_LCS[str(j)][i]['seq'] # the substring itself
+    if top_fcs[str(j)] is not None:
+        for i in range(0, len(top_fcs[str(j)]) ):
+            lfcs[j][i] = len(top_fcs[str(j)][i]['seq']) # length of each substring
+            sfcs[j][i] = top_fcs[str(j)][i]['score']/appearance[j] # apperance frequency of each substring
+            afcs[j][i] = top_fcs[str(j)][i]['seq'] # the substring itself
 
 # important to plot these graphs
 plt.figure(dpi=300)
@@ -286,20 +286,20 @@ sns.set_theme(rc={
     'xtick.labelsize': 6,
     'ytick.labelsize': 6
 })
-#sns.heatmap(llcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-sns.heatmap(slcs, cmap='nipy_spectral', annot=alcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.1f"})
-plt.imshow(llcs, cmap='nipy_spectral', interpolation='nearest')
+#sns.heatmap(lfcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
+sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.1f"})
+plt.imshow(lfcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=45)
-plt.savefig("/shm/heatmap-lcs.png")
+plt.savefig("/shm/heatmap-fcs.png")
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 #ax = plt.gca()
 #for tick in ax.get_yticklabels():
 #    tick.set_y(tick.get_position()[1] + 400)  # Move tick labels down
 #plt.show()
 
-counts, bins = np.histogram(slcs.flatten(), bins=LCS_FREQ)
-adjusted_counts = counts / np.count_nonzero(slcs)
+counts, bins = np.histogram(sfcs.flatten(), bins=fcs_FREQ)
+adjusted_counts = counts / np.count_nonzero(sfcs)
 plt.bar(bins[:-1], adjusted_counts, width=np.diff(bins), edgecolor='black', align='edge')
 # Adding labels
 plt.xlabel("Probability of subsequence appearance for each hurf")
@@ -425,36 +425,36 @@ def stringtorasm_MC_substring(chaincode):
             _ = ''
             while _=='': # avoid empty hurf class
                 mc_class= int(np.random.rand()*NUM_CLASSES)
-                _=alcs[mc_class][0]
-                lcs_lookup=''
-                lcs_prob=1
+                _=afcs[mc_class][0]
+                fcs_lookup=''
+                fcs_prob=1
             
             appearance[mc_class] += 1
             for m in range(LENGTH_MIN, len(tee_string), 1):
                 tee_tmp= tee_string[0:m]
                 
                 # TODO: compare to source.seq rather than the SUBSTRINGs
-                while len(lcs_lookup) < LENGTH_MAX*PHI*PHI:
-                    mc_index= int(np.random.rand()*LCS_FREQ)
-                    if alcs[mc_class][mc_index] != '':
-                        lcs_lookup += alcs[mc_class][mc_index]
-                        lcs_prob *= slcs[mc_class][mc_index]
+                while len(fcs_lookup) < LENGTH_MAX*PHI*PHI:
+                    mc_index= int(np.random.rand()*fcs_FREQ)
+                    if afcs[mc_class][mc_index] != '':
+                        fcs_lookup += afcs[mc_class][mc_index]
+                        fcs_prob *= sfcs[mc_class][mc_index]
                     # similarity eval, HOPE for the best
                     score= myjaro(tee_tmp.replace(' ', ''), \
-                                  lcs_lookup.replace(' ', ''))\
+                                  fcs_lookup.replace(' ', ''))\
                             *pow(PHI, len(tee_tmp)) #\ # penalty for shorter chain should should be applied?
-                                #* lcs_prob # may not be needed since will skew to those rare hurfs
-                            # SHALL WE FACTOR IN THE SUBSTRING PROBABILITY TOO? i.e. slcs
+                                #* fcs_prob # may not be needed since will skew to those rare hurfs
+                            # SHALL WE FACTOR IN THE SUBSTRING PROBABILITY TOO? i.e. sfcs
                     if score==0:
                         break
-                    #print(f"ret{mc_retry}\tclass{mc_class}\tscore{score:.2f}\t{tee_tmp}\t{lcs_lookup} @{lcs_prob:.2f}")
+                    #print(f"ret{mc_retry}\tclass{mc_class}\tscore{score:.2f}\t{tee_tmp}\t{fcs_lookup} @{fcs_prob:.2f}")
                     elif score>score_best:
                         score_best= score
                         len_best= m
                         class_best= mc_class
                         tee_best=tee_tmp
-                        lookup_best=lcs_lookup
-                        print(f"ret {mc_retry}\tclass {class_best} ({hurf[class_best]})\tscore {score_best:.2f}\t{tee_best} {lcs_lookup}")
+                        lookup_best=fcs_lookup
+                        print(f"ret {mc_retry}\tclass {class_best} ({hurf[class_best]})\tscore {score_best:.2f}\t{tee_best} {fcs_lookup}")
             mc_retry= mc_retry+1 # up can be incremented anywhere in the nesting
         
         hurf_best= hurf[class_best]
@@ -577,11 +577,11 @@ def stringtorasm_MC_cumulative(chaincode):
             tee_string= remainder_stroke[0:len_mc]
             mc_retry= 0
             while(mc_retry < MC_RETRY_MAX):
-                random_class= random.choice(list(top_LCS))  # may also compare to the whole string
-                if len(top_LCS[random_class]) != 0:
-                    random_index = random.randint(0, len(top_LCS[random_class]) - 1)
+                random_class= random.choice(list(top_fcs))  # may also compare to the whole string
+                if len(top_fcs[random_class]) != 0:
+                    random_index = random.randint(0, len(top_fcs[random_class]) - 1)
                     score_mc[int(random_class)][len_mc] += \
-                        myjaro(tee_string, top_LCS[random_class][random_index]['seq'])
+                        myjaro(tee_string, top_fcs[random_class][random_index]['seq'])
                     mc_retry += 1
             
         
@@ -635,7 +635,7 @@ with redirect_stdout_to_file_and_console('/shm/markicob3.txt'):
 
 
 import textdistance
-def stringtorasm_LCS(strokeorder):
+def stringtorasm_fcs(strokeorder):
     remainder_stroke= strokeorder
     rasm=''
     while len(remainder_stroke)>=2 and remainder_stroke!='':
@@ -648,10 +648,10 @@ def stringtorasm_LCS(strokeorder):
                 break
             tee_string= remainder_stroke[0:n]
             for j in range(0, NUM_CLASSES):
-                if top_LCS[str(j)] is not None:
-                    for i in range(0, len(top_LCS[str(j)]) ):
-                        #tee_eval= fuzz.ratio(tee_string, LCS[i][j]) *pow(PHI, len(tee_string))
-                        tee_eval= textdistance.jaro.similarity(tee_string, top_LCS[str(j)][i]['seq'], 0.1) *pow(PHI, len(tee_string))
+                if top_fcs[str(j)] is not None:
+                    for i in range(0, len(top_fcs[str(j)]) ):
+                        #tee_eval= fuzz.ratio(tee_string, fcs[i][j]) *pow(PHI, len(tee_string))
+                        tee_eval= textdistance.jaro.similarity(tee_string, top_fcs[str(j)][i]['seq'], 0.1) *pow(PHI, len(tee_string))
                         if tee_eval> eval_best:
                             #print(f"length:{n} class:{label_best} score:{eval_best}")
                             eval_best= tee_eval
@@ -675,14 +675,14 @@ def stringtorasm_LCS(strokeorder):
 from itertools import product
 from collections import defaultdict, Counter
 
-def lcs_multiple(strings, LENGTH_MIN=3):
+def fcs_multiple(strings, LENGTH_MIN=3):
     if not strings:
         return []
 
     num_strings = len(strings)
     lengths = [len(s) for s in strings]
 
-    # Create a multi-dimensional array to store lengths of LCS and sets of LCS substrings with counts
+    # Create a multi-dimensional array to store lengths of fcs and sets of fcs substrings with counts
     dp = {}
     for indices in product(*(range(length + 1) for length in lengths)):
         dp[indices] = (0, defaultdict(int))
@@ -843,6 +843,6 @@ with open(file_path, 'r') as file:
     # Iterate over each line in the file
     for line in file:
         #print(line, end='')  # The 'end' argument avoids adding extra newlines
-        print(f"{stringtorasm_LCS(line)} ")
+        print(f"{stringtorasm_fcs(line)} ")
         
 

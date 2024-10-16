@@ -561,7 +561,35 @@ def draw_heatmap(data, xlabel, ylabel, title):
     for label in ax.get_yticklabels():
         label.set_verticalalignment('top')  # 'bottom' moves the labels slightly down
 
-   
+def draw_3d_surface(data, xlabel, ylabel, zlabel, title):
+    # Create figure and 3D axes
+    fig = plt.figure(dpi=300)
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Define X and Y axes (assuming data is a 2D numpy array)
+    x = np.arange(data.shape[1])  # Number of columns in the data
+    y = np.arange(data.shape[0])  # Number of rows in the data
+    X, Y = np.meshgrid(x, y)
+
+    # Plot the surface
+    surf = ax.plot_surface(X, Y, data, cmap='nipy_spectral', edgecolor='none')
+
+    # Add color bar
+    fig.colorbar(surf)
+
+    # Set labels and title
+    ax.set_xlabel(xlabel, fontsize=6)
+    ax.set_ylabel(ylabel, fontsize=6)
+    ax.set_zlabel(zlabel, fontsize=6)
+    ax.set_title(title, fontsize=8)
+
+    # Set tick sizes
+    ax.tick_params(axis='both', which='major', labelsize=6)
+
+    # Show the plot
+    plt.show()   
+
+
 LENGTH_MAX= 15 # guess this is more based than 12 for LSTM
  
 def stringtorasm_MC_cumulative(chaincode):
@@ -570,7 +598,7 @@ def stringtorasm_MC_cumulative(chaincode):
     
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
-        score_mc = np.ones((NUM_CLASSES, len_mc_max), dtype=float)
+        score_mc = np.zeros((NUM_CLASSES, len_mc_max), dtype=float)
         for len_mc in range(LENGTH_MIN, len_mc_max):
             tee_string= remainder_stroke[0:len_mc]
             mc_retry= 0
@@ -578,7 +606,7 @@ def stringtorasm_MC_cumulative(chaincode):
                 random_class= random.choice(list(top_fcs))  # may also compare to the whole string
                 if len(top_fcs[random_class]) != 0:
                     random_index = random.randint(0, len(top_fcs[random_class]) - 1)
-                    score_mc[int(random_class)][len_mc] *= \
+                    score_mc[int(random_class)][len_mc] += \
                         myjaro(tee_string, top_fcs[random_class][random_index]['seq'])
                     mc_retry += 1
         score_mc[score_mc == 1.0] = 0            

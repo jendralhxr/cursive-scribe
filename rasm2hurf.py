@@ -69,13 +69,14 @@ random_labels=pd.concat([source['val']])
 #source['rasm'].str.len().max()
 
 char_lengths = source['rasm'].apply(len)
-plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths) + 2), edgecolor='black')
+plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths)), edgecolor='black')
 from scipy import stats
-mode_value = stats.mode(char_lengths)
 plt.xlabel('chaincode length')
 plt.ylabel('apperance')
+quartiles = char_lengths.quantile([1/PHI, 2/PHI])
 
 
+### tensorflow doing LSTM ###
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -208,7 +209,7 @@ def stringtorasm_LSTM(strokeorder):
 
         
 
-#### fcs 
+#### FCS stands for frequent common substring/subsequence/substroke
 
 import seaborn as sns
 from collections import defaultdict
@@ -322,6 +323,8 @@ def myjaro(s1,s2):
     if not s1_len or not s2_len:
         #result= 0
         return 0.0
+    if s1==s2:
+        return 1.0
 
     min_len = min(s1_len, s2_len)
     search_range = max(s1_len, s2_len)
@@ -339,7 +342,7 @@ def myjaro(s1,s2):
         low = max(0, i - search_range)
         hi = min(i + search_range, s2_len - 1)
         for j in range(low, hi + 1):
-            #print(f"eval s1[{i}]:{s1[i]} s2[{j}].replace(' ', ''):{s2[j]}")
+            #print(f"eval {low}-{hi} s1[{i}]:{s1[i]} s2[{j}]:{s2[j]}")
             if not s2_flags[j] and s2[j] == s1_ch:
                 s1_flags[i] = s2_flags[j] = True
                 common_chars += 1
@@ -381,8 +384,8 @@ def myjaro(s1,s2):
     #     return weight
 
     # winkler modification
-    # adjust for up to first 4 chars in common
-    j = min(min_len, 3)
+    # adjust for up to first 6 chars in common
+    j = min(min_len, 5)
     i = 0
     while i < j and s1[i] == s2[i]:
         i += 1
@@ -536,17 +539,12 @@ def stringtorasm_MC_wholestring(chaincode):
 
 
 stringtorasm_MC_wholestring('55507676674040402+106703+44+444030')
-appearance = np.zeros(len(source), dtype=float)
-
-# mc_retry= 0
-# while(mc_retry < MC_RETRY_MAX):
-#     mc_index= int(np.random.rand()*len(source))
-#     appearance[mc_index] += 1
-#     mc_retry += 1
+chaincode='66676543535364667075444'
 
 import random    
+appearance = np.zeros(len(source), dtype=float)
 
-def draw_heatmap(data, xlabel, ylabel):
+def draw_heatmap(data, xlabel, ylabel, title):
     plt.figure(dpi=300)
     sns.set_theme(rc={
         'font.family': ['Noto Naskh Arabic', 'Noto Sans'],
@@ -559,19 +557,19 @@ def draw_heatmap(data, xlabel, ylabel):
     plt.xticks(fontsize=6)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+    plt.title(title)
     for label in ax.get_yticklabels():
         label.set_verticalalignment('top')  # 'bottom' moves the labels slightly down
 
    
-
-
+LENGTH_MAX= 15 # guess this is more based than 12 for LSTM
+ 
 def stringtorasm_MC_cumulative(chaincode):
     remainder_stroke= chaincode
     rasm=''
     
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
-        
         score_mc = np.zeros((NUM_CLASSES, len_mc_max), dtype=float)
         for len_mc in range(LENGTH_MIN, len_mc_max):
             tee_string= remainder_stroke[0:len_mc]
@@ -583,12 +581,50 @@ def stringtorasm_MC_cumulative(chaincode):
                     score_mc[int(random_class)][len_mc] += \
                         myjaro(tee_string, top_fcs[random_class][random_index]['seq'])
                     mc_retry += 1
+        draw_heatmap(score_mc, 'hurf character length', 'class', 'cumulative MC'+str(MC_RETRY_MAX))
             
         
         len_best= 00;
         class_best= 00;
         
         
+        
+        hurf_best= hurf[class_best]
+        rasm+= hurf_best
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
+            remainder_stroke=''
+        else:
+            remainder_stroke= remainder_stroke[len_best:]
+        if remainder_stroke=='':
+            break
+    return(rasm)
+
+
+def stringtorasm_MC_metropolis(chaincode):
+    remainder_stroke= chaincode
+    rasm=''
+    
+    while len(remainder_stroke)>=2 and remainder_stroke!='':
+        score_mc = np.zeros((NUM_CLASSES, LENGTH_MAX), dtype=float)
+        len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
+        mc_retry= 0
+        score_best=-1
+        while(mc_retry < MC_RETRY_MAX):
+            random_length= random.randint(2,len_mc_max)
+            tee_string= remainder_stroke[0:random_length]
+            random_class= random.choice(list(top_fcs))  # may also compare to the whole string
+            if len(top_fcs[random_class]) != 0:
+                random_index = random.randint(0, len(top_fcs[random_class]) - 1)
+                score_now= myjaro(tee_string, top_fcs[random_class][random_index]['seq'])
+                if score_now>score_best:
+                    score_mc[int(random_class)][random_length-1]= score_now
+                    score_best= score_now
+                mc_retry += 1
+        #draw_heatmap(score_mc, 'hurf character length', 'class', 'metropolis MC'+str(MC_RETRY_MAX))
+        
+        # not sure how to decide which class and stop-limit length is the best
+        len_best= 00;
+        class_best= 00;
         
         hurf_best= hurf[class_best]
         rasm+= hurf_best

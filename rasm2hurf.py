@@ -598,7 +598,7 @@ def stringtorasm_MC_cumulative(chaincode):
     
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
-        #score_mc = np.ones((NUM_CLASSES, LENGTH_MIN+len_mc_max-1), dtype=float) * pow(MC_RETRY_MAX,3)
+        #score_mc = np.ones((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float) * pow(MC_RETRY_MAX,6) # for cumulative product
         score_mc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
         for len_mc in range(LENGTH_MIN, len_mc_max+LENGTH_MIN+1):
             tee_string= remainder_stroke[0:len_mc]
@@ -607,17 +607,17 @@ def stringtorasm_MC_cumulative(chaincode):
                 random_class= random.choice(list(top_fcs))  # may also compare to the whole string
                 if len(top_fcs[random_class]) != 0:
                     random_index = random.randint(0, len(top_fcs[random_class]) - 1)
-                    score_mc[int(random_class)][len_mc] += \
-                        myjaro(tee_string, top_fcs[random_class][random_index]['seq'])
+                    # score_mc[int(random_class)][len_mc] *=  cumulative product is also nice
+                    score_mc[int(random_class)][len_mc] += myjaro(tee_string, top_fcs[random_class][random_index]['seq'])
                     mc_retry += 1
-        #score_mc[score_mc == pow(MC_RETRY_MAX,3)] = 0            
-        draw_heatmap(score_mc, 'hurf character length', 'class', 'cumulative MC'+str(MC_RETRY_MAX))
+        score_mc[score_mc == pow(MC_RETRY_MAX,6)] = 0            
+        draw_heatmap(score_mc, 'hurf character length', 'class', 'cumulative additive MC'+str(MC_RETRY_MAX))
             
-        
-        len_best= 00;
-        class_best= 00;
-        
-        
+        # this choice condition is subject to change
+        row_sums = np.sum(score_mc, axis=1)
+        class_best= np.argmax(row_sums);
+        max_row = score_mc[np.argmax(row_sums)]
+        len_best= np.argmax(max_row);
         
         hurf_best= hurf[class_best]
         rasm+= hurf_best

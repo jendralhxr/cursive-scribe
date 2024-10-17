@@ -598,8 +598,9 @@ def stringtorasm_MC_cumulative(chaincode):
     
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
-        score_mc = np.zeros((NUM_CLASSES, len_mc_max), dtype=float)
-        for len_mc in range(LENGTH_MIN, len_mc_max):
+        #score_mc = np.ones((NUM_CLASSES, LENGTH_MIN+len_mc_max-1), dtype=float) * pow(MC_RETRY_MAX,3)
+        score_mc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
+        for len_mc in range(LENGTH_MIN, len_mc_max+LENGTH_MIN+1):
             tee_string= remainder_stroke[0:len_mc]
             mc_retry= 0
             while(mc_retry < MC_RETRY_MAX):
@@ -609,7 +610,7 @@ def stringtorasm_MC_cumulative(chaincode):
                     score_mc[int(random_class)][len_mc] += \
                         myjaro(tee_string, top_fcs[random_class][random_index]['seq'])
                     mc_retry += 1
-        score_mc[score_mc == 1.0] = 0            
+        #score_mc[score_mc == pow(MC_RETRY_MAX,3)] = 0            
         draw_heatmap(score_mc, 'hurf character length', 'class', 'cumulative MC'+str(MC_RETRY_MAX))
             
         

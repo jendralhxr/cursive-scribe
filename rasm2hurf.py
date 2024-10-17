@@ -214,8 +214,8 @@ def stringtorasm_LSTM(strokeorder):
 import seaborn as sns
 from collections import defaultdict
 
-fcs_FREQ= 16
-fcs_MIN= 2
+FCS_MAX_NUM= 16
+FCS_APPEARANCE_MIN= 2
 
 score = {f'{i}': [] for i in range(0, NUM_CLASSES)}
 appearance = np.zeros(40, dtype=float)
@@ -249,13 +249,11 @@ fieldval= 'val'
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
     fcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(' ', ''))
-    ##
-
 
 top_fcs = {}
 for hurf_class, rasm_seq in score.items():
     sorted_token = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)
-    top_fcs[hurf_class] = [token for token in sorted_token[:fcs_FREQ] if token['score'] >= fcs_MIN]
+    top_fcs[hurf_class] = [token for token in sorted_token[:FCS_MAX_NUM] if token['score'] >= FCS_APPEARANCE_MIN]
 
 
 # check for duplicates
@@ -266,17 +264,22 @@ for key, entries in top_fcs.items():
         seq_indices[entry['seq']].append(hurf[int(key)])
 duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
+FCS_THINNING= char_lengths.mode()[0] # the mode of strings length, still feels inappropriate
 
-lfcs = np.zeros((NUM_CLASSES, fcs_FREQ))
-sfcs = np.zeros((NUM_CLASSES, fcs_FREQ))
-afcs = [["" for i in range(fcs_FREQ)] for j in range(NUM_CLASSES)]
+lfcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM))
+sfcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM))
+afcs = [["" for i in range(FCS_MAX_NUM)] for j in range(NUM_CLASSES)]
 
 for j in range(0, NUM_CLASSES):
     if top_fcs[str(j)] is not None:
         for i in range(0, len(top_fcs[str(j)]) ):
-            lfcs[j][i] = len(top_fcs[str(j)][i]['seq']) # length of each substring
-            sfcs[j][i] = top_fcs[str(j)][i]['score']/appearance[j] # apperance frequency of each substring
-            afcs[j][i] = top_fcs[str(j)][i]['seq'] # the substring itself
+            tee_score = top_fcs[str(j)][i]['score']/appearance[j]
+            if tee_score >= 1/pow(PHI,FCS_THINNING):
+                sfcs[j][i] = tee_score # apperance frequency of each substring
+                lfcs[j][i] = len(top_fcs[str(j)][i]['seq']) # length of each substring
+                sfcs[j][i] = top_fcs[str(j)][i]['score']/appearance[j] # apperance frequency of each substring
+                afcs[j][i] = top_fcs[str(j)][i]['seq'] # the substring itself
+
 
 # important to plot these graphs
 plt.figure(dpi=300)
@@ -288,18 +291,19 @@ sns.set_theme(rc={
     'ytick.labelsize': 6
 })
 #sns.heatmap(lfcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.1f"})
+sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.2f"})
 plt.imshow(lfcs, cmap='nipy_spectral', interpolation='nearest')
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=45)
-plt.savefig("/shm/heatmap-fcs.png")
+plt.title("FCS with lower threshold of 1/φ^"+str(FCS_THINNING))
+plt.savefig("/shm/heatmapFCS-"+str(FCS_THINNING)+".png")
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 #ax = plt.gca()
 #for tick in ax.get_yticklabels():
 #    tick.set_y(tick.get_position()[1] + 400)  # Move tick labels down
 #plt.show()
 
-counts, bins = np.histogram(sfcs.flatten(), bins=fcs_FREQ)
+counts, bins = np.histogram(sfcs.flatten(), bins=FCS_MAX_NUM)
 adjusted_counts = counts / np.count_nonzero(sfcs)
 plt.bar(bins[:-1], adjusted_counts, width=np.diff(bins), edgecolor='black', align='edge')
 # Adding labels
@@ -405,9 +409,6 @@ def myjaro(s1,s2):
 
 MC_RETRY_MAX= 1e4
 
-
-appearance = np.zeros(40, dtype=float)
-
 def stringtorasm_MC_substring(chaincode):
     remainder_stroke= chaincode
     rasm=''
@@ -436,9 +437,8 @@ def stringtorasm_MC_substring(chaincode):
             for m in range(LENGTH_MIN, len(tee_string), 1):
                 tee_tmp= tee_string[0:m]
                 
-                # TODO: compare to source.seq rather than the SUBSTRINGs
                 while len(fcs_lookup) < LENGTH_MAX*PHI*PHI:
-                    mc_index= int(np.random.rand()*fcs_FREQ)
+                    mc_index= int(np.random.rand()*FCS_MAX_NUM)
                     if afcs[mc_class][mc_index] != '':
                         fcs_lookup += afcs[mc_class][mc_index]
                         fcs_prob *= sfcs[mc_class][mc_index]
@@ -542,7 +542,6 @@ stringtorasm_MC_wholestring('55507676674040402+106703+44+444030')
 chaincode='66676543535364667075444'
 
 import random    
-appearance = np.zeros(len(source), dtype=float)
 
 def draw_heatmap(data, xlabel, ylabel, title):
     plt.figure(dpi=300)
@@ -630,6 +629,58 @@ def stringtorasm_MC_cumulative(chaincode):
     return(rasm)
 
 
+def stringtorasm_MC_jagokandang(chaincode):
+    remainder_stroke= chaincode
+    rasm=''
+    
+    while len(remainder_stroke)>=2 and remainder_stroke!='':
+        len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
+        score_mc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
+        string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype=str)
+        
+        mc_retry= 0
+        while(mc_retry < MC_RETRY_MAX):
+            fcs_lookup=''
+            mc_class= random.randint(1, len(top_fcs)-1)  # may also compare to the whole string
+            if len(top_fcs[str(mc_class)]) != 0:
+                fcs_prob= 1
+                
+                for len_mc in range(LENGTH_MIN, len_mc_max+LENGTH_MIN+1):
+                    while len(fcs_lookup)<=len_mc:
+                        mc_index= random.randint(0, len(top_fcs[str(mc_class)])-1) 
+                        fcs_lookup += afcs[mc_class][mc_index]
+                        fcs_prob *= sfcs[mc_class][mc_index]
+                
+                    if len(top_fcs[ str(mc_class) ]) != 0:
+                        score_tee= myjaro( remainder_stroke[0:len_mc], fcs_lookup) # * fcs_prob # (optionally)
+                        if score_tee > score_mc[int(mc_class)][len_mc]:
+                            score_mc[int(mc_class)][len_mc]= score_tee
+                            string_mc[int(mc_class)][len_mc]= fcs_lookup
+                    
+                mc_retry += 1 # can also be neseted one down
+        
+        draw_heatmap(score_mc, 'hurf character length', 'class', 'FCS-sequence MC'+str(MC_RETRY_MAX))
+        
+        
+        
+        # this choice condition is subject to change
+        row_sums = np.sum(score_mc, axis=1)
+        class_best= np.argmax(row_sums);
+        max_row = score_mc[np.argmax(row_sums)]
+        len_best= np.argmax(max_row);
+        
+        hurf_best= hurf[class_best]
+        rasm+= hurf_best
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
+            remainder_stroke=''
+        else:
+            remainder_stroke= remainder_stroke[len_best:]
+        if remainder_stroke=='':
+            break
+    return(rasm)
+
+
+
 def stringtorasm_MC_metropolis(chaincode):
     remainder_stroke= chaincode
     rasm=''
@@ -697,8 +748,6 @@ def redirect_stdout_to_file_and_console(file_path):
 with redirect_stdout_to_file_and_console('/shm/markicob3.txt'):
     stringtorasm_MC_substring("564304+4053+434675440")
     
-
-
 
 import textdistance
 def stringtorasm_fcs(strokeorder):

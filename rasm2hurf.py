@@ -617,6 +617,7 @@ def stringtorasm_MC_cumulative(chaincode):
         class_best= np.argmax(row_sums);
         max_row = score_mc[np.argmax(row_sums)]
         len_best= np.argmax(max_row);
+        column_variances = np.var(score_mc, axis=0)
         
         hurf_best= hurf[class_best]
         rasm+= hurf_best
@@ -628,6 +629,10 @@ def stringtorasm_MC_cumulative(chaincode):
             break
     return(rasm)
 
+
+import textdistance
+FACTOR_LENGTH= 1.0
+VARIANCE_THRESHOLD= 0.01
 
 def stringtorasm_MC_jagokandang(chaincode):
     remainder_stroke= chaincode
@@ -652,14 +657,28 @@ def stringtorasm_MC_jagokandang(chaincode):
                         fcs_prob *= sfcs[mc_class][mc_index]
                 
                     if len(top_fcs[ str(mc_class) ]) != 0:
-                        score_tee= myjaro( remainder_stroke[0:len_mc], fcs_lookup) # * fcs_prob # (optionally)
+                        #score_tee= textdistance.jaro.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        #score_tee= textdistance.jaro_winkler.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.strcmp95.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        #score_tee= textdistance.gotoh.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.jaccard.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # tanimoto agak2
+                        #score_tee=  2-textdistance.tanimoto.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.sorensen.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.sorensen_dice.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.dice.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.tversky.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.overlap.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.cosine.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        #score_tee= textdistance.monge_elkan.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        score_tee= myjaro( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         if score_tee > score_mc[int(mc_class)][len_mc]:
                             score_mc[int(mc_class)][len_mc]= score_tee
                             string_mc[int(mc_class)][len_mc]= fcs_lookup
                     
                 mc_retry += 1 # can also be neseted one down
         
-        draw_heatmap(score_mc, 'hurf character length', 'class', 'FCS-sequence MC'+str(MC_RETRY_MAX))
+        draw_heatmap(score_mc, 'hurf character length', 'class', 'FCS-sequence MC-Jaro (modified) '+str(MC_RETRY_MAX)+'/'+str(FACTOR_LENGTH))
         
         
         
@@ -668,7 +687,13 @@ def stringtorasm_MC_jagokandang(chaincode):
         class_best= np.argmax(row_sums);
         max_row = score_mc[np.argmax(row_sums)]
         len_best= np.argmax(max_row);
+        column_variances = np.var(score_mc, axis=0)
         
+        asymptote = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):])
+        # find from behind
+        divergence_point_from_end = np.where(np.abs(column_variances - asymptote) > VARIANCE_THRESHOLD)[0][-1]
+        len_best= divergence_point_from_end
+
         hurf_best= hurf[class_best]
         rasm+= hurf_best
         if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':

@@ -281,7 +281,7 @@ for j in range(0, NUM_CLASSES):
                 afcs[j][i] = top_fcs[str(j)][i]['seq'] # the substring itself
 
 
-# important to plot these graphs
+# important to plot these graphs 
 plt.figure(dpi=300)
 sns.set_theme(rc={
     'figure.figsize': (8, 8),
@@ -643,7 +643,7 @@ def reverseFreeman(s):
 
 
 import textdistance
-FACTOR_LENGTH= 1.001
+FACTOR_LENGTH= 1.01
 VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 
 def stringtorasm_MC_jagokandang(chaincode):
@@ -685,39 +685,45 @@ def stringtorasm_MC_jagokandang(chaincode):
                         #score_tee= textdistance.monge_elkan.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         score_tee1= myjaro( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         score_tee2= myjaro( reverseFreeman(remainder_stroke[0:len_mc]), fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
-                        score_tee= max(score_tee1, score_tee2)
                         
-                        if score_tee > score_mc[int(mc_class)][len_mc]:
-                            score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
-                            string_mc[int(mc_class)][len_mc]= fcs_lookup
-                    
+                        # i like accumulative MC
+                        score_mc[int(mc_class)][len_mc] += max(score_tee1, score_tee2)
+                        string_mc[int(mc_class)][len_mc]= fcs_lookup
+                        # if score_tee > score_mc[int(mc_class)][len_mc]:
+                        #     score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
+                        
                 mc_retry += 1 # can also be neseted one down
         
         # this choice condition is subject to change
         row_sums = np.sum(score_mc, axis=1)
         class_best= np.argmax(row_sums);
         max_row = score_mc[np.argmax(row_sums)]
+        max_row /= np.max(max_row)
         len_best= np.argmax(max_row);
         column_variances = np.var(score_mc, axis=0)
-        
-        # draw_heatmap(score_mc, 'hurf character length', 'class', 'FCS-sequence MC-Jaro (modified) '+str(MC_RETRY_MAX)+'/'+str(FACTOR_LENGTH))
-        # # plot the stop selection criteria
-        # fig, ax = plt.subplots()
-        # ax.plot(max_row, color='red', label='best-match hurf values')
-        # ax.plot(column_variances, color='blue', label='inter-hurf variance')
-        # ax.set_title(remainder_stroke+' ('+hurf[class_best]+')')
-        # ax.set_xlabel('hurf character length')
-        # ax.set_ylabel('val')
-        # ax.legend()
+        column_variances  /= np.max(column_variances)
             
         asymptote = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):])
         divergence_point_from_end = np.where(np.abs(column_variances - asymptote) > asymptote/pow(PHI,4))[0][-1]
         len_best= divergence_point_from_end
 
+        # # plot the stop selection criteria
+        fig, ax = plt.subplots()
+        ax.plot(max_row, color='red', label='best-match hurf values')
+        ax.plot(column_variances, color='blue', label='inter-hurf variance')
+        ax.set_title(remainder_stroke+' ('+hurf[class_best]+')')
+        ax.set_xlabel('hurf character length')
+        ax.set_ylabel('val')
+        ax.legend()
+
         hurf_best= hurf[class_best]
         rasm+= hurf_best
+
+        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke+' as '+hurf_best)
+    
         
-        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
+        if hurf_best=='ا' or hurf_best=='ء' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
             remainder_stroke=''
         else:
             remainder_stroke= remainder_stroke[len_best:]

@@ -664,6 +664,8 @@ from rasm2hurf import stringtorasm_MC_jagokandang
 FONTSIZE= 24
 
 for i in range(len(components)):
+    rasm=''
+    remainder_stroke=''
     if len(components[i].nodes)>=2: # small alifs are often sometimes only 2-nodes big
         if components[i].node_start==-1: # in case of missing starting node
             #node_start_pos=(0,0)
@@ -704,14 +706,13 @@ for i in range(len(components)):
         # using LCS table
         # rasm= stringtorasm_LCS(remainder_stroke)
         rasm= stringtorasm_MC_jagokandang(remainder_stroke)
-
+        
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         seed= pos[components[i].node_end]
         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
         pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
-        #font = ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf", FONTSIZE)
         font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
-        fontsm = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE-8)
+        fontsm = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE-12)
         drawPIL = ImageDraw.Draw(pil_image)
         drawPIL.text((components[i].centroid[0]-FONTSIZE/2, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
         drawPIL.text((components[i].centroid[0]-FONTSIZE/2, components[i].centroid[1]), str(i), font=fontsm, fill=(0, 200, 200))
@@ -719,8 +720,12 @@ for i in range(len(components)):
         ccv= np.asarray(pil_image)
         ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
         draw(ccv)
-        # #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
+        # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
 
+    else:
+        rasm= '' # so the next rasm gets it fresh
+        
+    
 graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/test.png')
 #draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)

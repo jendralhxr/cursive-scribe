@@ -55,7 +55,7 @@ np.random.seed(42)
 
 # Parameters
 LENGTH_MIN= 2
-LENGTH_MAX = 12  # Max length of the strings
+LENGTH_MAX = 16  # Max length of the strings
 NUM_CLASSES = 40  # Number of classes
 
 # data
@@ -538,7 +538,7 @@ def stringtorasm_MC_wholestring(chaincode):
     return(rasm)
 
 
-stringtorasm_MC_wholestring('55507676674040402+106703+44+444030')
+#stringtorasm_MC_wholestring('55507676674040402+106703+44+444030')
 chaincode='66676543535364667075444'
 
 import random    
@@ -629,10 +629,22 @@ def stringtorasm_MC_cumulative(chaincode):
             break
     return(rasm)
 
+def increment_by_4_mod_8(s):
+    result = []
+    for char in s:
+        if char.isdigit() and 0 <= int(char) <= 7:
+            # If the character is a digit between 0 and 7, process it
+            new_char = str((int(char) + 4) % 8)
+            result.append(new_char)
+        else:
+            # If it's a non-numeric character, leave it unchanged or handle as needed
+            result.append(char)
+    return ''.join(result)
+
 
 import textdistance
-FACTOR_LENGTH= 1.0
-VARIANCE_THRESHOLD= 0.01
+FACTOR_LENGTH= 1.001
+VARIANCE_THRESHOLD= 0.05
 
 def stringtorasm_MC_jagokandang(chaincode):
     remainder_stroke= chaincode
@@ -680,8 +692,6 @@ def stringtorasm_MC_jagokandang(chaincode):
         
         draw_heatmap(score_mc, 'hurf character length', 'class', 'FCS-sequence MC-Jaro (modified) '+str(MC_RETRY_MAX)+'/'+str(FACTOR_LENGTH))
         
-        
-        
         # this choice condition is subject to change
         row_sums = np.sum(score_mc, axis=1)
         class_best= np.argmax(row_sums);
@@ -689,6 +699,15 @@ def stringtorasm_MC_jagokandang(chaincode):
         len_best= np.argmax(max_row);
         column_variances = np.var(score_mc, axis=0)
         
+        # plot the stop selection criteria
+        fig, ax = plt.subplots()
+        ax.plot(max_row, color='red', label='best-match hurf values')
+        ax.plot(column_variances, color='blue', label='inter-hurf variance')
+        ax.set_title(remainder_stroke+' ('+hurf[class_best]+')')
+        ax.set_xlabel('hurf character length')
+        ax.set_ylabel('val')
+        ax.legend()
+            
         asymptote = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):])
         # find from behind
         divergence_point_from_end = np.where(np.abs(column_variances - asymptote) > VARIANCE_THRESHOLD)[0][-1]

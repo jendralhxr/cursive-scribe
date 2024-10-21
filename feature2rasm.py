@@ -56,6 +56,7 @@ def freeman(x, y):
 
 def draw(img): # draw the bitmap
     plt.figure(dpi=600)
+    plt.grid(False)
     if (len(img.shape)==3):
         plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2RGB))
     elif (len(img.shape)==2):
@@ -235,13 +236,13 @@ components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 #             cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
 #         if components[n].node_end!=-1:
 #             cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
-#         # r= components[n].rect[0]+int(components[n].rect[2])
-#         # l= components[n].rect[0]
-#         # if l<width and r<width: # did we ever went beyond the frame?
-#         #     for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
-#         #         disp[j1,r,1]= 120
-#         #     for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
-#         #         disp[j1,l,1]= 120
+#         r= components[n].rect[0]+int(components[n].rect[2])
+#         l= components[n].rect[0]
+#         if l<width and r<width: # did we ever went beyond the frame?
+#             for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
+#                 disp[j1,r,1]= 120
+#             for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
+#                 disp[j1,l,1]= 120
 #     else:        
 #         m= components[n].centroid[1]
 #         i= components[n].centroid[0]
@@ -250,10 +251,10 @@ components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 #             if j2<height and j2>0: 
 #                 disp[j2,i,1]= STROKEVAL/2
 
-    #rasm= components[n].mat[\
-    #    components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
-    #    components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
-    #cv.imwrite(str(n)+'.png', rasm)
+#     rasm= components[n].mat[\
+#         components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
+#         components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
+#     cv.imwrite(str(n)+'.png', rasm)
 # draw(disp) 
 #cv.imwrite(imagename+'-disp.png', disp)    
 
@@ -658,10 +659,12 @@ def bfs_with_closest_priority(G, start_node):
 
 # drawing the rasm graph
 from PIL import ImageFont, ImageDraw, Image
+from rasm2hurf import stringtorasm_MC_jagokandang
+
 FONTSIZE= 24
 
 for i in range(len(components)):
-    if len(components[i].nodes)>2: # small alifs are often sometimes only 2-nodes big
+    if len(components[i].nodes)>=2: # small alifs are often sometimes only 2-nodes big
         if components[i].node_start==-1: # in case of missing starting node
             #node_start_pos=(0,0)
             components[i].node_start=components[i].nodes[0]
@@ -700,20 +703,22 @@ for i in range(len(components)):
         # rasm=stringtorasm_LSTM(remainder_stroke)
         # using LCS table
         # rasm= stringtorasm_LCS(remainder_stroke)
+        rasm= stringtorasm_MC_jagokandang(remainder_stroke)
 
-        # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        # seed= pos[components[i].node_end]
-        # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        # pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
-        # font = ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf", FONTSIZE)
-        # font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
-        # drawPIL = ImageDraw.Draw(pil_image)
-        # #drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
-        # drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), str(i), font=font, fill=(0, 200, 0))
-        # # Convert back to Numpy array and switch back from RGB to BGR
-        # ccv= np.asarray(pil_image)
-        # ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        # draw(ccv)
+        ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+        seed= pos[components[i].node_end]
+        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
+        #font = ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf", FONTSIZE)
+        font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
+        fontsm = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE-8)
+        drawPIL = ImageDraw.Draw(pil_image)
+        drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
+        drawPIL.text((components[i].centroid[0]+FONTSIZE, components[i].centroid[1]-FONTSIZE), str(i), font=fontsm, fill=(0, 200, 0))
+        # Convert back to Numpy array and switch back from RGB to BGR
+        ccv= np.asarray(pil_image)
+        ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
+        draw(ccv)
         # #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext

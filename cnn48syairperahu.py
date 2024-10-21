@@ -6,7 +6,7 @@ from tensorflow.keras import layers, models
 
 
 # Load CSV file
-data = pd.read_csv('catet.csv')
+data = pd.read_csv('syairperahucnn/catet.csv')
 
 # Define image size and path prefix
 
@@ -14,7 +14,7 @@ IMG_WIDTH= 48
 IMG_HEIGHT= IMG_WIDTH
 
 img_size = (IMG_WIDTH, IMG_HEIGHT)  # Update as per your image size
-img_dir = 'images/'  # Directory containing images
+img_dir = 'syairperahucnn/images/'  # Directory containing images
 
 # Load and preprocess images
 def load_image(file_path):

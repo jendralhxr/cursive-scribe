@@ -377,7 +377,7 @@ def myjaro(s1,s2):
 
     # adjust for similarities in nonmatched characters
     weight = common_chars / s1_len + common_chars / s2_len
-    weight += (common_chars - trans_count) / common_chars
+    weight += (common_chars - pow(PHI,trans_count)) / common_chars
     weight += (almost_common_chars) / (s1_len+s2_len) /4
     weight /= 3
 
@@ -389,22 +389,22 @@ def myjaro(s1,s2):
 
     # winkler modification
     # adjust for up to first 6 chars in common
-    j = min(min_len, 5)
-    i = 0
-    while i < j and s1[i] == s2[i]:
-        i += 1
-    if i:
-        weight += i * prefix_weight * (1.0 - weight)
+    # j = min(min_len, 5)
+    # i = 0
+    # while i < j and s1[i] == s2[i]:
+    #     i += 1
+    # if i:
+    #     weight += i * prefix_weight * (1.0 - weight)
 
     # optionally adjust for long strings
     # after agreeing beginning chars, at least two or more must agree and
     # agreed characters must be > half of remaining characters
     # if not self.long_tolerance or min_len <= 4:
     #     return weight
-    if common_chars <= i + 1 or 2 * common_chars < min_len + i:
-        return weight
-    tmp = (common_chars - i - 1) / (s1_len + s2_len - i * 2 + 2)
-    weight += (1.0 - weight) * tmp
+    # if common_chars <= i + 1 or 2 * common_chars < min_len + i:
+    #     return weight
+    # tmp = (common_chars - i - 1) / (s1_len + s2_len - i * 2 + 2)
+    # weight += (1.0 - weight) * tmp
     return weight
 
 MC_RETRY_MAX= 1e4
@@ -643,7 +643,7 @@ def reverseFreeman(s):
 
 
 import textdistance
-FACTOR_LENGTH= 1.01
+FACTOR_LENGTH= 1.00
 VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 
 def stringtorasm_MC_jagokandang(chaincode):
@@ -686,11 +686,10 @@ def stringtorasm_MC_jagokandang(chaincode):
                         score_tee1= myjaro( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         score_tee2= myjaro( reverseFreeman(remainder_stroke[0:len_mc]), fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         
-                        # i like accumulative MC
-                        score_mc[int(mc_class)][len_mc] += max(score_tee1, score_tee2)
-                        string_mc[int(mc_class)][len_mc]= fcs_lookup
-                        # if score_tee > score_mc[int(mc_class)][len_mc]:
-                        #     score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
+                        score_tee = max(score_tee1, score_tee2)
+                        if score_tee > score_mc[int(mc_class)][len_mc]:
+                            string_mc[int(mc_class)][len_mc]= fcs_lookup
+                            score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
                         
                 mc_retry += 1 # can also be neseted one down
         

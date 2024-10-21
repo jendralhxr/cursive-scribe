@@ -22,7 +22,7 @@ PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
 RESIZE_FACTOR=2
 SLIC_SPACE= 3
 SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
-WHITESPACE_INTERVAL= 5
+WHITESPACE_INTERVAL= 4
 
 RASM_EDGE_MAXDEG= 2
 RASM_CANDIDATE= 6
@@ -73,10 +73,34 @@ width= image.shape[1]
 
 image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
-kernel = np.ones((2,2),np.uint8)
-erosion = cv.erode(image_gray,kernel,iterations = 1)
-_, gray = cv.threshold(erosion, 0, THREVAL, cv.THRESH_OTSU) # less smear
-#_, gray= cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
+#kernel = np.ones((1,1),np.uint8)
+#erosion = cv.erode(image_gray,kernel,iterations = 1)
+#_, gray= cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_TRIANGLE) # works better with dynamic-selective erosion
+#draw(gray)
+
+#kernel_size=2
+#canny_threshold1=100
+#canny_threshold2=200
+#edges = cv.Canny(gray, canny_threshold1, canny_threshold2)
+#kernel = np.ones((kernel_size, kernel_size), np.uint8)
+#eroded_image = cv.erode(gray, kernel, iterations=1)
+#edge_mask = cv.bitwise_not(edges)
+#selective_eroded = cv.bitwise_and(eroded_image, eroded_image, mask=edge_mask)
+#ret, gray= cv.threshold(selective_eroded,1,THREVAL,cv.THRESH_BINARY)
+
+erosion_kernel = np.ones((1, 2), np.uint8)
+eroded_image = cv.erode(image_gray, erosion_kernel, iterations=1)
+_, gray = cv.threshold(eroded_image, 0, THREVAL, cv.THRESH_OTSU) # less smear
+
+
+dilation_kernel = np.ones((2, 1), np.uint8)
+dilated_image = cv.dilate(gray, dilation_kernel, iterations=1)
+
+
+#cv.imshow('Dilated Image', dilated_image)
+#cv.waitKey(0)
+cv.imwrite('eroded_text.png', eroded_image)
+cv.imwrite('dilated_text.png', dilated_image)
 
 cue= gray.copy()
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
@@ -132,7 +156,7 @@ for n in range(num_slic):
         cy= int( np.mean( [array[1] for array in moments[n]] ))
         if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
-            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='orange', rasm=True)
+            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 
@@ -172,7 +196,9 @@ for n in range(scribe.number_of_nodes()):
     mu= cv.moments(ccv)
     if mu['m00'] > pow(SLIC_SPACE,2)*PHI:
         mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
+        area = mu ['m00']
         pd= pdistance(seed, mc)
+        node_start = n
         box= cv.boundingRect(ccv)
         # append keypoint if the component already exists
         found=0
@@ -312,25 +338,42 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
     if filename is not None:
         plt.savefig(filename, dpi=300)
 
-def line_iterator(img, point0, point1):
-    for n in range(WHITESPACE_INTERVAL,1,-1):
-        dx= (point1[0]-point0[0])/n
-        dy= (point1[1]-point0[1])/n
-        has_dark= False
-        for i in range(1,n):
-            x= int (point0[0]+i*dx)
-            y= int (point0[1]+i*dy)
-            # 3x3 kernel to account for the floating point rounding
-            #print(f"{n} {i} -- ({x},{y}) {img[y,x]}")
-            if img[y,x]==0 and img[y,x+1]==0 and img[y,x-1]==0 and\
-                img[y+1,x]==0 and img[y+1,x+1]==0 and img[y+1,x-1]==0 and\
-                img[y-1,x]==0 and img[y-1,x+1]==0 and img[y-1,x-1]==0:
-                has_dark= True
-                break
-        #print(f"{n} space {has_dark}")
-        if has_dark==True: # would prefer separated stroke
+# Fungsi line_iterator dengan erosi dan dilasi menggunakan kernel (x, y)
+def line_iterator(img, point0, point1, erosion_x=1, erosion_y=2, dilation_x=1, dilation_y=1):
+    # Membuat kernel erosi dan dilasi berdasarkan parameter x dan y
+    erosion_kernel = np.ones((erosion_y, erosion_x), np.uint8)
+    dilation_kernel = np.ones((dilation_y, dilation_x), np.uint8)
+
+    # Lakukan erosi dan dilasi
+    eroded_image = cv.erode(img, erosion_kernel, iterations=1)
+    dilated_image = cv.dilate(eroded_image, dilation_kernel, iterations=1)
+
+    for n in range(WHITESPACE_INTERVAL, 1, -1):
+        dx = (point1[0] - point0[0]) / n
+        dy = (point1[1] - point0[1]) / n
+        has_dark = False
+        for i in range(1, n):
+            x = int(point0[0] + i * dx)
+            y = int(point0[1] + i * dy)
+
+            # Pastikan koordinat x dan y berada dalam batas gambar
+            if 0 <= y < dilated_image.shape[0] and 0 <= x < dilated_image.shape[1]:
+                # Cek 3x3 kernel untuk pixel hitam, pastikan tidak keluar batas gambar
+                if y > 0 and y < dilated_image.shape[0] - 1 and x > 0 and x < dilated_image.shape[1] - 1:
+                    if np.all(dilated_image[y-1:y+2, x-1:x+2] == 0):
+                        has_dark = True
+                        break
+        if not has_dark:
             break
     return has_dark
+
+# Contoh penggunaan
+# image = cv.imread('path_to_your_image.png', cv.IMREAD_GRAYSCALE)
+
+# Memanggil fungsi dengan kernel erosi 1x2 dan dilasi 1x1
+has_dark = line_iterator(image, (10, 10), (20, 20), erosion_x=1, erosion_y=2, dilation_x=1, dilation_y=1)
+
+# print(f"Apakah ada area gelap? {has_dark}")
     
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 # we need to make edges between nodes within a connectedcomponent
@@ -382,9 +425,6 @@ for k in range(len(components)):
                 if filled[2]==False and filled[1]==False and i==(3-RASM_EDGE_MAXDEG):
                     break
                     
-                    
-
-
 degree_rasm= scribe.degree()
 
 def prune_edges(graph, hop):
@@ -403,10 +443,25 @@ def prune_edges(graph, hop):
                     G.remove_edge(u, v)
     return(G)
 
-#scribe= prune_edges(scribe, 2)
+#scribe= prune_edges(scribe, 3)
+#scribe= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
 
 degree_rasm= scribe.degree()
 scribe_dia= scribe.copy()
+
+def hex_or(color1, color2):
+    int1 = int(color1.lstrip('#'), 16)
+    int2 = int(color2.lstrip('#'), 16)
+    result_int = int1 | int2
+    result_hex = f'#{result_int:06X}'
+    return result_hex
+
+def hex_and(color1, color2):
+    int1 = int(color1.lstrip('#'), 16)
+    int2 = int(color2.lstrip('#'), 16)
+    return int1 & int2
+    
+
 
 # finding diacritics connection for small components
 # and update extreme nodes for large components
@@ -436,11 +491,12 @@ for k in range(len(components)):
         if closest_dist<SLIC_SPACE*pow(PHI,4):
             scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
             if closest_vane==6: # diacritics over
-                scribe.nodes[closest_node]['color']='#0080FF'
-                scribe_dia.nodes[closest_node]['color']='#0080FF'
+                scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#0000FF')
+                scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#0000FF')
             else: # diacritics below
-                scribe.nodes[closest_node]['color']='#8000FF'
-                scribe_dia.nodes[closest_node]['color']='#8000FF'
+                scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#000080')
+                scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#000080')
+    
     else: # large ones, updating the starting node
         raddist_start=[]
         # calculate the distances
@@ -457,8 +513,8 @@ for k in range(len(components)):
                 if degree_rasm(e[1])==d and e[1]!=-1:
                     #print(f'comp{k}_start: {components[k].node_start} -> {e[1]}')
                     components[k].node_start= e[1]
-                    scribe.nodes[components[k].node_start]['color']= 'red'
-                    scribe_dia.nodes[components[k].node_start]['color']= 'red'
+                    scribe.nodes[components[k].node_start]['color']= '#F00000'
+                    scribe_dia.nodes[components[k].node_start]['color']= '#F00000'
                     flag= True
                     break
             if flag:
@@ -524,9 +580,15 @@ def path_vane_nodes(G, path): # if path is written as series of nodes
         pathstring+=str(tvane)
     return pathstring
 
+def get_edge_colors_of_node(G, node):
+    edges = G.edges(node, data=True)
+    colors = [(edge[0], edge[1], edge[2].get('color', 'No color assigned')) for edge in edges]
+    return colors
+
 def path_vane_edges(G, path): # if path is written is written as series of edges
     pathstring=''
     for n in path:
+        # vane code
         src= G.nodes()[n[0]]
         dst= G.nodes()[n[1]]
         tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
@@ -534,25 +596,27 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         scribe_dia.edges[n]['vane']=tvane
         if (G.edges[n]['color']=='#00FF00'): # main stroke
             pathstring+=str(tvane)
-        # else: #substroke
-        #     if tvane==2:
-        #         pathstring+='+'
-        #     else:
-        #         pathstring+='-'
-        if dst['color']=='#8000FF': # diacritics over
-            pathstring+='+'
-        if dst['color']=='#0080FF': # diacritics below
-            pathstring+='-'
+        
+        # diacritics mark
+        # may need duplicate check so that not printed twice if node is revisited from another edge(s)
+        diacolor= hex_and(src['color'], '#0000FF')
+        if diacolor:
+            if diacolor == 255:
+                pathstring+='-'
+            elif diacolor == 128:
+                pathstring+='+'
+        else:
+            diacolor= hex_and(dst['color'], '#0000FF')
+            if diacolor:
+                if diacolor == 255:
+                    pathstring+='-'
+                elif diacolor == 128:
+                    pathstring+='+'
     return pathstring
 
-#list(nx.bfs_edges(besar, source=29)) # simplified
-#list(nx.edge_bfs(besar, source=29)) # traverse sequence
-
-#ra1=extract_subgraph2(scribe, 77, 182)
-#ra2=extract_subgraph2(scribe, 38, 180)
-
-
 ###### graph construction from line image ends here
+
+###### path finding routines starts here
 
 def custom_bfs_dfs(graph, start_node):
     queue = deque([start_node])  # Initialize the queue with the start node
@@ -597,21 +661,48 @@ def custom_bfs_dfs(graph, start_node):
 
     return edges
 
-from PIL import ImageFont, ImageDraw, Image
+def bfs_with_closest_priority(G, start_node):
+    visited = set()  # track visited nodes
+    edges = [] # traversed edges
+    priority_queue = []  # Use heapq for priority queue
+    heapq.heappush(priority_queue, (0, start_node))  # Push the start node with priority 0
+        
+    while priority_queue:
+        # Get the node with the highest priority (smallest distance)
+        _, current_node = heapq.heappop(priority_queue)
+        
+        if current_node not in visited:
+            visited.add(current_node)
+            #print(f"Visited {current_node}")  # Do something with the node
+            
+            # Explore neighbors
+            for neighbor in G.neighbors(current_node):
+                if neighbor not in visited:
+                    distance = pdistance(pos[neighbor], pos[neighbor])
+                    heapq.heappush(priority_queue, (distance, neighbor))
+                    edges.append((current_node, neighbor))
+    
+    # try either, should be good enough
+    #return visited # if handling the nodes
+    return edges # if handling the edges
+
+
+
+# drawing the rasm graph
+# from PIL import ImageFont, ImageDraw, Image
 FONTSIZE= 24
 
 for i in range(len(components)):
-    if len(components[i].nodes)>3:
+    if len(components[i].nodes)>2: # small alifs are often sometimes only 2-nodes big
         if components[i].node_start==-1: # in case of missing starting node
-            node_start_pos=(0,0)
-            node_start=-1
+            #node_start_pos=(0,0)
+            components[i].node_start=components[i].nodes[0]
             for n in components[i].nodes:
-                if pos[n][0] > node_start_pos[0]: # rightmost node as starting node if it is still missing
-                    node_start= n
-                    node_start_pos= pos[n]
-            scribe.nodes[node_start]['color']= 'red'
+                if pos[n][0] > pos[components[i].node_start][0]: # rightmost node as starting node if it is still missing
+                    components[i].node_start= n
         else: # actually optimizing the starting node
-            scribe.nodes[components[i].node_start]['color']= 'orange'
+            scribe.nodes[components[i].node_start]['color']= '#FFA500'
+            scribe_dia.nodes[components[i].node_start]['color']= '#FFA500'
             graph= extract_subgraph(scribe, components[i].node_start)
             if (components[i].rect[3]/components[i].rect[2] > pow(PHI,2)):
                 # if tall, prefer starting from top
@@ -619,19 +710,19 @@ for i in range(len(components)):
                 node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1])
             else: 
                 # if stumpy, prefers starting close to median more to the right, but far away from centroid
-                rightmost_nodes= sorted([node for node in graph.nodes if node in pos], key=lambda node: pos[node][0], reverse=True)[:RASM_CANDIDATE]
-                smallest_degree_nodes = sorted(rightmost_nodes, key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
+                rightmost_nodes= sorted([node for node in graph.nodes if pos[node][0] > (components[i].centroid[0]-SLIC_SPACE)], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE*PHI)]
+                topmost_nodes = sorted([node for node in rightmost_nodes],key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
+                smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
                 node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[i].centroid))
-            scribe.nodes[components[i].node_start]['color']= 'orange'
-            scribe_dia.nodes[components[i].node_start]['color']= 'orange'
-            components[i].node_start= node_start
-            scribe.nodes[components[i].node_start]['color']= 'red'
-            scribe_dia.nodes[components[i].node_start]['color']= 'red'
+                #node_start = max(rightmost_nodes, key=lambda node: pos[node][1] )
         
-        #scribe_dia.nodes[node_start]['color']= 'red'
+        components[i].node_start= node_start
+        scribe.nodes[components[i].node_start]['color']= '#F00000'
+        scribe_dia.nodes[components[i].node_start]['color']= '#F00000'
         
         # path finding
-        remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
+        #remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
+        remainder_stroke= path_vane_edges(scribe, list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start)))
         print(remainder_stroke)
         
         # refer to rasm2hurf.py
@@ -642,22 +733,23 @@ for i in range(len(components)):
         # using LCS table
         # rasm= stringtorasm_LCS(remainder_stroke)
 
-        ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        seed= pos[components[i].node_end]
-        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
-        font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
-        drawPIL = ImageDraw.Draw(pil_image)
-        #drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
-        drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), str(i), font=font, fill=(0, 200, 0))
-        # Convert back to Numpy array and switch back from RGB to BGR
-        ccv= np.asarray(pil_image)
-        ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        draw(ccv)
-        #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
+        # ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+        # seed= pos[components[i].node_end]
+        # cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+        # pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
+        # font = ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf", FONTSIZE)
+        # font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
+        # drawPIL = ImageDraw.Draw(pil_image)
+        # #drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
+        # drawPIL.text((components[i].centroid[0]-FONTSIZE, components[i].centroid[1]-FONTSIZE), str(i), font=font, fill=(0, 200, 0))
+        # # Convert back to Numpy array and switch back from RGB to BGR
+        # ccv= np.asarray(pil_image)
+        # ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
+        # draw(ccv)
+        # #cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
 
 graphfile= 'graph-'+imagename+ext
-#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, "sungguh-graph3.png")
+# draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/test.png')
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
 
 # #### scratchpad
@@ -744,11 +836,6 @@ draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
 # Gk= prune_edges(G, 5)
 # draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop5.png")
 # path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
-
-
-
-
-
 
 # # kalo gede
 # i=1

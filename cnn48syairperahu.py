@@ -70,7 +70,8 @@ model.compile(optimizer='adam',
 
 # train the model
 model.fit(train_dataset, epochs=10, validation_data=test_dataset)
-
+model.save('syairperahu.keras')
+#model = load_model('syairperahu.keras')
 
 ## prediction
 

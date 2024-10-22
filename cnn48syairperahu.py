@@ -3,6 +3,10 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 from tensorflow.keras import layers, models
+from keras.models import Sequential
+import numpy as np
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+import matplotlib.pyplot as plt
 
 
 # Load CSV file
@@ -69,16 +73,12 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 # train the model
-model.fit(train_dataset, epochs=10, validation_data=test_dataset)
-model.save('syairperahu.keras')
-#model = load_model('syairperahu.keras')
+# model.fit(train_dataset, epochs=10, validation_data=test_dataset)
+# model.save('syairperahu.keras')
+from keras.models import load_model
+model = load_model('syairperahu.keras')
 
-## prediction
-
-import numpy as np
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
-import matplotlib.pyplot as plt
-
+#### prediction
 # Load and preprocess the image
 def preprocess_image(image_path, img_size=(IMG_HEIGHT, IMG_WIDTH)):
     img = load_img(image_path, target_size=img_size, color_mode='grayscale')  # Adjust color_mode if needed

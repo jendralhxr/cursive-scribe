@@ -143,7 +143,7 @@ for n in range(num_slic):
         cy= int( np.mean( [array[1] for array in moments[n]] ))
         if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
-            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
+            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), hurf='', pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 
@@ -705,7 +705,7 @@ for i in range(len(components)):
         # rasm=stringtorasm_LSTM(remainder_stroke)
         # using LCS table
         # rasm= stringtorasm_LCS(remainder_stroke)
-        rasm= stringtorasm_MC_jagokandang(remainder_stroke)
+        # rasm= stringtorasm_MC_jagokandang(remainder_stroke)
         
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         seed= pos[components[i].node_end]
@@ -714,7 +714,7 @@ for i in range(len(components)):
         font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
         fontsm = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE-12)
         drawPIL = ImageDraw.Draw(pil_image)
-        drawPIL.text((components[i].centroid[0]-FONTSIZE/2, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
+        #drawPIL.text((components[i].centroid[0]-FONTSIZE/2, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
         drawPIL.text((components[i].centroid[0]-FONTSIZE/2, components[i].centroid[1]), str(i), font=fontsm, fill=(0, 200, 200))
         # Convert back to Numpy array and switch back from RGB to BGR
         ccv= np.asarray(pil_image)
@@ -727,8 +727,51 @@ for i in range(len(components)):
         
     
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/test.png')
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/linegraph.png')
 #draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
+
+
+## makan dari CNN
+import cnn48syairperahu
+import rasm2hurf
+
+from keras.models import load_model
+model = load_model('syairperahu.keras')
+
+
+IMG_WIDTH= 48
+IMG_HEIGHT= IMG_WIDTH
+
+def predictfromimage(grayimage, pos):
+    cx= pos[0]
+    cy= pos[1]
+    roi= grayimage[int(cy-IMG_WIDTH/2):int(cy+IMG_WIDTH/2), int(cx-IMG_WIDTH/2):int(cx+IMG_WIDTH/2)]
+    roi = roi / THREVAL
+    roi = np.expand_dims(roi, axis=0) 
+    roi = np.expand_dims(roi, axis=-1)
+    prediction = model.predict(roi)
+    predicted_class = np.argmax(prediction, axis=-1)
+    return hurf[int(predicted_class)]
+
+for i in scribe.nodes():
+    pos= scribe.nodes[i]['pos_bitmap']
+    if pos[1]>IMG_HEIGHT and pos[1]<gray.shape[0]-IMG_HEIGHT and  \
+       pos[0]>IMG_WIDTH and pos[0]<gray.shape[1]-IMG_WIDTH:       
+       scribe.nodes[i]['hurf']= predictfromimage(gray, scribe.nodes[i]['pos_bitmap'])
+       print(f"node{i}: {scribe.nodes[i]['hurf']} ada di {pos[0]}{pos[1]}")
+    else:
+       scribe.nodes[i]['hurf']= '' 
+
+
+
+
+
+
+
+
+
+
+
 
 # #### scratchpad
 # path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))

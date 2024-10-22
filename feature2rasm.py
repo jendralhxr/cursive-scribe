@@ -74,7 +74,6 @@ width= image.shape[1]
 
 image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
-
 _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #_, gray= cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_TRIANGLE) # works better with dynamic-selective erosion
 #draw(gray)
@@ -92,6 +91,16 @@ dilation_kernel = np.ones((1,2), np.uint8) # alifah dan fitri
 gray = cv.dilate(gray, dilation_kernel, iterations=1)
 cue= gray.copy()
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+
+# erosion-dilation @Alifah25
+erosion_kernel = np.ones((1, 2), np.uint8)
+eroded_image = cv.erode(image_gray, erosion_kernel, iterations=1)
+_, gray = cv.threshold(eroded_image, 0, THREVAL, cv.THRESH_OTSU) # less smear
+dilation_kernel = np.ones((2, 1), np.uint8)
+dilated_image = cv.dilate(gray, dilation_kernel, iterations=1)
+#cv.imwrite('eroded_text.png', eroded_image)
+#cv.imwrite('dilated_text.png', dilated_image)
+gray= dilated_image
 
 #SLIC
 slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = SLIC_SPACE)
@@ -184,7 +193,9 @@ for n in range(scribe.number_of_nodes()):
     mu= cv.moments(ccv)
     if mu['m00'] > pow(SLIC_SPACE,2)*PHI:
         mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
+        area = mu ['m00']
         pd= pdistance(seed, mc)
+        node_start = n
         box= cv.boundingRect(ccv)
         # append keypoint if the component already exists
         found=0
@@ -324,27 +335,35 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
     if filename is not None:
         plt.savefig(filename, dpi=300)
 
+# Fungsi line_iterator dengan erosi dan dilasi menggunakan kernel (x, y), opsional
+# def line_iterator(img, point0, point1, erosion_x=1, erosion_y=2, dilation_x=1, dilation_y=1):
 def line_iterator(img, point0, point1):
+    # Membuat kernel erosi dan dilasi berdasarkan parameter x dan y
+    # erosion_kernel = np.ones((erosion_y, erosion_x), np.uint8)
+    # dilation_kernel = np.ones((dilation_y, dilation_x), np.uint8)
+    # eroded_image = cv.erode(img, erosion_kernel, iterations=1)
+    # img = cv.dilate(eroded_image, dilation_kernel, iterations=1)
+
     for n in range(WHITESPACE_INTERVAL,1,-1):
-        dx= (point1[0]-point0[0])/n
-        dy= (point1[1]-point0[1])/n
+        dx = (point1[0] - point0[0]) / n
+        dy = (point1[1] - point0[1]) / n
         has_dark= False
         for i in range(1,n):
-            x= int (point0[0]+i*dx)
-            y= int (point0[1]+i*dy)
+            x = int(point0[0] + i * dx)
+            y = int(point0[1] + i * dy)
             # 3x3 kernel to account for the floating point rounding
             #print(f"{n} {i} -- ({x},{y}) {img[y,x]}")
-            if img[y,x]==0 and img[y,x+1]==0 and img[y,x-1]==0 and\
-                img[y+1,x]==0 and img[y+1,x+1]==0 and img[y+1,x-1]==0 and\
-                img[y-1,x]==0 and img[y-1,x+1]==0 and img[y-1,x-1]==0:
-                has_dark= True
-                break
+            if 0 <= y < img.shape[0] and 0 <= x < img.shape[1]:
+                if np.all(img[y-1:y+1, x-1:x+1] == 0):
+                    has_dark= True
+                    break
         #print(f"{n} space {has_dark}")
         #if has_dark==False:  # suka nyambung/lengket
         if has_dark==True:	 # suka putus 		
             break
     return has_dark
-    
+
+   
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 # we need to make edges between nodes within a connectedcomponent
 for k in range(len(components)):
@@ -587,7 +606,8 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 ###### graph construction from line image ends here
 
 ###### path finding routines starts here
-# breadth-first search
+
+# breadth-first search which switched to depth-first search upon visiting branch
 def custom_bfs_dfs(graph, start_node):
     queue = deque([start_node])  # Initialize the queue with the start node
     visited = set([start_node])  # Set to keep track of visited nodes
@@ -636,7 +656,6 @@ def bfs_with_closest_priority(G, start_node):
     edges = [] # traversed edges
     priority_queue = []  # Use heapq for priority queue
     heapq.heappush(priority_queue, (0, start_node))  # Push the start node with priority 0
-
     while priority_queue:
         # Get the node with the highest priority (smallest distance)
         _, current_node = heapq.heappop(priority_queue)
@@ -771,8 +790,6 @@ for i in scribe.nodes():
        print(f"node{i}: {scribe.nodes[i]['hurf']} ada di {pos[0]}{pos[1]}")
     else:
        scribe.nodes[i]['hurf']= '' 
-
-
 
 
 # #### scratchpad

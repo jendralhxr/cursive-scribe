@@ -88,7 +88,8 @@ eroded_image = cv.erode(gray, kernel, iterations=1)
 edge_mask = cv.bitwise_not(edges)
 selective_eroded = cv.bitwise_and(eroded_image, eroded_image, mask=edge_mask)
 ret, gray= cv.threshold(selective_eroded,1,THREVAL,cv.THRESH_BINARY)
-
+dilation_kernel = np.ones((1,2), np.uint8) # alifah dan fitri
+gray = cv.dilate(gray, dilation_kernel, iterations=1)
 cue= gray.copy()
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 
@@ -339,8 +340,8 @@ def line_iterator(img, point0, point1):
                 has_dark= True
                 break
         #print(f"{n} space {has_dark}")
-        # early break upon absence of background pixel means preferrring connected stroke
-        if has_dark==False: # would prefer connected strokes (Zulhaj)
+        #if has_dark==False:  # suka nyambung/lengket
+        if has_dark==True:	 # suka putus 		
             break
     return has_dark
     
@@ -635,7 +636,7 @@ def bfs_with_closest_priority(G, start_node):
     edges = [] # traversed edges
     priority_queue = []  # Use heapq for priority queue
     heapq.heappush(priority_queue, (0, start_node))  # Push the start node with priority 0
-        
+
     while priority_queue:
         # Get the node with the highest priority (smallest distance)
         _, current_node = heapq.heappop(priority_queue)
@@ -651,10 +652,8 @@ def bfs_with_closest_priority(G, start_node):
                     heapq.heappush(priority_queue, (distance, neighbor))
                     edges.append((current_node, neighbor))
     
-    # try either, should be good enough
     #return visited # if handling the nodes
     return edges # if handling the edges
-
 
 
 # drawing the rasm graph
@@ -673,25 +672,39 @@ for i in range(len(components)):
             for n in components[i].nodes:
                 if pos[n][0] > pos[components[i].node_start][0]: # rightmost node as starting node if it is still missing
                     components[i].node_start= n
+        
         else: # actually optimizing the starting node
-            scribe.nodes[components[i].node_start]['color']= '#FFA500'
+            scribe.nodes[components[i].node_start]['color']= '#FFA500' # reset to orange
             scribe_dia.nodes[components[i].node_start]['color']= '#FFA500'
             graph= extract_subgraph(scribe, components[i].node_start)
-            if (components[i].rect[3]/components[i].rect[2] > pow(PHI,2)):
-                # if tall, prefer starting from top
-                smallest_degree_nodes = [node for node, _ in sorted(graph.degree(), key=lambda item: item[1])[:RASM_CANDIDATE]] 
-                node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1])
-            else: 
+
+            # Check if the component is tall
+            if (components[i].rect[3] / components[i].rect[2] > pow(PHI, 2)):
+                # If tall, prefer starting from the top
+                smallest_degree_nodes = [node for node, _ in sorted(graph.degree(), key=lambda item: item[1])[:RASM_CANDIDATE]]
+                #node_start = min(smallest_degree_nodes, key=lambda node: pos[node][0]) # cari yang paling kanan (Zulhaj)
+                node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1]) # cari yang paling atas (Fitri)
+
+			else: 
                 # if stumpy, prefers starting close to median more to the right, but far away from centroid
-                rightmost_nodes= sorted([node for node in graph.nodes if pos[node][0] > (components[i].centroid[0]-SLIC_SPACE)], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE*PHI)]
+                rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[i].centroid[0] - SLIC_SPACE)],key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
+                # Step 1: Get the rightmost nodes
                 topmost_nodes = sorted([node for node in rightmost_nodes],key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
-                smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
-                node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[i].centroid))
+                # Zulhaj @jendralhxr
+                # smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
+                #node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[i].centroid))
                 #node_start = max(rightmost_nodes, key=lambda node: pos[node][1] )
-        
-        components[i].node_start= node_start
-        scribe.nodes[components[i].node_start]['color']= '#F00000'
-        scribe_dia.nodes[components[i].node_start]['color']= '#F00000'
+				
+				# @FadhilatulFitriyah
+                # Step 2: Get the topmost nodes from the rightmost nodes
+                # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
+                # Step 3: Get the node with the node start from topmost nodes
+                node_start  = min(topmost_nodes, key=lambda node: graph.degree(node))
+                
+			# Set the node_start as the selected node
+            components[i].node_start= node_start
+			scribe.nodes[components[i].node_start]['color']= '#F00000' # starting node is red
+			scribe_dia.nodes[components[i].node_start]['color']= '#F00000'
         
         # path finding
         #remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
@@ -721,17 +734,14 @@ for i in range(len(components)):
         ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
         draw(ccv)
         # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
-
     else:
         rasm= '' # so the next rasm gets it fresh
         
     
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/linegraph.png')
-#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile)
 
-
-## makan dari CNN
+## ambil data dari hasil CNN
 import cnn48syairperahu
 import rasm2hurf
 
@@ -765,17 +775,8 @@ for i in scribe.nodes():
 
 
 
-
-
-
-
-
-
-
-
 # #### scratchpad
 # path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
-
 
 # def non_returning_tspNORE(graph, start_node):
 #     visited_nodes = set()  # Set to keep track of visited nodes
@@ -883,3 +884,4 @@ for i in scribe.nodes():
 # Gk= prune_edges(G, 4)
 # draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-hop4.png")
 # path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
+

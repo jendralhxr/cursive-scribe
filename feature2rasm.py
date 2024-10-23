@@ -236,38 +236,38 @@ components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 #         print(f'{i}: {distance}')
 
 # drawing the starting node (bitmap level)
-# disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-# for n in range(len(components)):
-#     #print(f'{n} at {components[n].centroid} size {components[n].area}')
-#     # draw green line for rasm at edges, color the rasm brighter
-#     if components[n].area>4*PHI*pow(SLIC_SPACE,2):
-#         disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
-#         seed= components[n].centroid
-#         cv.circle(disp, seed, 2, (0,0,120), -1)
-#         if components[n].node_start!=-1:
-#             cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
-#         if components[n].node_end!=-1:
-#             cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
-#         r= components[n].rect[0]+int(components[n].rect[2])
-#         l= components[n].rect[0]
-#         if l<width and r<width: # did we ever went beyond the frame?
-#             for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
-#                 disp[j1,r,1]= 120
-#             for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
-#                 disp[j1,l,1]= 120
-#     else:        
-#         m= components[n].centroid[1]
-#         i= components[n].centroid[0]
-#         # draw blue line for shakil 'connection'
-#         for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
-#             if j2<height and j2>0: 
-#                 disp[j2,i,1]= STROKEVAL/2
+disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+for n in range(len(components)):
+    #print(f'{n} at {components[n].centroid} size {components[n].area}')
+    # draw green line for rasm at edges, color the rasm brighter
+    if components[n].area>4*PHI*pow(SLIC_SPACE,2):
+        disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
+        seed= components[n].centroid
+        cv.circle(disp, seed, 2, (0,0,120), -1)
+        if components[n].node_start!=-1:
+            cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
+        if components[n].node_end!=-1:
+            cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
+        r= components[n].rect[0]+int(components[n].rect[2])
+        l= components[n].rect[0]
+        if l<width and r<width: # did we ever went beyond the frame?
+            for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
+                disp[j1,r,1]= 120
+            for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
+                disp[j1,l,1]= 120
+    else:        
+        m= components[n].centroid[1]
+        i= components[n].centroid[0]
+        # draw blue line for shakil 'connection'
+        for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
+            if j2<height and j2>0: 
+                disp[j2,i,1]= STROKEVAL/2
 
-#     rasm= components[n].mat[\
-#         components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
-#         components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
-#     cv.imwrite(str(n)+'.png', rasm)
-# draw(disp) 
+    # rasm= components[n].mat[\
+    #     components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
+    #     components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
+    # cv.imwrite(str(n)+'.png', rasm)
+draw(disp) 
 #cv.imwrite(imagename+'-disp.png', disp)    
 
 # draw each components separately, sorted right to left
@@ -301,7 +301,7 @@ def draw_graph(graph, posstring, scale):
             width=weights*2,
             )
 
-def draw_graph_edgelabel(graph, posstring, scale, filename):
+def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
     plt.figure(figsize=(4*scale,4)) 
     # nodes
     if posstring is None:
@@ -310,23 +310,40 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
         positions = nx.get_node_attributes(graph,posstring)
     
     #area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
-    edge_lbls= nx.get_edge_attributes(graph, 'vane')
-    # edges
     node_colors = nx.get_node_attributes(graph,'color').values()
+    if labelfield is not None:
+        custom_labels = {node: scribe.nodes[node]['hurf'] for node in scribe.nodes()}
+    # edges
+    edge_lbls= nx.get_edge_attributes(graph, 'vane')
     edge_colors = nx.get_edge_attributes(graph,'color').values()
     weights = np.array(list(nx.get_edge_attributes(graph,'weight').values()))
     #plt.figure(figsize=(width/12,height/12)) 
-    nx.draw(graph, 
-            # nodes' param
-            pos=positions, 
-            with_labels=True, 
-            node_color= node_colors,
-            node_size=100,
-            font_size=6,
-            # edges' param
-            edge_color=edge_colors, 
-            width=weights*2,
-            )
+    if labelfield is not None:
+        nx.draw(graph, 
+                # nodes' param
+                pos=positions, 
+                with_labels=True, 
+                node_color= node_colors,
+                labels= custom_labels,
+                node_size=100,
+                font_size=6,
+                # edges' param
+                edge_color=edge_colors, 
+                width=weights*2,
+                )
+    else:
+        nx.draw(graph, 
+                # nodes' param
+                pos=positions, 
+                node_color= node_colors,
+                with_labels=True, 
+                node_size=100,
+                font_size=6,
+                # edges' param
+                edge_color=edge_colors, 
+                width=weights*2,
+                )
+        
     nx.draw_networkx_edge_labels(graph, 
             pos= positions,
             edge_labels=edge_lbls, 
@@ -335,7 +352,7 @@ def draw_graph_edgelabel(graph, posstring, scale, filename):
     if filename is not None:
         plt.savefig(filename, dpi=300)
 
-# Fungsi line_iterator dengan erosi dan dilasi menggunakan kernel (x, y), opsional
+# Fungsi line_iterator dengan erosi dan dilasi menggunakan kernel (x, y), opsional @Alifah25
 # def line_iterator(img, point0, point1, erosion_x=1, erosion_y=2, dilation_x=1, dilation_y=1):
 def line_iterator(img, point0, point1):
     # Membuat kernel erosi dan dilasi berdasarkan parameter x dan y
@@ -677,7 +694,6 @@ def bfs_with_closest_priority(G, start_node):
 
 # drawing the rasm graph
 from PIL import ImageFont, ImageDraw, Image
-from rasm2hurf import stringtorasm_MC_jagokandang
 
 FONTSIZE= 24
 
@@ -740,7 +756,7 @@ for i in range(len(components)):
         # rasm= stringtorasm_MC_jagokandang(remainder_stroke)
         
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        seed= pos[components[i].node_end]
+        seed= pos[components[i].node_start]
         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
         pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
         font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
@@ -801,12 +817,14 @@ def predictfromimage(grayimage, pos):
 
 for i in scribe.nodes():
     pos= scribe.nodes[i]['pos_bitmap']
-    if pos[1]>IMG_HEIGHT and pos[1]<gray.shape[0]-IMG_HEIGHT and  \
-       pos[0]>IMG_WIDTH and pos[0]<gray.shape[1]-IMG_WIDTH:       
+    if pos[1]>IMG_HEIGHT/2 and pos[1]<gray.shape[0]-IMG_HEIGHT/2 and  \
+       pos[0]>IMG_WIDTH/2 and pos[0]<gray.shape[1]-IMG_WIDTH/2:       
        scribe.nodes[i]['hurf']= predictfromimage(gray, scribe.nodes[i]['pos_bitmap'])
+       scribe_dia.nodes[i]['hurf']= scribe.nodes[i]['hurf']
        print(f"node{i}: {scribe.nodes[i]['hurf']} ada di {pos[0]}{pos[1]}")
     else:
        scribe.nodes[i]['hurf']= '' 
+       scribe_dia.nodes[i]['hurf']= '' 
 
 
 # #### scratchpad

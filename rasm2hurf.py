@@ -73,8 +73,8 @@ plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths)), edgecol
 from scipy import stats
 plt.xlabel('chaincode length')
 plt.ylabel('apperance')
-quartiles = char_lengths.quantile([1/PHI, 2/PHI])
-
+#quartiles = char_lengths.quantile([1/PHI, 1-1/PHI])
+quartiles = char_lengths.quantile([0.25, 0.5, 0.75])
 
 ### tensorflow doing LSTM ###
 

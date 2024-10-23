@@ -704,7 +704,7 @@ for i in range(len(components)):
                 #node_start = min(smallest_degree_nodes, key=lambda node: pos[node][0]) # cari yang paling kanan (Zulhaj)
                 node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1]) # cari yang paling atas (Fitri)
 
-			else: 
+            else: 
                 # if stumpy, prefers starting close to median more to the right, but far away from centroid
                 rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[i].centroid[0] - SLIC_SPACE)],key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
                 # Step 1: Get the rightmost nodes
@@ -722,8 +722,8 @@ for i in range(len(components)):
                 
 			# Set the node_start as the selected node
             components[i].node_start= node_start
-			scribe.nodes[components[i].node_start]['color']= '#F00000' # starting node is red
-			scribe_dia.nodes[components[i].node_start]['color']= '#F00000'
+            scribe.nodes[components[i].node_start]['color']= '#F00000' # starting node is red
+            scribe_dia.nodes[components[i].node_start]['color']= '#F00000'
         
         # path finding
         #remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
@@ -774,7 +774,24 @@ IMG_HEIGHT= IMG_WIDTH
 def predictfromimage(grayimage, pos):
     cx= pos[0]
     cy= pos[1]
-    roi= grayimage[int(cy-IMG_WIDTH/2):int(cy+IMG_WIDTH/2), int(cx-IMG_WIDTH/2):int(cx+IMG_WIDTH/2)]
+    cy_min= int(cy-IMG_WIDTH/2)
+    cy_max= int(cy+IMG_WIDTH/2)
+    cx_min= int(cx-IMG_WIDTH/2)
+    cx_max= int(cx+IMG_WIDTH/2)
+    if (cy_min<0):
+        cy_min= 0
+        cy_max= IMG_HEIGHT
+    if (cy_max > grayimage.shape[0]):
+        cy_max= grayimage.shape[0]
+        cy_min= cy_max - IMG_HEIGHT
+    if (cx_min<0):
+        cx_min= 0
+        cx_max= IMG_WIDTH
+    if (cx_max > grayimage.shape[1]):
+        cx_max= grayimage.shape[1]
+        cx_min= cx_max - IMG_HEIGHT   
+    
+    roi= grayimage[cy_min:cy_max,cx_min:cx_max]
     roi = roi / THREVAL
     roi = np.expand_dims(roi, axis=0) 
     roi = np.expand_dims(roi, axis=-1)

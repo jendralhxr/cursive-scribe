@@ -1,0 +1,295 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.17 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.17" pages="2">
+  <diagram name="MC-FCS" id="c7558073-3199-34d8-9f00-42111426c3f3">
+    <mxGraphModel dx="2325" dy="1154" grid="1" gridSize="10" guides="1" tooltips="0" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="none" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="&lt;p style=&quot;margin: 0px; margin-top: 4px; text-align: center; text-decoration: underline;&quot;&gt;page2line&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;extract RED channel&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;thresholding (Otsu)&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;rotation&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;vertical projection histogram&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-top: 4px; text-align: center; text-decoration: underline;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" parent="1" vertex="1">
+          <mxGeometry x="-40" y="210" width="166" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Kitab&#xa;Syair Perahu" style="whiteSpace=wrap;align=center;verticalAlign=middle;fontStyle=1;strokeWidth=3;fillColor=#FFFFCC" parent="1" vertex="1">
+          <mxGeometry x="0.5" y="100" width="90" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="OCR System for Jawi Script" style="shape=process;whiteSpace=wrap;align=center;verticalAlign=middle;size=0.0475;fontStyle=1;strokeWidth=3;fillColor=#FFCCCC" parent="1" vertex="1">
+          <mxGeometry x="-10" y="391" width="920" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="User" style="whiteSpace=wrap;align=center;verticalAlign=middle;fontStyle=1;strokeWidth=3;fillColor=#FFFFCC" parent="1" vertex="1">
+          <mxGeometry x="850" y="150" width="90" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="36" value="" style="edgeStyle=none;noEdgeStyle=1;strokeColor=#990000;strokeWidth=2" parent="1" source="3" target="2" edge="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="-197.5" y="250" as="sourcePoint" />
+            <mxPoint x="-97.5" y="150" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="53" value="image of pages" style="text;spacingTop=-5;align=center" parent="1" vertex="1">
+          <mxGeometry x="-16.5" y="170" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="56" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2" parent="1" edge="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="42.829999999999984" y="316" as="sourcePoint" />
+            <mxPoint x="42.829999999999984" y="391" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="42.829999999999984" y="360" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="57" value="image of lines" style="text;spacingTop=-5;align=center" parent="1" vertex="1">
+          <mxGeometry x="-16.5" y="341" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="58" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;entryX=0.547;entryY=1.03;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.986;exitY=-0.016;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="5" target="12" edge="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="900" y="370" as="sourcePoint" />
+            <mxPoint x="910" y="240" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="900" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="59" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.272;exitY=-0.027;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.344;entryY=1.008;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="5" target="YXXHrNocwAqxTTLc9Izd-101" edge="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="314.78" y="446.6" as="sourcePoint" />
+            <mxPoint x="240" y="240" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-101" value="&lt;p style=&quot;margin: 0px; margin-top: 4px; text-align: center; text-decoration: underline;&quot;&gt;feature2rasm&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;thresholding (Otsu)&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;selective erosion, dilation&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;superpixel (SLIC)&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;connected component (rasm) identification&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;graph definition&lt;span style=&quot;font-weight: 400;&quot;&gt;: superpixels as nodes,&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;edges between nearby nodes within rasm&amp;nbsp;&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400; background-color: initial;&quot;&gt;pruning (optional)&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;define rasm starting point&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;define diactritics edges&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;traverse the rasm using Djikstra-DFS&lt;/span&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="140" y="60" width="290" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-102" value="image of lines" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="180" y="296" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-105" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.58;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.347;entryY=0.028;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="YXXHrNocwAqxTTLc9Izd-101" target="5">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="320.15" y="400" as="sourcePoint" />
+            <mxPoint x="320.15" y="232" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-106" value="chaincode" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="330" y="296" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-107" value="machine readable&#xa;Arabic/Jawi text (UTF-8)" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="840" y="272" width="30" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-110" value="&lt;p style=&quot;margin: 0px; margin-top: 4px; text-align: center; text-decoration: underline;&quot;&gt;FCS (frequent common subsequence)&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;split chaincode into subsequences&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;track appearance of subsequences for each class/hurf&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;keep only frequent subsequences&lt;/span&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="160" y="490" width="290" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-111" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.293;exitY=0.98;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.348;entryY=0.007;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="5" target="YXXHrNocwAqxTTLc9Izd-110">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="240" y="430" as="sourcePoint" />
+            <mxPoint x="260" y="520" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="260" y="490" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-112" value="chaincode" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="210" y="460" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-113" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.534;exitY=-0.033;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="YXXHrNocwAqxTTLc9Izd-110" target="5">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="540" y="460" as="sourcePoint" />
+            <mxPoint x="541" y="572" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-114" value="FCSs" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="340" y="460" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-115" value="&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;text-decoration-line: underline;&quot;&gt;JagoKandang&lt;/span&gt;&amp;nbsp;&lt;span style=&quot;font-weight: normal;&quot;&gt;(name subject to change)&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;&lt;u&gt;randomize sequence and length&lt;/u&gt; of subsequence&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;for each hurf from FCSs&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;u&gt;evaluate similarity&lt;/u&gt;&amp;nbsp;between chaincode and&amp;nbsp;&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;the randomized FCS sequence&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;pick the optimum FCS sequence (highest similarity,&amp;nbsp;&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;less inter-hurf and outer-hurf variance)&amp;nbsp;&lt;/span&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="470" y="520" width="290" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-116" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.619;exitY=1.005;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.313;entryY=-0.012;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="5" target="YXXHrNocwAqxTTLc9Izd-115">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="560" y="444.5" as="sourcePoint" />
+            <mxPoint x="561" y="500" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="560" y="494.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-118" value="chaincode" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="510" y="460" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-119" value="FCSs" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="510" y="480" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-120" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.462;exitY=-0.011;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.668;entryY=1.048;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="YXXHrNocwAqxTTLc9Izd-115" target="5">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="630" y="431" as="sourcePoint" />
+            <mxPoint x="632" y="509" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="604" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="YXXHrNocwAqxTTLc9Izd-121" value="hurf&#xa;truncated chaincode" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="650" y="470" width="30" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="A_qLle2DKTRcIN5I7hKQ" name="graph-CNN">
+    <mxGraphModel dx="2709" dy="757" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-1" value="&lt;p style=&quot;margin: 0px; margin-top: 4px; text-align: center; text-decoration: underline;&quot;&gt;page2line&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;extract RED channel&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;thresholding (Otsu)&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;rotation&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;vertical projection histogram&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-top: 4px; text-align: center; text-decoration: underline;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="-40" y="210" width="166" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-2" value="Kitab&#xa;Syair Perahu" style="whiteSpace=wrap;align=center;verticalAlign=middle;fontStyle=1;strokeWidth=3;fillColor=#FFFFCC" vertex="1" parent="1">
+          <mxGeometry x="0.5" y="100" width="90" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-3" value="OCR System for Jawi Script" style="shape=process;whiteSpace=wrap;align=center;verticalAlign=middle;size=0.0475;fontStyle=1;strokeWidth=3;fillColor=#FFCCCC" vertex="1" parent="1">
+          <mxGeometry x="-10" y="391" width="920" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-4" value="User" style="whiteSpace=wrap;align=center;verticalAlign=middle;fontStyle=1;strokeWidth=3;fillColor=#FFFFCC" vertex="1" parent="1">
+          <mxGeometry x="850" y="150" width="90" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-5" value="" style="edgeStyle=none;noEdgeStyle=1;strokeColor=#990000;strokeWidth=2" edge="1" parent="1" source="-HvhQo2kw4-clQSA9TLC-2" target="-HvhQo2kw4-clQSA9TLC-1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="-197.5" y="250" as="sourcePoint" />
+            <mxPoint x="-97.5" y="150" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-6" value="image of pages" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="-16.5" y="170" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-7" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2" edge="1" parent="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="42.829999999999984" y="316" as="sourcePoint" />
+            <mxPoint x="42.829999999999984" y="391" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="42.829999999999984" y="360" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-8" value="image of lines" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="-16.5" y="341" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-9" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;entryX=0.547;entryY=1.03;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.986;exitY=-0.016;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="-HvhQo2kw4-clQSA9TLC-3" target="-HvhQo2kw4-clQSA9TLC-4">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="900" y="370" as="sourcePoint" />
+            <mxPoint x="910" y="240" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="900" y="240" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-10" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;entryX=0.344;entryY=1.008;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="-HvhQo2kw4-clQSA9TLC-11">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="410" y="390" as="sourcePoint" />
+            <mxPoint x="410" y="246" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-11" value="&lt;p style=&quot;margin: 0px; margin-top: 4px; text-align: center; text-decoration: underline;&quot;&gt;feature2rasm&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;thresholding (Otsu)&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;selective erosion, dilation&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;superpixel (SLIC)&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;connected component (rasm) identification&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;graph definition&lt;span style=&quot;font-weight: 400;&quot;&gt;: superpixels as nodes,&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;edges between nearby nodes within rasm&amp;nbsp;&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400; background-color: initial;&quot;&gt;pruning (optional)&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;define rasm starting point&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;define diactritics edges&lt;/span&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="310" y="66" width="290" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-12" value="image of lines" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="350" y="302" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-13" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.58;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="-HvhQo2kw4-clQSA9TLC-11">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="490.15" y="406" as="sourcePoint" />
+            <mxPoint x="479" y="390" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-14" value="nodes and edges" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="520" y="316" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-15" value="machine readable&#xa;Arabic/Jawi text (UTF-8)" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="840" y="272" width="30" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-21" value="&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;JawiCNN (cnnsyairperahu48)&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;Conv2D,&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: initial; font-weight: 400;&quot;&gt;MaxPooling2D, Flatten, Dense (40 classes)&lt;/span&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="130" y="540" width="300" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-22" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.619;exitY=1.005;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.313;entryY=-0.012;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="-HvhQo2kw4-clQSA9TLC-21">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="223.48000000000002" y="441" as="sourcePoint" />
+            <mxPoint x="225" y="499.75" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="224" y="494.25" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-25" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.462;exitY=-0.011;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.668;entryY=1.048;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="-HvhQo2kw4-clQSA9TLC-21">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="294" y="430.75" as="sourcePoint" />
+            <mxPoint x="268.55999999999995" y="443.1500000000001" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="268" y="479.75" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-27" value="&lt;p style=&quot;margin: 0px; margin-top: 4px; text-align: center; text-decoration: underline;&quot;&gt;annotate&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;thresholding&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;crop 48x48 px image section&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;along with the label of&lt;/span&gt;&lt;/p&gt;&lt;p style=&quot;margin: 4px 0px 0px; text-align: center;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&amp;nbsp;corresponding hurf&lt;/span&gt;&lt;/p&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="134" y="208.6" width="166" height="106" as="geometry" />
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-28" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2" edge="1" parent="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="239.99999999999997" y="313.5" as="sourcePoint" />
+            <mxPoint x="239.99999999999997" y="388.5" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="239.99999999999997" y="357.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="-HvhQo2kw4-clQSA9TLC-29" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;entryX=0.4;entryY=0.987;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="-HvhQo2kw4-clQSA9TLC-27">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="199" y="390" as="sourcePoint" />
+            <mxPoint x="200" y="330" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="200" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-1" value="image of lines" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="140" y="341" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-2" value="image of hurf" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="270" y="330" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-4" value="Expert" style="whiteSpace=wrap;align=center;verticalAlign=middle;fontStyle=3;strokeWidth=3;fillColor=#FFFFCC" vertex="1" parent="1">
+          <mxGeometry x="160" y="100" width="90" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-5" value="" style="edgeStyle=none;noEdgeStyle=1;strokeColor=#990000;strokeWidth=2" edge="1" parent="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="205.5" y="158.6" as="sourcePoint" />
+            <mxPoint x="204.5" y="208.6" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-6" value="image of hurf" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="164" y="469.75" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-7" value="classifier mode" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="304" y="469.75" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-8" value="identify and cluster&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;crop image around each node position&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;apply JawiCNN for the cropped image&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;cluster neighboring nodes, apply polling to&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;&amp;nbsp;determine &lt;i&gt;actual &lt;/i&gt;hurf&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;font-weight: normal;&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;" style="verticalAlign=middle;align=center;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;rounded=1;fontStyle=1;strokeWidth=3;fillColor=#E6FFCC" vertex="1" parent="1">
+          <mxGeometry x="460" y="500" width="260" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-12" value="image of lines" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="480" y="460" width="30" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-13" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;exitX=0.58;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="549" y="441" as="sourcePoint" />
+            <mxPoint x="550" y="500" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-14" value="" style="edgeStyle=elbowEdgeStyle;elbow=horizontal;strokeColor=#990000;strokeWidth=2;" edge="1" parent="1">
+          <mxGeometry width="100" height="100" relative="1" as="geometry">
+            <mxPoint x="600.1" y="500" as="sourcePoint" />
+            <mxPoint x="600" y="440" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="SXgBaOGOmMloSNRjVMOF-15" value="hurf" style="text;spacingTop=-5;align=center" vertex="1" parent="1">
+          <mxGeometry x="630" y="460" width="30" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

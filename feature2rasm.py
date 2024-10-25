@@ -18,18 +18,6 @@ from collections import deque
 #    5   6   7
 
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
-
-RESIZE_FACTOR=2
-SLIC_SPACE= 3
-SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
-WHITESPACE_INTERVAL= 4
-
-RASM_EDGE_MAXDEG= 2
-RASM_CANDIDATE= 6
-
-THREVAL= 60
-CHANNEL= 2
-
 def freeman(x, y):
     if (y==0):
         y=1e-9 # so that we escape the divby0 exception
@@ -53,6 +41,18 @@ def freeman(x, y):
             return(4)
         elif (y<0) and (abs(y)>abs(x)):
             return(6)
+
+RESIZE_FACTOR=2
+SLIC_SPACE= 3
+SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
+WHITESPACE_INTERVAL= 4
+
+RASM_EDGE_MAXDEG= 2
+RASM_CANDIDATE= 6
+
+THREVAL= 60
+CHANNEL= 2
+
 
 def draw(img): # draw the bitmap
     plt.figure(dpi=600)
@@ -89,7 +89,6 @@ selective_eroded = cv.bitwise_and(eroded_image, eroded_image, mask=edge_mask)
 ret, gray= cv.threshold(selective_eroded,1,THREVAL,cv.THRESH_BINARY)
 dilation_kernel = np.ones((1,2), np.uint8) # alifah dan fitri
 gray = cv.dilate(gray, dilation_kernel, iterations=1)
-cue= gray.copy()
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 
 # erosion-dilation @Alifah25
@@ -103,6 +102,7 @@ dilated_image = cv.dilate(gray, dilation_kernel, iterations=1)
 gray= dilated_image
 
 #SLIC
+cue= gray.copy()
 slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = SLIC_SPACE)
 slic.iterate()
 mask= slic.getLabelContourMask()
@@ -774,7 +774,7 @@ for i in range(len(components)):
         
     
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 
 ## ambil data dari hasil CNN
 import cnn48syairperahu

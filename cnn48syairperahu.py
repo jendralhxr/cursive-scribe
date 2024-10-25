@@ -16,7 +16,6 @@ data = pd.read_csv('syairperahucnn/catet.csv')
 
 IMG_WIDTH= 48
 IMG_HEIGHT= IMG_WIDTH
-
 img_size = (IMG_WIDTH, IMG_HEIGHT)  # Update as per your image size
 img_dir = 'syairperahucnn/images/'  # Directory containing images
 

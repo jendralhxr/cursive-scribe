@@ -646,6 +646,8 @@ import textdistance
 FACTOR_LENGTH= 1.00
 VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 
+remainder_stroke= '66676543535364667075444
+
 def stringtorasm_MC_jagokandang(chaincode):
     remainder_stroke= chaincode
     rasm=''

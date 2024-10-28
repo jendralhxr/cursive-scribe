@@ -642,11 +642,16 @@ def reverseFreeman(s):
     return ''.join(result)
 
 
+# if numpy 2
+# from numpy.dtypes import StringDType
 import textdistance
+
 FACTOR_LENGTH= 1.00
 VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 
-remainder_stroke= '66676543535364667075444
+remainder_stroke= '66676543535364667075444'
+
+
 
 def stringtorasm_MC_jagokandang(chaincode):
     remainder_stroke= chaincode
@@ -655,7 +660,10 @@ def stringtorasm_MC_jagokandang(chaincode):
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
         score_mc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
-        string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype=str)
+        # if numpy 2
+        # string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype=StringDType())
+        string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype='<U20')
+        
         
         mc_retry= 0
         while(mc_retry < MC_RETRY_MAX):

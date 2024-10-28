@@ -375,8 +375,8 @@ def line_iterator(img, point0, point1):
                     has_dark= True
                     break
         #print(f"{n} space {has_dark}")
-        #if has_dark==False:  # suka nyambung/lengket
-        if has_dark==True:	 # suka putus 		
+        if has_dark==False:  # suka nyambung/lengket
+        #if has_dark==True:	 # suka putus 		
             break
     return has_dark
 

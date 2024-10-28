@@ -75,7 +75,7 @@ model.compile(optimizer='adam',
 # model.fit(train_dataset, epochs=10, validation_data=test_dataset)
 # model.save('syairperahu.keras')
 from keras.models import load_model
-model = load_model('syairperahu.keras')
+model = load_model('syairperahucnn/syairperahu.keras')
 
 #### prediction
 # Load and preprocess the image

@@ -377,7 +377,8 @@ def myjaro(s1,s2):
 
     # adjust for similarities in nonmatched characters
     weight = common_chars / s1_len + common_chars / s2_len
-    weight += (common_chars - pow(PHI,trans_count)) / common_chars
+    #weight += (common_chars - pow(PHI,trans_count)) / common_chars
+    weight += (common_chars - trans_count) / common_chars
     weight += (almost_common_chars) / (s1_len+s2_len) /4
     weight /= 3
 
@@ -650,7 +651,7 @@ FACTOR_LENGTH= 1.00
 VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 
 remainder_stroke= '66676543535364667075444'
-
+remainder_stroke= '66670766454734453556707155535440' # terlaLU
 
 
 def stringtorasm_MC_jagokandang(chaincode):
@@ -660,6 +661,7 @@ def stringtorasm_MC_jagokandang(chaincode):
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
         score_mc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
+        score_mc_acc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
         # if numpy 2
         # string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype=StringDType())
         string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype='<U20')
@@ -693,23 +695,27 @@ def stringtorasm_MC_jagokandang(chaincode):
                         # score_tee= textdistance.overlap.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         # score_tee= textdistance.cosine.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         #score_tee= textdistance.monge_elkan.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        
+                        # metropolis
                         score_tee1= myjaro( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         score_tee2= myjaro( reverseFreeman(remainder_stroke[0:len_mc]), fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
-                        
                         score_tee = max(score_tee1, score_tee2)
+                        score_mc_acc[int(mc_class)][len_mc] += score_tee
                         if score_tee > score_mc[int(mc_class)][len_mc]:
                             string_mc[int(mc_class)][len_mc]= fcs_lookup
                             score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
                         
+                        
+                        
                 mc_retry += 1 # can also be neseted one down
         
         # this choice condition is subject to change
-        row_sums = np.sum(score_mc, axis=1)
+        row_sums = np.sum(score_mc_acc, axis=1)
         class_best= np.argmax(row_sums);
         max_row = score_mc[np.argmax(row_sums)]
         max_row /= np.max(max_row)
         len_best= np.argmax(max_row);
-        column_variances = np.var(score_mc, axis=0)
+        column_variances = np.var(score_mc_acc, axis=0)
         column_variances  /= np.max(column_variances)
             
         asymptote = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):])
@@ -730,6 +736,9 @@ def stringtorasm_MC_jagokandang(chaincode):
 
         draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                      +'\n'+remainder_stroke+' as '+hurf_best)
+        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence accumulative MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke+' as '+hurf_best)
+            
     
         
         if hurf_best=='ا' or hurf_best=='ء' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':

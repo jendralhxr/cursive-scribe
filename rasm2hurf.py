@@ -68,13 +68,28 @@ random_labels=pd.concat([source['val']])
 #source['rasm'].str.len().min()
 #source['rasm'].str.len().max()
 
+plt.rcParams.update({
+    'figure.dpi': 300,
+    'axes.labelsize': 12,
+    'axes.titlesize': 14,
+    'xtick.labelsize': 10,
+    'ytick.labelsize': 10,
+    'grid.color': 'gray',
+    'grid.alpha': 0.3
+})
+
+# First plot - Histogram of character lengths
 char_lengths = source['rasm'].apply(len)
-plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths)), edgecolor='black')
-from scipy import stats
+plt.figure()  # Create a new figure
+plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths) + 1), edgecolor='black')
 plt.xlabel('chaincode length')
-plt.ylabel('apperance')
-#quartiles = char_lengths.quantile([1/PHI, 1-1/PHI])
+plt.ylabel('appearance')
+plt.title("Character Length Distribution")
+plt.grid(True)
+
+
 quartiles = char_lengths.quantile([0.25, 0.5, 0.75])
+
 
 ### tensorflow doing LSTM ###
 
@@ -212,7 +227,7 @@ def stringtorasm_LSTM(strokeorder):
 #### FCS stands for frequent common substring/subsequence/substroke
 
 import seaborn as sns
-from collections import defaultdict
+from collections import defaultdictf
 
 FCS_MAX_NUM= 16
 FCS_APPEARANCE_MIN= 2
@@ -303,20 +318,23 @@ plt.savefig("/shm/heatmapFCS-"+str(FCS_THINNING)+".png")
 #    tick.set_y(tick.get_position()[1] + 400)  # Move tick labels down
 #plt.show()
 
+# FCS probability within a hurf
 counts, bins = np.histogram(sfcs.flatten(), bins=FCS_MAX_NUM)
 adjusted_counts = counts / np.count_nonzero(sfcs)
+plt.figure(dpi=300)
 plt.bar(bins[:-1], adjusted_counts, width=np.diff(bins), edgecolor='black', align='edge')
-# Adding labels
 plt.xlabel("Probability of subsequence appearance for each hurf")
 plt.ylabel("Adjusted Probability of subsequence from the kitab")
-distribution_threshold = 1-1/PHI
-plt.axvline(x=distribution_threshold, color='red', linestyle='--', linewidth=2, label='x=0.381966')
-# Annotate the vertical line
+plt.title("Subsequence Appearance Probability")
+plt.grid(True)  # Enable grid
+# the limit
+distribution_threshold = 1 - (1/PHI)
+plt.axvline(x=distribution_threshold, color='red', linestyle='--', linewidth=2)
 plt.annotate("1-(1/φ)",
-             xy=(distribution_threshold, 0),  # Position of the annotation (x, y)
-             xytext=(distribution_threshold + 0.05, 0.3),  # Position of the text (adjust as needed)
-             #arrowprops=dict(facecolor='black', arrowstyle='->'),  # Arrow pointing to the line
+             xy=(distribution_threshold, 0),
+             xytext=(distribution_threshold + 0.05, 0.3),
              fontsize=12, color='black')
+
 
 
 def myjaro(s1,s2):
@@ -378,12 +396,12 @@ def myjaro(s1,s2):
     # adjust for similarities in nonmatched characters
     weight = common_chars / s1_len + common_chars / s2_len
     #weight += (common_chars - pow(PHI,trans_count)) / common_chars
-    weight += (common_chars - trans_count) / common_chars
+    weight += (common_chars - trans_count*PHI) / common_chars
     weight += (almost_common_chars) / (s1_len+s2_len) /4
     weight /= 3
 
     # # stop to boost if strings are not similar
-    # if not self.winklerize:
+    # if not self.winklerize:f
     #     return weight
     # if weight <= 0.7:
     #     return weight
@@ -539,9 +557,6 @@ def stringtorasm_MC_wholestring(chaincode):
     return(rasm)
 
 
-#stringtorasm_MC_wholestring('55507676674040402+106703+44+444030')
-chaincode='66676543535364667075444'
-
 import random    
 
 def draw_heatmap(data, xlabel, ylabel, title):
@@ -561,8 +576,7 @@ def draw_heatmap(data, xlabel, ylabel, title):
     for label in ax.get_yticklabels():
         label.set_verticalalignment('top')  # 'bottom' moves the labels slightly down
 
-def draw_3d_surface(data, xlabel, ylabel, zlabel, title):
-    # Create figure and 3D axes
+def draw_3d_surface(data, xlabel, ylabel, zlabel, title, elev=30, azim=45):
     fig = plt.figure(dpi=300)
     ax = fig.add_subplot(111, projection='3d')
 
@@ -573,20 +587,14 @@ def draw_3d_surface(data, xlabel, ylabel, zlabel, title):
 
     # Plot the surface
     surf = ax.plot_surface(X, Y, data, cmap='nipy_spectral', edgecolor='none')
-
-    # Add color bar
-    fig.colorbar(surf)
-
-    # Set labels and title
     ax.set_xlabel(xlabel, fontsize=6)
     ax.set_ylabel(ylabel, fontsize=6)
     ax.set_zlabel(zlabel, fontsize=6)
     ax.set_title(title, fontsize=8)
 
-    # Set tick sizes
+    fig.colorbar(surf)
     ax.tick_params(axis='both', which='major', labelsize=6)
-
-    # Show the plot
+    ax.view_init(elev=elev, azim=azim)
     plt.show()   
 
 
@@ -650,8 +658,9 @@ import textdistance
 FACTOR_LENGTH= 1.00
 VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 
-remainder_stroke= '66676543535364667075444'
-remainder_stroke= '66670766454734453556707155535440' # terlaLU
+
+remainder_stroke= '66676543535364667075444' # terlaLU with pruning
+remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
 
 def stringtorasm_MC_jagokandang(chaincode):
@@ -662,10 +671,10 @@ def stringtorasm_MC_jagokandang(chaincode):
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
         score_mc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
         score_mc_acc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
+        score_mc_mul = np.ones((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
         # if numpy 2
         # string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype=StringDType())
         string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype='<U20')
-        
         
         mc_retry= 0
         while(mc_retry < MC_RETRY_MAX):
@@ -698,50 +707,75 @@ def stringtorasm_MC_jagokandang(chaincode):
                         
                         # metropolis
                         score_tee1= myjaro( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
-                        score_tee2= myjaro( reverseFreeman(remainder_stroke[0:len_mc]), fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
-                        score_tee = max(score_tee1, score_tee2)
+                        if len_mc <= 4:
+                            score_tee2= myjaro( reverseFreeman(remainder_stroke[0:len_mc]), fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                            score_tee= max(score_tee1, score_tee2) # * fcs_prob
+                        else:
+                            score_tee = score_tee1 # * fcs_prob
                         score_mc_acc[int(mc_class)][len_mc] += score_tee
+                        score_mc_mul[int(mc_class)][len_mc] *= score_tee
+                        
                         if score_tee > score_mc[int(mc_class)][len_mc]:
                             string_mc[int(mc_class)][len_mc]= fcs_lookup
+                            #score_mc[int(mc_class)][len_mc] = score_tee
                             score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
-                        
-                        
                         
                 mc_retry += 1 # can also be neseted one down
         
+        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke)
+        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence addition MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke)
+        score_mc_mul[score_mc_mul == 1.0] = 0.0
+        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'FCS-sequence product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke)
+        
+        
         # this choice condition is subject to change
-        row_sums = np.sum(score_mc_acc, axis=1)
+        row_sums = np.sum(score_mc_mul, axis=1)
         class_best= np.argmax(row_sums);
-        max_row = score_mc[np.argmax(row_sums)]
+        
+        max_row = score_mc[class_best]
         max_row /= np.max(max_row)
-        len_best= np.argmax(max_row);
-        column_variances = np.var(score_mc_acc, axis=0)
-        column_variances  /= np.max(column_variances)
-            
-        asymptote = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):])
-        divergence_point_from_end = np.where(np.abs(column_variances - asymptote) > asymptote/pow(PHI,4))[0][-1]
-        len_best= divergence_point_from_end
+        len_best= np.argmax(max_row); # minimum estimate for hurf length
+        column_variances = np.var(score_mc, axis=0)
+        asymptote_var = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do variance?
+        divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
+        
+        asymptote = np.mean(max_row[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do row value?
+        divergence_val = np.where(np.abs(max_row - asymptote) > asymptote/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
+        len_best= min(divergence_var, divergence_val)
 
-        # # plot the stop selection criteria
+        # plot the stop selection criteria
+        from matplotlib.ticker import MultipleLocator, FuncFormatter
+        plt.figure(dpi=300)
         fig, ax = plt.subplots()
         ax.plot(max_row, color='red', label='best-match hurf values')
         ax.plot(column_variances, color='blue', label='inter-hurf variance')
-        ax.set_title(remainder_stroke+' ('+hurf[class_best]+')')
-        ax.set_xlabel('hurf character length')
-        ax.set_ylabel('val')
+        ax.set_title(f'{remainder_stroke} ({hurf[class_best]})', fontsize=14)
+        ax.set_xlabel('hurf character length', fontsize=12)
+        ax.set_ylabel('normalized similarity score', fontsize=12)
+        ax.tick_params(axis='both', which='major', labelsize=10)
+        ax.xaxis.set_major_locator(MultipleLocator(2))
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.0f}'))
         ax.legend()
+        ax.axvline(x=len_best, color='gray', linestyle='--', linewidth=1, label='divergence point')
+        ax.annotate(f"optimum length is {len_best}", 
+            xy=(len_best, ax.get_ylim()[1]), 
+            xytext=(len_best + 0.5, ax.get_ylim()[1] * 0.3),
+            #arrowprops=dict(arrowstyle="->", color='black'),
+            fontsize=12, color='black')
 
         hurf_best= hurf[class_best]
         rasm+= hurf_best
 
-        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                     +'\n'+remainder_stroke+' as '+hurf_best)
-        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence accumulative MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                     +'\n'+remainder_stroke+' as '+hurf_best)
+        #draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        #             +'\n'+remainder_stroke+' as '+hurf_best)
+        #draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence accumulative MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        #             +'\n'+remainder_stroke+' as '+hurf_best)
             
-    
-        
-        if hurf_best=='ا' or hurf_best=='ء' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و':
+        if hurf_best=='ا' or hurf_best=='ء' or hurf_best=='د' or hurf_best=='ذ' \
+            or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و ' or hurf_best=='ۏ':
             remainder_stroke=''
         else:
             remainder_stroke= remainder_stroke[len_best:]

@@ -62,8 +62,8 @@ def draw(img): # draw the bitmap
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
-filename= sys.argv[1]
-#filename= 'topanribut.png'
+#filename= sys.argv[1]
+filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -375,8 +375,8 @@ def line_iterator(img, point0, point1):
                     has_dark= True
                     break
         #print(f"{n} space {has_dark}")
-        if has_dark==False:  # suka nyambung/lengket
-        #if has_dark==True:	 # suka putus 		
+        #if has_dark==False:  # suka nyambung/lengket
+        if has_dark==True:	 # suka putus 		
             break
     return has_dark
 
@@ -397,7 +397,7 @@ for k in range(len(components)):
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
             has_dark= line_iterator(cue, src['pos_bitmap'], dst['pos_bitmap'])
             # add the checking for line segment
-            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2): #and has_dark==False:
+            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2) and has_dark==False:
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]
@@ -753,7 +753,7 @@ for i in range(len(components)):
         # rasm=stringtorasm_LSTM(remainder_stroke)
         # using LCS table
         # rasm= stringtorasm_LCS(remainder_stroke)
-        # rasm= stringtorasm_MC_jagokandang(remainder_stroke)
+        #rasm= stringtorasm_MC_jagokandang(remainder_stroke)
         
         ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
         seed= pos[components[i].node_start]

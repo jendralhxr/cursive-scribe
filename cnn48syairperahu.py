@@ -28,6 +28,7 @@ labels = np.array(data['label'])
 images = images.reshape((-1, IMG_WIDTH, IMG_HEIGHT, 1))
 
 # Split into training and test sets
+# some would suggest to add more data or do augmentation
 from sklearn.model_selection import train_test_split
 train_images, test_images, train_labels, test_labels = train_test_split(images, labels, test_size=0.1)
 
@@ -46,22 +47,23 @@ model = models.Sequential()
 # Convolutional Layer 1
 model.add(layers.Conv2D(32, (3, 3), activation='relu'))  # Grayscale input
 model.add(layers.MaxPooling2D((2, 2)))
-model.add(layers.Dropout(0.20))  # so as to avoid overfitting
+model.add(layers.Dropout(0.3))  # so as to avoid overfitting, some would suggest to be more aggressive
 
 # Convolutional Layer 2
 model.add(layers.Conv2D(64, (3, 3), activation='relu'))
 model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Dropout(0.3))  # so as to avoid overfitting
 
 # Convolutional Layer 3
 model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-model.add(layers.Dropout(0.20))  # so as to avoid overfitting
+model.add(layers.Dropout(0.3))  # so as to avoid overfitting
 
 # Flattening the output
 model.add(layers.Flatten())
 
 # Fully connected (dense) layers
 model.add(layers.Dense(64, activation='relu'))
-model.add(layers.Dropout(0.40))  # says this makes stronger 'regularization'
+model.add(layers.Dropout(0.6))  # says this makes stronger 'regularization'
 
 # output layer
 model.add(layers.Dense(40, activation='softmax'))  # 40 distinct classes
@@ -72,7 +74,7 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 # train the model
-history= model.fit(train_dataset, epochs=100, validation_data=test_dataset)
+history= model.fit(train_dataset, epochs=200, validation_data=test_dataset)
 model.save('syairperahu.keras')
 # Epoch 100/100
 # 113/113 ━━━━━━━━━━━━━━━━━━━━ 2s 15ms/step - accuracy: 0.9864 - loss: 0.0373 - val_accuracy: 0.8030 - val_loss: 1.3989
@@ -132,9 +134,11 @@ print(f'Predicted class: {predicted_class[0]}')
 
 # make random prediction
 import random
-random_index= random.randint(0, train_images.shape[0])
-# draw(train_images[random_index] * 200) 
-prediction = model.predict(np.expand_dims(train_images[random_index], axis=0)) # why this call doesn't bode well?
+# random call to test_images doesn't bode well, but it is okay with images
+# why keras, why?
+random_index= random.randint(0, images.shape[0])
+draw(images[random_index] * 200) 
+prediction = model.predict(np.expand_dims(images[random_index], axis=0)) 
 predicted_class = np.argmax(prediction, axis=-1)
-print(f'Predicted class: {predicted_class[0]}, label was {train_labels[random_index]}')
+print(f'Predicted class: {predicted_class[0]}, label was {labels[random_index]}')
 

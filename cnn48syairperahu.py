@@ -3,11 +3,6 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
 from tensorflow.keras import layers, models
-from keras.models import Sequential
-import numpy as np
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
-import matplotlib.pyplot as plt
-
 
 # Load CSV file
 data = pd.read_csv('syairperahucnn/catet.csv')
@@ -51,6 +46,7 @@ model = models.Sequential()
 # Convolutional Layer 1
 model.add(layers.Conv2D(32, (3, 3), activation='relu'))  # Grayscale input
 model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Dropout(0.20))  # so as to avoid overfitting
 
 # Convolutional Layer 2
 model.add(layers.Conv2D(64, (3, 3), activation='relu'))
@@ -58,12 +54,16 @@ model.add(layers.MaxPooling2D((2, 2)))
 
 # Convolutional Layer 3
 model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+model.add(layers.Dropout(0.20))  # so as to avoid overfitting
 
 # Flattening the output
 model.add(layers.Flatten())
 
 # Fully connected (dense) layers
 model.add(layers.Dense(64, activation='relu'))
+model.add(layers.Dropout(0.40))  # says this makes stronger 'regularization'
+
+# output layer
 model.add(layers.Dense(40, activation='softmax'))  # 40 distinct classes
 
 # Compile the model
@@ -72,10 +72,47 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 # train the model
-# model.fit(train_dataset, epochs=10, validation_data=test_dataset)
-# model.save('syairperahu.keras')
+history= model.fit(train_dataset, epochs=100, validation_data=test_dataset)
+model.save('syairperahu.keras')
+# Epoch 100/100
+# 113/113 ━━━━━━━━━━━━━━━━━━━━ 2s 15ms/step - accuracy: 0.9864 - loss: 0.0373 - val_accuracy: 0.8030 - val_loss: 1.3989
+
+import matplotlib.pyplot as plt
+
+# Plot training & validation accuracy values
+plt.figure(figsize=(12, 4), dpi=300)
+
+# Accuracy Plot
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Model Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+
+# Loss Plot
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+# reevaluating the model accuracy
+test_loss, test_accuracy = model.evaluate(test_images, test_labels)
+print(f"Test accuracy: {test_accuracy}")
+# 13/13 ━━━━━━━━━━━━━━━━━━━━ 0s 3ms/step - accuracy: 0.0587 - loss: 10.6775 
+# Test accuracy: 0.05236907675862312
+# may prone to overfitting, but works just okay atm
+
 from keras.models import load_model
 model = load_model('syairperahucnn/syairperahu.keras')
+
 
 #### prediction
 # Load and preprocess the image
@@ -85,12 +122,18 @@ def preprocess_image(image_path, img_size=(IMG_HEIGHT, IMG_WIDTH)):
     img = np.expand_dims(img, axis=0)
     return img
 
-# Load the image
-input_image = preprocess_image('images/p01-lineimg0_n0003_label01.png', img_size)
-
-# Make a prediction
+# make prediction from image
+input_image = preprocess_image('syairperahucnn/images/p01-lineimg0_n0003_label01.png', img_size)
+input_image = preprocess_image('mekaten/mekaten_n0000_label03.png', img_size)
 prediction = model.predict(input_image)
-
-# Get the predicted class
 predicted_class = np.argmax(prediction, axis=-1)
 print(f'Predicted class: {predicted_class[0]}')
+
+# make random prediction
+import random
+random_index= random.randint(0, train_images.shape[0])
+# draw(train_images[random_index] * 200) 
+prediction = model.predict(np.expand_dims(train_images[random_index], axis=0)) # why this call doesn't bode well?
+predicted_class = np.argmax(prediction, axis=-1)
+print(f'Predicted class: {predicted_class[0]}, label was {train_labels[random_index]}')
+

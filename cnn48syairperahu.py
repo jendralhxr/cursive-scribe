@@ -123,8 +123,9 @@ def preprocess_image(image_path, img_size=(IMG_HEIGHT, IMG_WIDTH)):
     return img
 
 # make prediction from image
-input_image = preprocess_image('syairperahucnn/images/p01-lineimg0_n0003_label01.png', img_size)
+#input_image = preprocess_image('syairperahucnn/images/p01-lineimg0_n0003_label01.png', img_size)
 input_image = preprocess_image('mekaten/mekaten_n0000_label03.png', img_size)
+input_image = preprocess_image('mekaten/mekaten_n0005_label03.png', img_size)
 prediction = model.predict(input_image)
 predicted_class = np.argmax(prediction, axis=-1)
 print(f'Predicted class: {predicted_class[0]}')

@@ -9,6 +9,7 @@ data = pd.read_csv('syairperahucnn/catet.csv')
 
 # Define image size and path prefix
 
+CLASS_NUM=40
 IMG_WIDTH= 48
 IMG_HEIGHT= IMG_WIDTH
 img_size = (IMG_WIDTH, IMG_HEIGHT)  # Update as per your image size
@@ -17,7 +18,7 @@ img_dir = 'syairperahucnn/images/'  # Directory containing images
 # Load and preprocess images
 def load_image(file_path):
     img = load_img(img_dir + file_path, target_size=img_size, color_mode='grayscale')
-    img = img_to_array(img) / 255.0  # Normalize to [0, 1]
+    img = img_to_array(img) / np.max(img)  # Normalize to [0, 1]
     return img
 
 # Load the images and labels into numpy arrays
@@ -66,7 +67,7 @@ model.add(layers.Dense(64, activation='relu'))
 model.add(layers.Dropout(0.6))  # says this makes stronger 'regularization'
 
 # output layer
-model.add(layers.Dense(40, activation='softmax'))  # 40 distinct classes
+model.add(layers.Dense(CLASS_NUM, activation='softmax'))  # 40 distinct classes
 
 # Compile the model
 model.compile(optimizer='adam', 
@@ -141,4 +142,45 @@ draw(images[random_index] * 200)
 prediction = model.predict(np.expand_dims(images[random_index], axis=0)) 
 predicted_class = np.argmax(prediction, axis=-1)
 print(f'Predicted class: {predicted_class[0]}, label was {labels[random_index]}')
+
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+true_labels = []
+predictions = []
+
+# Iterate through the test dataset
+for images, labels in train_dataset:
+    preds = model.predict(images)  # Predict probabilities for each class
+
+    # Append true labels and predicted class indices
+    true_labels.extend(labels.numpy())  # Directly use integer labels
+    predictions.extend(np.argmax(preds, axis=1))  # Get predicted class indices
+
+# Convert lists to numpy arrays for the confusion matrix
+true_labels = np.array(true_labels)
+predictions = np.array(predictions)
+
+# Generate the confusion matrix
+num_classes = 40
+cm = np.zeros((num_classes, num_classes), dtype=int)
+
+# Fill the confusion matrix manually
+for true, pred in zip(true_labels, predictions):
+    cm[true, pred] += 1
+
+# Ensure all classes are represented in the confusion matrix
+# The following line is optional; it makes sure that classes with no predictions are displayed
+for i in range(num_classes):
+    if i not in true_labels:  # If a class is not present in true labels
+        cm[i] = np.zeros(num_classes)  # Set that row to zero
+
+# Plot the confusion matrix
+plt.figure(figsize=(12, 10), dpi=300)  # Increase figure size for better readability
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=hurf)
+disp.plot(cmap='Blues', values_format='d', ax=plt.gca())  # `values_format='d'` to display integer counts
+# Adjust tick parameters for better readability
+plt.xticks(rotation=45, ha="right", fontsize=12)
+plt.yticks(fontsize=12)
+plt.title('Confusion Matrix', fontsize=16)
+
 

@@ -817,14 +817,15 @@ def predictfromimage(grayimage, pos):
 
 for i in scribe.nodes():
     pos= scribe.nodes[i]['pos_bitmap']
-    if pos[1]>IMG_HEIGHT/2 and pos[1]<gray.shape[0]-IMG_HEIGHT/2 and  \
-       pos[0]>IMG_WIDTH/2 and pos[0]<gray.shape[1]-IMG_WIDTH/2:       
-       scribe.nodes[i]['hurf']= predictfromimage(gray, scribe.nodes[i]['pos_bitmap'])
-       scribe_dia.nodes[i]['hurf']= scribe.nodes[i]['hurf']
-       print(f"node{i}: {scribe.nodes[i]['hurf']} ada di {pos[0]}{pos[1]}")
-    else:
-       scribe.nodes[i]['hurf']= '' 
-       scribe_dia.nodes[i]['hurf']= '' 
+    # should be safe to handle nodes closer to image edges 
+    # if pos[1]>IMG_HEIGHT and pos[1]<gray.shape[0]-IMG_HEIGHT/2 and  \
+    #    pos[0]>IMG_WIDTH and pos[0]<gray.shape[1]-IMG_WIDTH:       
+    scribe.nodes[i]['hurf']= predictfromimage(gray, scribe.nodes[i]['pos_bitmap'])
+    scribe_dia.nodes[i]['hurf']= scribe.nodes[i]['hurf']
+    print(f"node{i}: {scribe.nodes[i]['hurf']} ada di {pos[0]}{pos[1]}")
+    #else:
+    #   scribe.nodes[i]['hurf']= '' 
+    #   scribe_dia.nodes[i]['hurf']= '' 
 
 
 # #### scratchpad

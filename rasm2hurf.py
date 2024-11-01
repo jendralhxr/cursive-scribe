@@ -227,7 +227,7 @@ def stringtorasm_LSTM(strokeorder):
 #### FCS stands for frequent common substring/subsequence/substroke
 
 import seaborn as sns
-from collections import defaultdictf
+from collections import defaultdict
 
 FCS_MAX_NUM= 16
 FCS_APPEARANCE_MIN= 2
@@ -738,13 +738,16 @@ def stringtorasm_MC_jagokandang(chaincode):
         max_row = score_mc[class_best]
         max_row /= np.max(max_row)
         len_best= np.argmax(max_row); # minimum estimate for hurf length
-        column_variances = np.var(score_mc, axis=0)
-        asymptote_var = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do variance?
-        divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
-        
         asymptote = np.mean(max_row[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do row value?
         divergence_val = np.where(np.abs(max_row - asymptote) > asymptote/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
+        
+        column_variances = np.var(score_mc, axis=0)
+        column_variances /= np.max(column_variances)
+        asymptote_var = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do variance?
+        divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
+
         len_best= min(divergence_var, divergence_val)
+
 
         # plot the stop selection criteria
         from matplotlib.ticker import MultipleLocator, FuncFormatter

@@ -80,10 +80,10 @@ def draw_histograms_on_image(thresholded_image, histogram_x, histogram_y):
 
     # # Draw red horizontal lines at each peak of histogram_y
     # for peak in peaks:
-    #     plt.axhline(y=peak, color='red', linestyle='--', linewidth=0.5)
+    #     plt.axhline(y=peak, color='red', linestyle='--', linewidth=0.5, xmin=0.1, xmax=0.9)
     # Draw blue horizontal lines at each valley of histogram_y
     for valley in valleys:
-        plt.axhline(y=valley, color='blue', linestyle='--', linewidth=0.5)
+        plt.axhline(y=valley, color='blue', linestyle='--', linewidth=0.5, xmin=0.1, xmax=0.9)
 
 
 filename= sys.argv[1]
@@ -167,7 +167,8 @@ draw_histograms_on_image(gray, histogram_x, histogram_y)
 # find the line segment
 peaks= find_peaks(histogram_y)[0]
 valleys= find_peaks(thresholded.shape[1]-histogram_y)[0]
-valleys = np.insert(valleys, 0, 0) # append zero as the first valley
+valleys = np.insert(valleys, 0, peaks[0]-abs(valleys[0]-peaks[0])) # append zero as the first valley
+np.append(valleys, valleys[-1]+(valleys[-1]-valleys[-2]))
 
 def average_difference(lst):
     differences = [lst[i+1] - lst[i] for i in range(len(lst)-1)]
@@ -177,7 +178,7 @@ def average_difference(lst):
 
 image=  cv.bitwise_not(image)
 
-step= average_difference(valleys) * PHI
+step= average_difference(valleys) * PHI # so as each crop is rather uniform
 
 # gonna crop-select each lines here
 m=0

@@ -495,7 +495,7 @@ for k in range(len(components)):
                             closest_dist= tdist
         #print(f'comp {k} to {closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
         if closest_dist<SLIC_SPACE*pow(PHI,4):
-            scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane)
+            scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane) # blue connecting edge
             if closest_vane==6: # diacritics over
                 scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#0000FF')
                 scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#0000FF')

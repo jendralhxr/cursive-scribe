@@ -42,8 +42,8 @@ def freeman(x, y):
         elif (y<0) and (abs(y)>abs(x)):
             return(6)
 
-RESIZE_FACTOR=2
-SLIC_SPACE= 3
+RESIZE_FACTOR=1
+SLIC_SPACE= 8
 SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
 WHITESPACE_INTERVAL= 4
 
@@ -62,8 +62,10 @@ def draw(img): # draw the bitmap
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
+        
 #filename= sys.argv[1]
-filename= 'topanribut.png'
+#filename= 'topanribut.png'
+filename='perangjohor-p1-lineimg1.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -76,30 +78,27 @@ image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
 _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #_, gray= cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_TRIANGLE) # works better with dynamic-selective erosion
-#draw(gray)
 
-kernel_size=2
-canny_threshold1=100
-canny_threshold2=200
-edges = cv.Canny(gray, canny_threshold1, canny_threshold2)
-kernel = np.ones((kernel_size, kernel_size), np.uint8)
-eroded_image = cv.erode(gray, kernel, iterations=1)
-edge_mask = cv.bitwise_not(edges)
-selective_eroded = cv.bitwise_and(eroded_image, eroded_image, mask=edge_mask)
-ret, gray= cv.threshold(selective_eroded,1,THREVAL,cv.THRESH_BINARY)
-dilation_kernel = np.ones((1,2), np.uint8) # alifah dan fitri
-gray = cv.dilate(gray, dilation_kernel, iterations=1)
-render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-
+# selective erosion
+# kernel_size=2
+# canny_threshold1=100
+# canny_threshold2=200
+# edges = cv.Canny(gray, canny_threshold1, canny_threshold2)
+# kernel = np.ones((kernel_size, kernel_size), np.uint8)
+# eroded_image = cv.erode(gray, kernel, iterations=1)
+# edge_mask = cv.bitwise_not(edges)
+# selective_eroded = cv.bitwise_and(eroded_image, eroded_image, mask=edge_mask)
+# ret, gray= cv.threshold(selective_eroded,1,THREVAL,cv.THRESH_BINARY)
 # erosion-dilation @Alifah25
-erosion_kernel = np.ones((1, 2), np.uint8)
-eroded_image = cv.erode(image_gray, erosion_kernel, iterations=1)
-_, gray = cv.threshold(eroded_image, 0, THREVAL, cv.THRESH_OTSU) # less smear
-dilation_kernel = np.ones((2, 1), np.uint8)
-dilated_image = cv.dilate(gray, dilation_kernel, iterations=1)
+# erosion_kernel = np.ones((1, 2), np.uint8)
+# eroded_image = cv.erode(image_gray, erosion_kernel, iterations=1)
 #cv.imwrite('eroded_text.png', eroded_image)
 #cv.imwrite('dilated_text.png', dilated_image)
-gray= dilated_image
+DILATION_Y= 4 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
+DILATION_X= 2  #some vertical lines are just too thin
+DILATION_I= 1        
+gray = cv.dilate(gray, np.ones((DILATION_Y,DILATION_X), np.uint8), iterations=DILATION_I) # tall,
+render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 
 #SLIC
 cue= gray.copy()
@@ -138,7 +137,7 @@ def remove_zeros(moments):
 for n in range(len(moments)):
     moments[n]= remove_zeros(moments[n])
 
-# draw(render)
+#draw(render)
 
 ######## // image preprocessing ends here
 
@@ -267,8 +266,13 @@ for n in range(len(components)):
     #     components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
     #     components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
     # cv.imwrite(str(n)+'.png', rasm)
-draw(disp) 
-#cv.imwrite(imagename+'-disp.png', disp)    
+#draw(disp) 
+#draw(render)
+
+# from datetime import datetime
+# now = datetime.now()
+# date_time_str = now.strftime("%Y%m%d%H%M%S")
+# cv.imwrite('/shm/'+date_time_str+'-render.png', render)    
 
 # draw each components separately, sorted right to left
 # for n in range(len(components)):
@@ -352,34 +356,71 @@ def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
     if filename is not None:
         plt.savefig(filename, dpi=300)
 
-# Fungsi line_iterator dengan erosi dan dilasi menggunakan kernel (x, y), opsional @Alifah25
-# def line_iterator(img, point0, point1, erosion_x=1, erosion_y=2, dilation_x=1, dilation_y=1):
-def line_iterator(img, point0, point1):
-    # Membuat kernel erosi dan dilasi berdasarkan parameter x dan y
-    # erosion_kernel = np.ones((erosion_y, erosion_x), np.uint8)
-    # dilation_kernel = np.ones((dilation_y, dilation_x), np.uint8)
-    # eroded_image = cv.erode(img, erosion_kernel, iterations=1)
-    # img = cv.dilate(eroded_image, dilation_kernel, iterations=1)
-
-    for n in range(WHITESPACE_INTERVAL,1,-1):
-        dx = (point1[0] - point0[0]) / n
-        dy = (point1[1] - point0[1]) / n
-        has_dark= False
-        for i in range(1,n):
-            x = int(point0[0] + i * dx)
-            y = int(point0[1] + i * dy)
-            # 3x3 kernel to account for the floating point rounding
-            #print(f"{n} {i} -- ({x},{y}) {img[y,x]}")
-            if 0 <= y < img.shape[0] and 0 <= x < img.shape[1]:
-                if np.all(img[y-1:y+1, x-1:x+1] == 0):
-                    has_dark= True
-                    break
-        #print(f"{n} space {has_dark}")
-        #if has_dark==False:  # suka nyambung/lengket
-        if has_dark==True:	 # suka putus 		
-            break
-    return has_dark
-
+# kudos to mohikhsan @stackoverflow
+# https://stackoverflow.com/questions/32328179/opencv-3-0-lineiterator
+# adapted to handle integer values
+def line_iterator(P1, P2, img):
+    img = cv.dilate(img, np.ones((int(SLIC_SPACE),int(SLIC_SPACE)), np.uint8), iterations=1)
+    
+    imageH = img.shape[0]
+    imageW = img.shape[1]
+    P1X = int(P1[0])
+    P1Y = int(P1[1])
+    P2X = int(P2[0])
+    P2Y = int(P2[1])
+    
+    # Difference and absolute difference between points
+    dX = P2X - P1X
+    dY = P2Y - P1Y
+    dXa = np.abs(dX)
+    dYa = np.abs(dY)
+    
+    itbuffer = np.empty(shape=(np.maximum(dYa, dXa), 3), dtype=np.int32)
+    
+    # Obtain coordinates along the line using Bresenham's algorithm
+    negY = P1Y > P2Y
+    negX = P1X > P2X
+    if P1X == P2X:  # Vertical line segment
+        itbuffer[:, 0] = P1X
+        if negY:
+            itbuffer[:, 1] = np.arange(P1Y - 1, P1Y - dYa - 1, -1)
+        else:
+            itbuffer[:, 1] = np.arange(P1Y + 1, P1Y + dYa + 1)
+    elif P1Y == P2Y:  # Horizontal line segment
+        itbuffer[:, 1] = P1Y
+        if negX:
+            itbuffer[:, 0] = np.arange(P1X - 1, P1X - dXa - 1, -1)
+        else:
+            itbuffer[:, 0] = np.arange(P1X + 1, P1X + dXa + 1)
+    else:  # Diagonal line segment
+        steepSlope = dYa > dXa
+        if steepSlope:
+            slope = dX / dY
+            if negY:
+                itbuffer[:, 1] = np.arange(P1Y - 1, P1Y - dYa - 1, -1)
+            else:
+                itbuffer[:, 1] = np.arange(P1Y + 1, P1Y + dYa + 1)
+            itbuffer[:, 0] = (slope * (itbuffer[:, 1] - P1Y) + P1X).astype(np.int32)
+        else:
+            slope = dY / dX
+            if negX:
+                itbuffer[:, 0] = np.arange(P1X - 1, P1X - dXa - 1, -1)
+            else:
+                itbuffer[:, 0] = np.arange(P1X + 1, P1X + dXa + 1)
+            itbuffer[:, 1] = (slope * (itbuffer[:, 0] - P1X) + P1Y).astype(np.int32)
+    
+    # Remove points outside of image bounds
+    colX = itbuffer[:, 0]
+    colY = itbuffer[:, 1]
+    itbuffer = itbuffer[(colX >= 0) & (colY >= 0) & (colX < imageW) & (colY < imageH)]
+    
+    # Get intensities from img ndarray
+    itbuffer = itbuffer.astype(np.int32)  # Ensure x, y coordinates are integers
+    itbuffer[:, 2] = img[itbuffer[:, 1], itbuffer[:, 0]]
+    
+    nonzero= np.sum(itbuffer[:, 2] != 0)
+    
+    return nonzero/len(itbuffer)
    
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 # we need to make edges between nodes within a connectedcomponent
@@ -395,9 +436,9 @@ for k in range(len(components)):
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-            has_dark= line_iterator(cue, src['pos_bitmap'], dst['pos_bitmap'])
+            linepart= line_iterator(gray, cue, src['pos_bitmap'], dst['pos_bitmap'])
             # add the checking for line segment
-            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2) and has_dark==False:
+            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)+SLIC_SPACE and linepart > 1/PHI:
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]
@@ -622,51 +663,53 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
 
 ###### graph construction from line image ends here
 
+
 ###### path finding routines starts here
 
-# breadth-first search which switched to depth-first search upon visiting branch
-def custom_bfs_dfs(graph, start_node):
-    queue = deque([start_node])  # Initialize the queue with the start node
-    visited = set([start_node])  # Set to keep track of visited nodes
-    edges = []  # List to store edges
+# # breadth-first search which switched to depth-first search upon visiting branch
+# def custom_bfs_dfs(graph, start_node):
+#     queue = deque([start_node])  # Initialize the queue with the start node
+#     visited = set([start_node])  # Set to keep track of visited nodes
+#     edges = []  # List to store edges
 
-    def dfs(node):
-        stack = [node]  # Use a stack for the DFS traversal
-        branch_edges = []
-        while stack:
-            current = stack.pop()
-            if current not in visited:
-                visited.add(current)
-                # Explore all neighbors of the current node
-                for neighbor in graph.neighbors(current):
-                    if neighbor not in visited:
-                        stack.append(neighbor)
-                        branch_edges.append((current, neighbor))  # Add the edge to the branch
-        return branch_edges
+#     def dfs(node):
+#         stack = [node]  # Use a stack for the DFS traversal
+#         branch_edges = []
+#         while stack:
+#             current = stack.pop()graphfile= 'graph-'+imagename+ext
 
-    while queue:
-        if (pos[queue[-1]][0] > pos[queue[0]][0]):
-            node = queue.pop()
-        else:
-            node = queue.popleft()  # Get the next node from the BFS queue
-        neighbors = list(graph.neighbors(node))  # Get neighbors of the current node
-        unvisited_neighbors = [neighbor for neighbor in neighbors if neighbor not in visited]
-        unvisited_neighbors.sort(key=lambda x: pos[x][0], reverse=True)
-        #unvisited_neighbors.sort(key=lambda x: pos[x][0])
+#             if current not in visited:
+#                 visited.add(current)
+#                 # Explore all neighbors of the current node
+#                 for neighbor in graph.neighbors(current):
+#                     if neighbor not in visited:
+#                         stack.append(neighbor)
+#                         branch_edges.append((current, neighbor))  # Add the edge to the branch
+#         return branch_edges
+
+#     while queue:
+#         if (pos[queue[-1]][0] > pos[queue[0]][0]):
+#             node = queue.pop()
+#         else:
+#             node = queue.popleft()  # Get the next node from the BFS queue
+#         neighbors = list(graph.neighbors(node))  # Get neighbors of the current node
+#         unvisited_neighbors = [neighbor for neighbor in neighbors if neighbor not in visited]
+#         unvisited_neighbors.sort(key=lambda x: pos[x][0], reverse=True)
+#         #unvisited_neighbors.sort(key=lambda x: pos[x][0])
         
-        # print all the branch first then traverse
-        if unvisited_neighbors:
-            for neighbor in unvisited_neighbors:
-                # Add the edge from the current node to the neighbor
-                edges.append((node, neighbor))
-                if len(list(graph.neighbors(neighbor))) > 1:  # If there's a branch
-                    branch_edges = dfs(neighbor)  # Explore the branch using DFS
-                    edges.extend(branch_edges)  # Add the edges found during DFS
-                else:
-                    visited.add(neighbor)  # Mark the neighbor as visited
-                    queue.append(neighbor)  # Add the neighbor to the BFS queue
+#         # print all the branch first then traverse
+#         if unvisited_neighbors:
+#             for neighbor in unvisited_neighbors:
+#                 # Add the edge from the current node to the neighbor
+#                 edges.append((node, neighbor))
+#                 if len(list(graph.neighbors(neighbor))) > 1:  # If there's a branch
+#                     branch_edges = dfs(neighbor)  # Explore the branch using DFS
+#                     edges.extend(branch_edges)  # Add the edges found during DFS
+#                 else:
+#                     visited.add(neighbor)  # Mark the neighbor as visited
+#                     queue.append(neighbor)  # Add the neighbor to the BFS queue
 
-    return edges
+#     return edges
 
 def bfs_with_closest_priority(G, start_node):
     visited = set()  # track visited nodes
@@ -776,6 +819,8 @@ for i in range(len(components)):
 graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 
+
+#################  -----------------
 ## ambil data dari hasil CNN
 import cnn48syairperahu
 import rasm2hurf
@@ -828,7 +873,10 @@ for i in scribe.nodes():
     #   scribe_dia.nodes[i]['hurf']= '' 
 
 
-# #### scratchpad
+
+
+
+############ scratchpad
 # path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
 
 # def non_returning_tspNORE(graph, start_node):

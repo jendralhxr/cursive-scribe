@@ -166,9 +166,15 @@ draw_histograms_on_image(gray, histogram_x, histogram_y)
 
 # find the line segment
 peaks= find_peaks(histogram_y)[0]
-valleys= find_peaks(thresholded.shape[1]-histogram_y)[0]
-valleys = np.insert(valleys, 0, peaks[0]-abs(valleys[0]-peaks[0])) # append zero as the first valley
-np.append(valleys, valleys[-1]+(valleys[-1]-valleys[-2]))
+valleys = find_peaks(thresholded.shape[1]-histogram_y)[0]
+firstline= peaks[0]-abs(valleys[0]-peaks[0])
+if firstline < 0:
+    firstline= 0
+valleys = np.insert(valleys, 0, firstline) # append zero as the first valley
+lastline= valleys[-1]+(valleys[-1]-valleys[-2])
+if lastline > gray.shape[0]:
+    lastline = gray.shape[0]
+valleys = np.append(valleys, lastline)
 
 def average_difference(lst):
     differences = [lst[i+1] - lst[i] for i in range(len(lst)-1)]

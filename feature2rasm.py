@@ -102,6 +102,7 @@ DILATION_I= 1
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 
 #SLIC
+gray= cv.dilate(gray, np.ones((DILATION_Y,DILATION_X), np.uint8), iterations=DILATION_I) # turns out gray is actually already too thin to begin with 
 cue= cv.dilate(gray, np.ones((DILATION_Y,DILATION_X), np.uint8), iterations=DILATION_I) 
 slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = SLIC_SPACE)
 slic.iterate()
@@ -357,10 +358,13 @@ def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
     if filename is not None:
         plt.savefig(filename, dpi=300)
 
+# draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/nodesonly.png', None)
+
 # kudos to mohikhsan @stackoverflow
 # https://stackoverflow.com/questions/32328179/opencv-3-0-lineiterator
 # adapted to handle integer values
 def line_iterator(img, P1, P2):
+    # perhaps optional
     img = cv.dilate(img, np.ones((int(SLIC_SPACE),int(SLIC_SPACE)), np.uint8), iterations=1)
     
     imageH = img.shape[0]
@@ -437,9 +441,9 @@ for k in range(len(components)):
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-            linepart= line_iterator(gray, src['pos_bitmap'], dst['pos_bitmap'])
+            linepart= line_iterator(components[k].mat, src['pos_bitmap'], dst['pos_bitmap'])
             # add the checking for line segment
-            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)+SLIC_SPACE/2 and linepart > pow(PHI,-1/PHI):
+            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)*2 and linepart > pow(PHI,1-PHI):
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]
@@ -473,7 +477,8 @@ for k in range(len(components)):
                 if filled[2]==False and filled[1]==False and i==(3-RASM_EDGE_MAXDEG):
                     break
                     
-#draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/coba.png', None)
+#draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/withedges.png', None)
+#draw_graph(scribe, 'pos_render', 8)
 
 def prune_edges(graph, hop):
     G= graph.copy()

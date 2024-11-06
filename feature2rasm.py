@@ -94,14 +94,15 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 # eroded_image = cv.erode(image_gray, erosion_kernel, iterations=1)
 #cv.imwrite('eroded_text.png', eroded_image)
 #cv.imwrite('dilated_text.png', dilated_image)
+
+
 DILATION_Y= 4 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
 DILATION_X= 2  #some vertical lines are just too thin
 DILATION_I= 1        
-gray = cv.dilate(gray, np.ones((DILATION_Y,DILATION_X), np.uint8), iterations=DILATION_I) # tall,
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 
 #SLIC
-cue= gray.copy()
+cue= cv.dilate(gray, np.ones((DILATION_Y,DILATION_X), np.uint8), iterations=DILATION_I) 
 slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = SLIC_SPACE)
 slic.iterate()
 mask= slic.getLabelContourMask()
@@ -190,7 +191,7 @@ for n in range(scribe.number_of_nodes()):
     cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
     _, ccv = cv.threshold(ccv, 100, STROKEVAL, cv.THRESH_BINARY)
     mu= cv.moments(ccv)
-    if mu['m00'] > pow(SLIC_SPACE,2)*PHI:
+    if mu['m00'] > pow(SLIC_SPACE,2)*PHI: # minimum area for a connectedcomponent
         mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
         area = mu ['m00']
         pd= pdistance(seed, mc)
@@ -280,7 +281,7 @@ for n in range(len(components)):
 #     if components[n].node_start!=-1:
 #         seed= pos[components[n].node_start]
 #         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-#         cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2)
+#         cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 1)
 #         draw(ccv) # along with the neighbor
 
 def draw_graph(graph, posstring, scale):
@@ -359,7 +360,7 @@ def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
 # kudos to mohikhsan @stackoverflow
 # https://stackoverflow.com/questions/32328179/opencv-3-0-lineiterator
 # adapted to handle integer values
-def line_iterator(P1, P2, img):
+def line_iterator(img, P1, P2):
     img = cv.dilate(img, np.ones((int(SLIC_SPACE),int(SLIC_SPACE)), np.uint8), iterations=1)
     
     imageH = img.shape[0]
@@ -436,9 +437,9 @@ for k in range(len(components)):
         for n in components[k].nodes:
             dst= scribe.nodes()[n]
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
-            linepart= line_iterator(gray, cue, src['pos_bitmap'], dst['pos_bitmap'])
+            linepart= line_iterator(gray, src['pos_bitmap'], dst['pos_bitmap'])
             # add the checking for line segment
-            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)+SLIC_SPACE and linepart > 1/PHI:
+            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)+SLIC_SPACE/2 and linepart > pow(PHI,-1/PHI):
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]
@@ -472,7 +473,7 @@ for k in range(len(components)):
                 if filled[2]==False and filled[1]==False and i==(3-RASM_EDGE_MAXDEG):
                     break
                     
-degree_rasm= scribe.degree()
+#draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/coba.png', None)
 
 def prune_edges(graph, hop):
     G= graph.copy()

@@ -231,39 +231,44 @@ for n in range(scribe.number_of_nodes()):
 
 
 components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
+stray = [c for c in components if c.area < pow(SLIC_SPACE,2)+SLIC_SPACE*PHI and len(c.nodes) == 1]
+for i in stray:
+    scribe.remove_node(i.nodes[0])
+components = [c for c in components if c.area >= pow(SLIC_SPACE,2)+SLIC_SPACE*PHI or len(c.nodes) > 1]
+
 # for n in len(components):
 #     for i in components[n].nodes:
 #         distance= pdistance(components[n].centroid, pos[i])
 #         print(f'{i}: {distance}')
 
 # drawing the starting node (bitmap level)
-disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-for n in range(len(components)):
-    #print(f'{n} at {components[n].centroid} size {components[n].area}')
-    # draw green line for rasm at edges, color the rasm brighter
-    if components[n].area>4*PHI*pow(SLIC_SPACE,2):
-        disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
-        seed= components[n].centroid
-        cv.circle(disp, seed, 2, (0,0,120), -1)
-        if components[n].node_start!=-1:
-            cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
-        if components[n].node_end!=-1:
-            cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
-        r= components[n].rect[0]+int(components[n].rect[2])
-        l= components[n].rect[0]
-        if l<width and r<width: # did we ever went beyond the frame?
-            for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
-                disp[j1,r,1]= 120
-            for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
-                disp[j1,l,1]= 120
-    else:        
-        m= components[n].centroid[1]
-        i= components[n].centroid[0]
-        # draw blue line for shakil 'connection'
-        for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
-            if j2<height and j2>0: 
-                disp[j2,i,1]= STROKEVAL/2
-
+# disp = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+# for n in range(len(components)):
+#     #print(f'{n} at {components[n].centroid} size {components[n].area}')
+#     # draw green line for rasm at edges, color the rasm brighter
+#     if components[n].area>4*PHI*pow(SLIC_SPACE,2):
+#         disp= cv.bitwise_or(disp, cv.cvtColor(components[n].mat,cv.COLOR_GRAY2BGR))
+#         seed= components[n].centroid
+#         cv.circle(disp, seed, 2, (0,0,120), -1)
+#         if components[n].node_start!=-1:
+#             cv.circle(disp, pos[components[n].node_start], 2, (0,120,0), -1)
+#         if components[n].node_end!=-1:
+#             cv.circle(disp, pos[components[n].node_end], 2, (120,0,0), -1)
+#         r= components[n].rect[0]+int(components[n].rect[2])
+#         l= components[n].rect[0]
+#         if l<width and r<width: # did we ever went beyond the frame?
+#             for j1 in range(int(SLIC_SPACE*PHI),height-int(SLIC_SPACE*PHI)):
+#                 disp[j1,r,1]= 120
+#             for j1 in range(int(SLIC_SPACE*pow(PHI,3)),height-int(SLIC_SPACE*pow(PHI,3))):
+#                 disp[j1,l,1]= 120
+#     else:        
+#         m= components[n].centroid[1]
+#         i= components[n].centroid[0]
+#         # draw blue line for shakil 'connection'
+#         for j2 in range(int(m-(2*SLIC_SPACE*PHI)), int(m+(2*SLIC_SPACE*PHI))):
+#             if j2<height and j2>0: 
+#                 disp[j2,i,1]= STROKEVAL/2
+    # crop in each rasm
     # rasm= components[n].mat[\
     #     components[n].rect[1]:components[n].rect[1]+components[i].rect[3],\
     #     components[n].rect[0]:components[n].rect[0]+components[i].rect[2]]
@@ -277,13 +282,13 @@ for n in range(len(components)):
 # cv.imwrite('/shm/'+date_time_str+'-render.png', render)    
 
 # draw each components separately, sorted right to left
-# for n in range(len(components)):
-#     ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-#     seed= pos[components[n].nodes[0]]
-#     cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-#     cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.75, (0, 200, 0), 1)
-#     draw(ccv) # along with the neighbor
-#     cv.imwrite('/shm/compo'+str(n)+'.png', ccv)    
+for n in range(len(components)):
+    ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+    seed= pos[components[n].nodes[0]]
+    cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+    cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.75, (0, 200, 0), 1)
+    draw(ccv) # along with the neighbor
+    cv.imwrite('/shm/rasm'+str(n)+'.png', ccv)    
         
 def draw_graph(graph, posstring, scale):
     # nodes
@@ -610,7 +615,7 @@ baseline_pos= np.mean(np.array([value[1] for value in pos.values()]))
 for k in range(len(components)):
     intersect= False
     for n in range(len(components[k].nodes)):
-        if pos[components[k].nodes[n]][1] < SLIC_SPACE:
+        if abs(pos[components[k].nodes[n]][1]-baseline_pos) < SLIC_SPACE:
             intersect= True
 
     # valid rasm
@@ -663,10 +668,12 @@ for k in range(len(components)):
     # valid diacritics
     # small size, but not too small (dirt)
     # away from median, but still relatively close
+    # rather stumpy
     if  intersect==False and \
         abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,4) and \
         abs(components[k].centroid-baseline_pos)[1] > SLIC_SPACE and \
-        ( components[k].area<pow(SLIC_SPACE,2)*pow(PHI,4) or (len(components[k].nodes)==1 and components[k].area > pow(SLIC_SPACE,2))): # small components (diacritics)
+        (components[k].rect[3]/components[k].rect[2] < PHI or  components[k].rect[2]/components[k].rect[3] < PHI) and\
+        ( components[k].area<pow(SLIC_SPACE,2)*pow(PHI,5) or (len(components[k].nodes)==1 and components[k].area > pow(SLIC_SPACE,2))): # small components (diacritics)
         for j in components[k].nodes:
             scribe_dia.nodes[j]['rasm']=False
             scribe_dia.nodes[j]['color']='#008888'

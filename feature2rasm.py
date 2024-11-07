@@ -279,12 +279,12 @@ for n in range(len(components)):
 # draw each components separately, sorted right to left
 # for n in range(len(components)):
 #     ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-#     if components[n].node_start!=-1:
-#         seed= pos[components[n].node_start]
-#         cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-#         cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 1)
-#         draw(ccv) # along with the neighbor
-
+#     seed= pos[components[n].nodes[0]]
+#     cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+#     cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.75, (0, 200, 0), 1)
+#     draw(ccv) # along with the neighbor
+#     cv.imwrite('/shm/compo'+str(n)+'.png', ccv)    
+        
 def draw_graph(graph, posstring, scale):
     # nodes
     plt.figure(figsize=(3*scale,3)) 
@@ -358,7 +358,95 @@ def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
     if filename is not None:
         plt.savefig(filename, dpi=300)
 
-# draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/nodesonly.png', None)
+def extract_subgraph(G, start): # for a connected component
+    if start!=-1:
+        connected_component = nx.node_connected_component(G, start)
+        connected_subgraph = G.subgraph(connected_component)
+    return connected_subgraph.copy()
+
+
+def extract_subgraph2(G, start, end): # for a hurf inside a rasm, naive
+    paths = []
+    nodes_in_paths = set()
+    edges_in_paths = set()
+    for path in paths:
+        nodes_in_paths.update(path)
+        edges_in_paths.update(zip(path, path[1:]))
+    subgraph = G.subgraph(nodes_in_paths).copy()
+    #subgraph = G.edge_subgraph(edges_in_paths).copy()
+    return subgraph
+
+def extract_subgraph3(G, start, end): # for a hurf inside a rasm, handling branches
+    visited = [start,end]
+    queue = [start, end]
+
+    while queue:
+        node = queue.pop(0)
+        crossing_start= all(start in path for path in nx.all_simple_paths(G, node, end))
+        crossing_end  = all(end in path for path in nx.all_simple_paths(G, node, start))
+        #print(f"{node} s{crossing_start} e{crossing_end}")
+        if (node not in visited) and (crossing_start==False) and (crossing_end==False) \
+            or node==start  or node==end:
+            visited.append(node)
+    
+            for neighbor in G.neighbors(node):
+                if neighbor not in visited:
+                    queue.append(neighbor)
+    
+    subgraph = G.subgraph(visited).copy()
+    return subgraph
+
+    
+def edge_attributes(G):
+    if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
+        for u,v,k, attrs in G.edges(keys=True, data=True):
+            print(f"({u}, {v}, {k}) {attrs}")
+    elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
+        for u, v, attrs in G.edges(data=True):
+            print(f"({u}, {v}) {attrs}")
+    
+def path_vane_nodes(G, path): # if path is written as series of nodes
+    pathstring=''
+    for i in range(len(path) - 1):
+        src= G.nodes()[path[i]]
+        dst= G.nodes()[path[i+1]]
+        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
+        pathstring+=str(tvane)
+    return pathstring
+
+def get_edge_colors_of_node(G, node):
+    edges = G.edges(node, data=True)
+    colors = [(edge[0], edge[1], edge[2].get('color', 'No color assigned')) for edge in edges]
+    return colors
+
+def path_vane_edges(G, path): # if path is written is written as series of edges
+    pathstring=''
+    for n in path:
+        # vane code
+        src= G.nodes()[n[0]]
+        dst= G.nodes()[n[1]]
+        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
+        G.edges[n]['vane']=tvane
+        scribe_dia.edges[n]['vane']=tvane
+        if (G.edges[n]['color']=='#00FF00'): # main stroke
+            pathstring+=str(tvane)
+        
+        # diacritics mark
+        # may need duplicate check so that not printed twice if node is revisited from another edge(s)
+        diacolor= hex_and(src['color'], '#0000FF')
+        if diacolor:
+            if diacolor == 255:
+                pathstring+='-'
+            elif diacolor == 128:
+                pathstring+='+'
+        else:
+            diacolor= hex_and(dst['color'], '#0000FF')
+            if diacolor:
+                if diacolor == 255:
+                    pathstring+='-'
+                elif diacolor == 128:
+                    pathstring+='+'
+    return pathstring
 
 # kudos to mohikhsan @stackoverflow
 # https://stackoverflow.com/questions/32328179/opencv-3-0-lineiterator
@@ -477,8 +565,8 @@ for k in range(len(components)):
                 if filled[2]==False and filled[1]==False and i==(3-RASM_EDGE_MAXDEG):
                     break
                     
-#draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/withedges.png', None)
-#draw_graph(scribe, 'pos_render', 8)
+# draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/withedges.png', None)
+# draw_graph(scribe, 'pos_render', 8)
 
 def prune_edges(graph, hop):
     G= graph.copy()
@@ -499,9 +587,6 @@ def prune_edges(graph, hop):
 #scribe= prune_edges(scribe, 3)
 #scribe= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
 
-degree_rasm= scribe.degree()
-scribe_dia= scribe.copy()
-
 def hex_or(color1, color2):
     int1 = int(color1.lstrip('#'), 16)
     int2 = int(color2.lstrip('#'), 16)
@@ -513,15 +598,79 @@ def hex_and(color1, color2):
     int1 = int(color1.lstrip('#'), 16)
     int2 = int(color2.lstrip('#'), 16)
     return int1 & int2
-    
 
 
 # finding diacritics connection for small components
 # and update extreme nodes for large components
+
+degree_rasm= scribe.degree()
+scribe_dia= scribe.copy()
+baseline_pos= np.mean(np.array([value[1] for value in pos.values()]))
+
 for k in range(len(components)):
-    if components[k].area<pow(SLIC_SPACE,2)*pow(PHI,4) or len(components[k].nodes)<=4: # small components (diacritics)
+    intersect= False
+    for n in range(len(components[k].nodes)):
+        if pos[components[k].nodes[n]][1] < SLIC_SPACE:
+            intersect= True
+
+    # valid rasm
+    # large size
+    # close to or intersect the baseline
+    if  intersect==True or \
+        components[k].area>pow(SLIC_SPACE,2)*pow(PHI,4): \
+        #or (abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,3) and components[k].area>pow(SLIC_SPACE,2)*pow(PHI,3)): 
+        
+        # tentative starting node
+        components[k].node_start=components[k].nodes[0]
+        for n in components[k].nodes:
+            if pos[n][0] > pos[components[k].node_start][0]: # rightmost node as starting node if it is still missing
+                components[k].node_start= n
+        scribe_dia.nodes[components[k].node_start]['color']= '#F00000' # initialize with red
+        #scribe.nodes[components[k].node_start]['color']= '#FFA500' 
+        
+        # actually optimizing the starting node
+        scribe.nodes[components[k].node_start]['color']= '#FFA500' # reset to orange
+        scribe_dia.nodes[components[k].node_start]['color']= '#FFA500'
+        graph= extract_subgraph(scribe, components[k].node_start)
+
+        # Check if the component is tall
+        if (components[k].rect[3] / components[k].rect[2] > pow(PHI, 2)):
+            # If tall, prefer starting from the top
+            smallest_degree_nodes = [node for node, _ in sorted(graph.degree(), key=lambda item: item[1])[:RASM_CANDIDATE]]
+            #node_start = min(smallest_degree_nodes, key=lambda node: pos[node][0]) # cari yang paling kanan (Zulhaj)
+            node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1]) # cari yang paling atas (Fitri)
+
+        else: 
+            # if stumpy, prefers starting close to median more to the right, but far away from centroid
+            rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)],key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
+            # Step 1: Get the rightmost nodes
+            topmost_nodes = sorted([node for node in rightmost_nodes],key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
+            # Zulhaj @jendralhxr
+            # smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
+            #node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
+            #node_start = max(rightmost_nodes, key=lambda node: pos[node][1] )
+			# @FadhilatulFitriyah
+            # Step 2: Get the topmost nodes from the rightmost nodes
+            # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
+            # Step 3: Get the node with the node start from topmost nodes
+            node_start  = min(topmost_nodes, key=lambda node: graph.degree(node))
+            components[k].node_start= node_start
+            scribe.nodes[node_start]['color']= '#F00000' # starting node is red
+            scribe_dia.nodes[node_start]['color']= '#F00000'
+    
+#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/rasm only.png', None)   
+
+    # valid diacritics
+    # small size, but not too small (dirt)
+    # away from median, but still relatively close
+    if  intersect==False and \
+        abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,4) and \
+        abs(components[k].centroid-baseline_pos)[1] > SLIC_SPACE and \
+        ( components[k].area<pow(SLIC_SPACE,2)*pow(PHI,4) or (len(components[k].nodes)==1 and components[k].area > pow(SLIC_SPACE,2))): # small components (diacritics)
         for j in components[k].nodes:
-            scribe.nodes[j]['rasm']=False
+            scribe_dia.nodes[j]['rasm']=False
+            scribe_dia.nodes[j]['color']='#008888'
+            
         src_comp= k
         src_node= -1
         closest_comp= -1
@@ -544,128 +693,21 @@ for k in range(len(components)):
         if closest_dist<SLIC_SPACE*pow(PHI,4):
             scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane) # blue connecting edge
             if closest_vane==6: # diacritics over
-                scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#0000FF')
-                scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#0000FF')
+                #scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#0000FF') 
+                scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#0000FF') # dark blue 
             else: # diacritics below
-                scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#000080')
-                scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#000080')
-    
-    else: # large ones, updating the starting node
-        raddist_start=[]
-        # calculate the distances
-        for m in components[k].nodes:
-            if pos[m][0] > components[k].centroid[0]:
-                raddist_start.append( (pdistance(pos[components[k].node_end], pos[m]), m) )
-            #    print(f'comp{k} node{m}')
-            radmax3_start= heapq.nlargest(3, raddist_start, key=lambda x:x[0])
-            #print(radmax3_start)
-        # find the more appropriate starting node
-        flag= False
-        for d in range(1,RASM_EDGE_MAXDEG): # starting node needs to have the smallest degree if possible
-            for e in radmax3_start:
-                if degree_rasm(e[1])==d and e[1]!=-1:
-                    #print(f'comp{k}_start: {components[k].node_start} -> {e[1]}')
-                    components[k].node_start= e[1]
-                    scribe.nodes[components[k].node_start]['color']= '#F00000'
-                    scribe_dia.nodes[components[k].node_start]['color']= '#F00000'
-                    flag= True
-                    break
-            if flag:
-                break
+                #scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#000080')
+                scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#000080') # light blue
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/diacritics only.png', None)
         
+        # large ones needs to be close to median to classify as rasm 
+        # updating the starting node
+        
+        
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/withdiacritics.png', None)
 degree_dia= scribe.degree()
 
-# draw_graph(scribe_dia, 'pos_render', 8)
 
-def extract_subgraph(G, start): # for a connected component
-    if start!=-1:
-        connected_component = nx.node_connected_component(G, start)
-        connected_subgraph = G.subgraph(connected_component)
-    return connected_subgraph.copy()
-
-
-def extract_subgraph2(G, start, end): # for a hurf inside a rasm, naive
-    paths = []
-    nodes_in_paths = set()
-    edges_in_paths = set()
-    for path in paths:
-        nodes_in_paths.update(path)
-        edges_in_paths.update(zip(path, path[1:]))
-    subgraph = G.subgraph(nodes_in_paths).copy()
-    #subgraph = G.edge_subgraph(edges_in_paths).copy()
-    return subgraph
-
-def extract_subgraph3(G, start, end): # for a hurf inside a rasm, handling branches
-    visited = [start,end]
-    queue = [start, end]
-
-    while queue:
-        node = queue.pop(0)
-        crossing_start= all(start in path for path in nx.all_simple_paths(G, node, end))
-        crossing_end  = all(end in path for path in nx.all_simple_paths(G, node, start))
-        #print(f"{node} s{crossing_start} e{crossing_end}")
-        if (node not in visited) and (crossing_start==False) and (crossing_end==False) \
-            or node==start  or node==end:
-            visited.append(node)
-    
-            for neighbor in G.neighbors(node):
-                if neighbor not in visited:
-                    queue.append(neighbor)
-    
-    subgraph = G.subgraph(visited).copy()
-    return subgraph
-
-    
-def edge_attributes(G):
-    if isinstance(G,nx.MultiGraph) or isinstance(G,nx.MultiDiGraph):
-        for u,v,k, attrs in G.edges(keys=True, data=True):
-            print(f"({u}, {v}, {k}) {attrs}")
-    elif isinstance(G,nx.Graph) or isinstance(G,nx.DiGraph):
-        for u, v, attrs in G.edges(data=True):
-            print(f"({u}, {v}) {attrs}")
-    
-def path_vane_nodes(G, path): # if path is written as series of nodes
-    pathstring=''
-    for i in range(len(path) - 1):
-        src= G.nodes()[path[i]]
-        dst= G.nodes()[path[i+1]]
-        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
-        pathstring+=str(tvane)
-    return pathstring
-
-def get_edge_colors_of_node(G, node):
-    edges = G.edges(node, data=True)
-    colors = [(edge[0], edge[1], edge[2].get('color', 'No color assigned')) for edge in edges]
-    return colors
-
-def path_vane_edges(G, path): # if path is written is written as series of edges
-    pathstring=''
-    for n in path:
-        # vane code
-        src= G.nodes()[n[0]]
-        dst= G.nodes()[n[1]]
-        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
-        G.edges[n]['vane']=tvane
-        scribe_dia.edges[n]['vane']=tvane
-        if (G.edges[n]['color']=='#00FF00'): # main stroke
-            pathstring+=str(tvane)
-        
-        # diacritics mark
-        # may need duplicate check so that not printed twice if node is revisited from another edge(s)
-        diacolor= hex_and(src['color'], '#0000FF')
-        if diacolor:
-            if diacolor == 255:
-                pathstring+='-'
-            elif diacolor == 128:
-                pathstring+='+'
-        else:
-            diacolor= hex_and(dst['color'], '#0000FF')
-            if diacolor:
-                if diacolor == 255:
-                    pathstring+='-'
-                elif diacolor == 128:
-                    pathstring+='+'
-    return pathstring
 
 ###### graph construction from line image ends here
 
@@ -749,77 +791,37 @@ FONTSIZE= 24
 for i in range(len(components)):
     rasm=''
     remainder_stroke=''
-    if len(components[i].nodes)>=2: # small alifs are often sometimes only 2-nodes big
-        if components[i].node_start==-1: # in case of missing starting node
-            #node_start_pos=(0,0)
-            components[i].node_start=components[i].nodes[0]
-            for n in components[i].nodes:
-                if pos[n][0] > pos[components[i].node_start][0]: # rightmost node as starting node if it is still missing
-                    components[i].node_start= n
-        
-        else: # actually optimizing the starting node
-            scribe.nodes[components[i].node_start]['color']= '#FFA500' # reset to orange
-            scribe_dia.nodes[components[i].node_start]['color']= '#FFA500'
-            graph= extract_subgraph(scribe, components[i].node_start)
 
-            # Check if the component is tall
-            if (components[i].rect[3] / components[i].rect[2] > pow(PHI, 2)):
-                # If tall, prefer starting from the top
-                smallest_degree_nodes = [node for node, _ in sorted(graph.degree(), key=lambda item: item[1])[:RASM_CANDIDATE]]
-                #node_start = min(smallest_degree_nodes, key=lambda node: pos[node][0]) # cari yang paling kanan (Zulhaj)
-                node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1]) # cari yang paling atas (Fitri)
-
-            else: 
-                # if stumpy, prefers starting close to median more to the right, but far away from centroid
-                rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[i].centroid[0] - SLIC_SPACE)],key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
-                # Step 1: Get the rightmost nodes
-                topmost_nodes = sorted([node for node in rightmost_nodes],key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
-                # Zulhaj @jendralhxr
-                # smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
-                #node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[i].centroid))
-                #node_start = max(rightmost_nodes, key=lambda node: pos[node][1] )
-				
-				# @FadhilatulFitriyah
-                # Step 2: Get the topmost nodes from the rightmost nodes
-                # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
-                # Step 3: Get the node with the node start from topmost nodes
-                node_start  = min(topmost_nodes, key=lambda node: graph.degree(node))
-                
-			# Set the node_start as the selected node
-            components[i].node_start= node_start
-            scribe.nodes[components[i].node_start]['color']= '#F00000' # starting node is red
-            scribe_dia.nodes[components[i].node_start]['color']= '#F00000'
-        
-        # path finding
-        #remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
-        remainder_stroke= path_vane_edges(scribe, list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start)))
-        print(remainder_stroke)
-        
-        # refer to rasm2hurf.py
-        # rule-based minimum feasible pattern
-        #rasm= stringtorasm_LEV(remainder_stroke)
-        # using LSTM model
-        # rasm=stringtorasm_LSTM(remainder_stroke)
-        # using LCS table
-        # rasm= stringtorasm_LCS(remainder_stroke)
-        #rasm= stringtorasm_MC_jagokandang(remainder_stroke)
-        
-        ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
-        seed= pos[components[i].node_start]
-        cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-        pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
-        font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
-        fontsm = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE-12)
-        drawPIL = ImageDraw.Draw(pil_image)
-        #drawPIL.text((components[i].centroid[0]-FONTSIZE/2, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
-        drawPIL.text((components[i].centroid[0]-FONTSIZE/2, components[i].centroid[1]), str(i), font=fontsm, fill=(0, 200, 200))
-        # Convert back to Numpy array and switch back from RGB to BGR
-        ccv= np.asarray(pil_image)
-        ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
-        draw(ccv)
-        # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
-    else:
-        rasm= '' # so the next rasm gets it fresh
+    # path finding
+    #remainder_stroke= path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
+    remainder_stroke= path_vane_edges(scribe, list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start)))
+    print(remainder_stroke)
+    
+    # refer to rasm2hurf.py
+    # rule-based minimum feasible pattern
+    #rasm= stringtorasm_LEV(remainder_stroke)
+    # using LSTM model
+    # rasm=stringtorasm_LSTM(remainder_stroke)
+    # using LCS table
+    # rasm= stringtorasm_LCS(remainder_stroke)
+    #rasm= stringtorasm_MC_jagokandang(remainder_stroke)
+    
+    ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
+    seed= pos[components[i].node_start]
+    cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+    pil_image = Image.fromarray(cv.cvtColor(ccv, cv.COLOR_BGR2RGB))
+    font = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE)
+    fontsm = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf", FONTSIZE-12)
+    drawPIL = ImageDraw.Draw(pil_image)
+    #drawPIL.text((components[i].centroid[0]-FONTSIZE/2, components[i].centroid[1]-FONTSIZE), rasm, font=font, fill=(0, 200, 0))
+    drawPIL.text((components[i].centroid[0]-FONTSIZE/2, components[i].centroid[1]), str(i), font=fontsm, fill=(0, 200, 200))
+    # Convert back to Numpy array and switch back from RGB to BGR
+    ccv= np.asarray(pil_image)
+    ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
+    draw(ccv)
+    # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
+else:
+    rasm= '' # so the next rasm gets it fresh
         
     
 graphfile= 'graph-'+imagename+ext

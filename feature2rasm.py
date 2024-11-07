@@ -411,6 +411,13 @@ def edge_attributes(G):
             print(f"({u}, {v}) {attrs}")
     
 def path_vane_nodes(G, path): # if path is written as series of nodes
+    
+    def find_blue_edges(G, node):
+        for neighbor in G.neighbors(node):
+            edge_data = G.get_edge_data(node, neighbor)
+            if edge_data.get('color') == 'blue':
+                print(f"Node {node} has a blue edge with node {neighbor}")
+
     pathstring=''
     for i in range(len(path) - 1):
         src= G.nodes()[path[i]]

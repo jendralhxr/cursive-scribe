@@ -50,7 +50,7 @@ def draw(img): # draw the bitmap
     elif (len(img.shape)==2):
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
-#filename= sys.argv[1]
+filename= sys.argv[1]
 #filename= 'topanribut.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)

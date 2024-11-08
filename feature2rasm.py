@@ -643,12 +643,12 @@ for k in range(len(components)):
         for j in components[k].nodes:
             scribe_dia.nodes[j]['rasm']=False
             scribe_dia.nodes[j]['color']='#008888'
-            if   components[k].area > pow(SLIC_SPACE,2)*pow(PHI,5):
+            if   components[k].area > pow(SLIC_SPACE,2)*pow(PHI,4):
                  scribe_dia.nodes[j]['dia_size']='C'
-            elif components[k].area > pow(SLIC_SPACE,2)*pow(PHI,4):
-                 scribe_dia.nodes[j]['dia_size']='B'
             elif components[k].area > pow(SLIC_SPACE,2)*pow(PHI,3):
-                 scribe_dia.nodes[j]['dia_size']='A'
+                 scribe_dia.nodes[j]['dia_size']='B'
+            else:
+                scribe_dia.nodes[j]['dia_size']='A' # approx pow(SLIC_SPACE,2)*pow(PHI,3)
             
         src_comp= k
         src_node= -1
@@ -694,10 +694,8 @@ for i in range(len(components)):
             for n in components[i].nodes:
                 if   components[i].area > pow(SLIC_SPACE,2)*pow(PHI,5):
                      scribe_dia.nodes[n]['dia_size']='C'
-                elif components[i].area > pow(SLIC_SPACE,2)*pow(PHI,4):
-                     scribe_dia.nodes[n]['dia_size']='B'
-                elif components[i].area > pow(SLIC_SPACE,2)*pow(PHI,3):
-                     scribe_dia.nodes[n]['dia_size']='A'
+                else:
+                     scribe_dia.nodes[n]['dia_size']='B'# approx pow(SLIC_SPACE,2)*pow(PHI,4)
             components[i].rect = (\
                                   components[i].rect[0],\
                                   components[i].rect[1],\
@@ -736,16 +734,17 @@ def get_edge_colors_of_node(G, node):
     colors = [(edge[0], edge[1], edge[2].get('color', 'No color assigned')) for edge in edges]
     return colors
 
-# TODO: indexing writing out the diacritics info during traversing
-def path_vane_edges(G, path): # if path is written is written as series of edges
+# dari contekan
+def find_diacritics_edges(G, node):
+    for neighbor in G.neighbors(node):
+        if G.edges[(node, neighbor)]['color'] == '#0000FF':
+            size= G.nodes[neighbor]['dia_size']
+            if pos[neighbor][1] > pos[node][1]:
+                size = size.lower()
+            return size
+    return None
 
-    # dari contekan
-    def find_blue_edges(G, node):
-        for neighbor in G.neighbors(node):
-            edge_data = G.get_edge_data(node, neighbor)
-            if edge_data.get('color') == 'blue':
-                print(f"Node {node} has a blue edge with node {neighbor}")
-    
+def path_vane_edges(G, path): # if path is written is written as series of edges
     pathstring=''
     for n in path:
         # vane code
@@ -753,26 +752,17 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         dst= G.nodes[n[1]]
         tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
         G.edges[n]['vane']=tvane
-        scribe_dia.edges[n]['vane']=tvane
+        G.edges[n]['vane']=tvane
         if (G.edges[n]['color']=='#00FF00'): # main stroke
             pathstring+=str(tvane)
         
         # diacritics mark
-        # may need duplicate check so that not printed twice if node is revisited from another edge(s)
-        diacolor= hex_and(src['color'], '#0000FF')
-        if diacolor:
-            if diacolor == 255:
-                pathstring+='-'
-            elif diacolor == 128:
-                pathstring+='+'
-        else:
-            diacolor= hex_and(dst['color'], '#0000FF')
-            if diacolor:
-                if diacolor == 255:
-                    pathstring+='-'
-                elif diacolor == 128:
-                    pathstring+='+'
-    return pathstring
+        mark= find_diacritics_edges(scribe_dia, src)
+        if mark!= None:
+            pathstring += mark
+        mark= None
+        
+        return pathstring
 
 def bfs_with_closest_priority(G, start_node):
     visited = set()  # track visited nodes

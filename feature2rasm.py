@@ -286,7 +286,7 @@ for n in range(len(components)):
     ccv= cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
     seed= pos[components[n].nodes[0]]
     cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-    cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.75, (0, 200, 0), 1)
+    cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 1, (0, 200, 0), 1)
     draw(ccv) # along with the neighbor
     cv.imwrite('/shm/rasm'+str(n)+'.png', ccv)    
         
@@ -620,6 +620,7 @@ scribe_dia= scribe.copy()
 baseline_pos= np.mean(np.array([value[1] for value in pos.values()]))
 
 for k in range(len(components)):
+    components[k].node_start= components[k].nodes[0]
     intersect= False
     for n in range(len(components[k].nodes)):
         if abs(pos[components[k].nodes[n]][1]-baseline_pos) < SLIC_SPACE:
@@ -627,13 +628,13 @@ for k in range(len(components)):
 
     # valid rasm
     # large size
-    # close to or intersect the baseline
+    # more likely to be close to or intersecting the baseline
     if  intersect==True or \
         components[k].area>pow(SLIC_SPACE,2)*pow(PHI,4): \
         #or (abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,3) and components[k].area>pow(SLIC_SPACE,2)*pow(PHI,3)): 
         
         # tentative starting node
-        components[k].node_start=components[k].nodes[0]
+        components[k].node_start= components[k].nodes[0]
         for n in components[k].nodes:
             if pos[n][0] > pos[components[k].node_start][0]: # rightmost node as starting node if it is still missing
                 components[k].node_start= n
@@ -651,7 +652,6 @@ for k in range(len(components)):
             smallest_degree_nodes = [node for node, _ in sorted(graph.degree(), key=lambda item: item[1])[:RASM_CANDIDATE]]
             #node_start = min(smallest_degree_nodes, key=lambda node: pos[node][0]) # cari yang paling kanan (Zulhaj)
             node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1]) # cari yang paling atas (Fitri)
-
         else: 
             # if stumpy, prefers starting close to median more to the right, but far away from centroid
             rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)],key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
@@ -666,12 +666,11 @@ for k in range(len(components)):
             # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
             # Step 3: Get the node with the node start from topmost nodes
             node_start  = min(topmost_nodes, key=lambda node: graph.degree(node))
-            components[k].node_start= node_start
-            scribe.nodes[node_start]['color']= '#F00000' # starting node is red
-            scribe_dia.nodes[node_start]['color']= '#F00000'
+        
+        components[k].node_start= node_start
+        scribe.nodes[node_start]['color']= '#F00000' # starting node is red
+        scribe_dia.nodes[node_start]['color']= '#F00000'
     
-#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/rasm only.png', None)   
-
     # valid diacritics
     # small size, but not too small (dirt)
     # away from median, but still relatively close
@@ -679,7 +678,7 @@ for k in range(len(components)):
     if  intersect==False and \
         abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,4) and \
         abs(components[k].centroid-baseline_pos)[1] > SLIC_SPACE and \
-        (components[k].rect[3]/components[k].rect[2] < PHI or  components[k].rect[2]/components[k].rect[3] < PHI) and\
+        (components[k].rect[3]/components[k].rect[2] < pow(PHI,2) and components[k].rect[2]/components[k].rect[3] < pow(PHI,2)) and\
         ( components[k].area<pow(SLIC_SPACE,2)*pow(PHI,5) or (len(components[k].nodes)==1 and components[k].area > pow(SLIC_SPACE,2))): # small components (diacritics)
         for j in components[k].nodes:
             scribe_dia.nodes[j]['rasm']=False
@@ -712,11 +711,10 @@ for k in range(len(components)):
             else: # diacritics below
                 #scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#000080')
                 scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#000080') # light blue
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/diacritics only.png', None)
-        
-        # large ones needs to be close to median to classify as rasm 
-        # updating the starting node
-        
+
+    # edge cases, treat as rasm
+    else:
+         scribe_dia.nodes[components[k].node_start]['color']= '#F00000' # initialize with red
         
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/withdiacritics.png', None)
 degree_dia= scribe.degree()

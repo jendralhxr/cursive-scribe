@@ -47,7 +47,7 @@ SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
 WHITESPACE_INTERVAL= 4
 
 RASM_EDGE_MAXDEG= 2
-RASM_CANDIDATE= 6
+RASM_CANDIDATE= SLIC_SPACE
 
 THREVAL= 60
 CHANNEL= 2
@@ -597,7 +597,7 @@ for k in range(len(components)):
         #scribe.nodes[components[k].node_start]['color']= '#FFA500' 
         
         # actually optimizing the starting node
-        scribe.nodes[components[k].node_start]['color']= '#FFA500' # reset to orange
+        #scribe.nodes[components[k].node_start]['color']= '#FFA500' # reset to orange
         scribe_dia.nodes[components[k].node_start]['color']= '#FFA500'
         graph= extract_subgraph(scribe, components[k].node_start)
 
@@ -609,21 +609,22 @@ for k in range(len(components)):
             node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1]) # cari yang paling atas (Fitri)
         else: 
             # if stumpy, prefers starting close to median more to the right, but far away from centroid
-            rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)],key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
+            rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
             # Step 1: Get the rightmost nodes
-            topmost_nodes = sorted([node for node in rightmost_nodes],key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
+            topmost_nodes = sorted([node for node in rightmost_nodes], key=lambda node: pos[node][1])[:int(RASM_CANDIDATE*PHI)]
             # Zulhaj @jendralhxr
-            smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
-            node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
+            rightmost_nodes = sorted([node for node in topmost_nodes], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE / PHI)]
+            #smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE)]
+            #node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
             #node_start = max(rightmost_nodes, key=lambda node: pos[node][1] )
 			# @FadhilatulFitriyah
             # Step 2: Get the topmost nodes from the rightmost nodes
             # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
             # Step 3: Get the node with the node start from topmost nodes
-            # node_start  = min(topmost_nodes, key=lambda node: graph.degree(node))
+            node_start  = min(rightmost_nodes, key=lambda node: graph.degree(node))
         
         components[k].node_start= node_start
-        scribe.nodes[node_start]['color']= '#F00000' # starting node is red
+        #scribe.nodes[node_start]['color']= '#F00000' # starting node is red
         scribe_dia.nodes[node_start]['color']= '#F00000'
     
     # valid diacritics

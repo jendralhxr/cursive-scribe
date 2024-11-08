@@ -281,14 +281,14 @@ components = [c for c in components if c.area >= pow(SLIC_SPACE,2)+SLIC_SPACE*PH
 # cv.imwrite('/shm/'+date_time_str+'-render.png', render)    
 
 # draw each components separately, sorted right to left
-ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
-for n in range(len(components)):
-    # ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
-    seed= pos[components[n].nodes[0]]
-    cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-    cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 0), 2)
-draw(ccv) # along with the neighbor
-cv.imwrite('/shm/rasm'+str(n)+'.png', ccv)    
+# ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
+# for n in range(len(components)):
+#     # ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
+#     seed= pos[components[n].nodes[0]]
+#     cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+#     cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 0), 2)
+# draw(ccv) # along with the neighbor
+# cv.imwrite('/shm/rasm'+str(n)+'.png', ccv)    
         
 def draw_graph(graph, posstring, scale):
     # nodes
@@ -534,7 +534,7 @@ for k in range(len(components)):
                 if filled[2]==False and filled[1]==False and i==(3-RASM_EDGE_MAXDEG):
                     break
                     
-draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/withedges.png', None)
+# draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/withedges.png', None)
 # draw_graph(scribe, 'pos_render', 8)
 
 def prune_edges(graph, hop):
@@ -609,19 +609,21 @@ for k in range(len(components)):
             node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1]) # cari yang paling atas (Fitri)
         else: 
             # if stumpy, prefers starting close to median more to the right, but far away from centroid
-            rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
+            rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)], \
+                                     key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
             # Step 1: Get the rightmost nodes
-            topmost_nodes = sorted([node for node in rightmost_nodes], key=lambda node: pos[node][1])[:int(RASM_CANDIDATE*PHI)]
+            topmost_nodes = sorted([node for node in rightmost_nodes  if pos[node][1] < (baseline_pos + SLIC_SPACE)],\
+                                   key=lambda node: pos[node][1])[:int(RASM_CANDIDATE*PHI)]
             # Zulhaj @jendralhxr
-            rightmost_nodes = sorted([node for node in topmost_nodes], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE / PHI)]
-            #smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE)]
+            smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE)]
+            rightmost_nodes = sorted([node for node in smallest_degree_nodes], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE / PHI)]
             #node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
-            #node_start = max(rightmost_nodes, key=lambda node: pos[node][1] )
+            node_start = min(rightmost_nodes, key=lambda node: pos[node][1])
 			# @FadhilatulFitriyah
             # Step 2: Get the topmost nodes from the rightmost nodes
             # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
             # Step 3: Get the node with the node start from topmost nodes
-            node_start  = min(rightmost_nodes, key=lambda node: graph.degree(node))
+            #node_start  = min(rightmost_nodes, key=lambda node: graph.degree(node))
         
         components[k].node_start= node_start
         #scribe.nodes[node_start]['color']= '#F00000' # starting node is red
@@ -714,7 +716,6 @@ while components[-1].centroid == (0,0):
 degree_dia= scribe.degree()
 
 graphfile= 'graph-'+imagename+ext
-#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/withdiacritics.png', None)
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 
 ###### graph construction from line image ends here

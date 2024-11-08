@@ -95,8 +95,8 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #cv.imwrite('dilated_text.png', dilated_image)
 
 
-DILATION_Y= 4 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
-DILATION_X= 2  #some vertical lines are just too thin
+DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
+DILATION_X= 4  #some vertical lines are just too thin
 DILATION_I= 1        
 render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 
@@ -281,13 +281,14 @@ components = [c for c in components if c.area >= pow(SLIC_SPACE,2)+SLIC_SPACE*PH
 # cv.imwrite('/shm/'+date_time_str+'-render.png', render)    
 
 # draw each components separately, sorted right to left
-# for n in range(len(components)):
-#     ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
-#     seed= pos[components[n].nodes[0]]
-#     cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-#     cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 1, (0, 200, 0), 1)
-#     draw(ccv) # along with the neighbor
-#     cv.imwrite('/shm/rasm'+str(n)+'.png', ccv)    
+ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
+for n in range(len(components)):
+    # ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
+    seed= pos[components[n].nodes[0]]
+    cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
+    cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 0), 2)
+draw(ccv) # along with the neighbor
+cv.imwrite('/shm/rasm'+str(n)+'.png', ccv)    
         
 def draw_graph(graph, posstring, scale):
     # nodes
@@ -322,7 +323,7 @@ def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
     #area= np.array(list(nx.get_node_attributes(graph, 'area').values()))
     node_colors = nx.get_node_attributes(graph,'color').values()
     if labelfield is not None:
-        custom_labels = {node: scribe.nodes[node]['hurf'] for node in scribe.nodes()}
+        custom_labels = {node: scribe.nodes[node]['hurf'] for node in scribe.nodes}
     # edges
     edge_lbls= nx.get_edge_attributes(graph, 'vane')
     edge_colors = nx.get_edge_attributes(graph,'color').values()
@@ -409,58 +410,6 @@ def edge_attributes(G):
         for u, v, attrs in G.edges(data=True):
             print(f"({u}, {v}) {attrs}")
     
-def path_vane_nodes(G, path): # if path is written as series of nodes
-    pathstring=''
-    for i in range(len(path) - 1):
-        src= G.nodes()[path[i]]
-        dst= G.nodes()[path[i+1]]
-        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
-        pathstring+=str(tvane)
-    return pathstring
-
-def get_edge_colors_of_node(G, node):
-    edges = G.edges(node, data=True)
-    colors = [(edge[0], edge[1], edge[2].get('color', 'No color assigned')) for edge in edges]
-    return colors
-
-def path_vane_edges(G, path): # if path is written is written as series of edges
-
-    # dari contekan
-    def find_blue_edges(G, node):
-        for neighbor in G.neighbors(node):
-            edge_data = G.get_edge_data(node, neighbor)
-            if edge_data.get('color') == 'blue':
-                print(f"Node {node} has a blue edge with node {neighbor}")
-    
-    
-    pathstring=''
-    for n in path:
-        # vane code
-        src= G.nodes()[n[0]]
-        dst= G.nodes()[n[1]]
-        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
-        G.edges[n]['vane']=tvane
-        scribe_dia.edges[n]['vane']=tvane
-        if (G.edges[n]['color']=='#00FF00'): # main stroke
-            pathstring+=str(tvane)
-        
-        # diacritics mark
-        # may need duplicate check so that not printed twice if node is revisited from another edge(s)
-        diacolor= hex_and(src['color'], '#0000FF')
-        if diacolor:
-            if diacolor == 255:
-                pathstring+='-'
-            elif diacolor == 128:
-                pathstring+='+'
-        else:
-            diacolor= hex_and(dst['color'], '#0000FF')
-            if diacolor:
-                if diacolor == 255:
-                    pathstring+='-'
-                elif diacolor == 128:
-                    pathstring+='+'
-    return pathstring
-
 # kudos to mohikhsan @stackoverflow
 # https://stackoverflow.com/questions/32328179/opencv-3-0-lineiterator
 # adapted to handle integer values
@@ -541,12 +490,12 @@ for k in range(len(components)):
     # O(n^2) complexity
     for m in components[k].nodes:
         scribe.nodes[m]['component_id']=k
-        src= scribe.nodes()[m]
+        src= scribe.nodes[m]
         # three closest nodes
         ndist=[1e9, 1e9, 1e9]
         ndst= [-1, -1, -1]
         for n in components[k].nodes:
-            dst= scribe.nodes()[n]
+            dst= scribe.nodes[n]
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
             if (m!=n):
                 linepart= line_iterator(cue, src['pos_bitmap'], dst['pos_bitmap'])
@@ -571,7 +520,7 @@ for k in range(len(components)):
         filled=[False, False, False]
         for i in range(2, -1, -1):
             if ndist[i]!=1e9 and ndst[i]!=-1:
-                dst= scribe.nodes()[ndst[i]]
+                dst= scribe.nodes[ndst[i]]
                 tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
                 # // (i==1 and scribe.has_edge(m,ndst[2])==True ) # for 1+alpha
                 if scribe.has_edge(m, ndst[i]):
@@ -653,7 +602,7 @@ for k in range(len(components)):
         graph= extract_subgraph(scribe, components[k].node_start)
 
         # Check if the component is tall
-        if (components[k].rect[3] / components[k].rect[2] > pow(PHI, 2)):
+        if components[k].rect[3] / components[k].rect[2] > pow(PHI, 2):
             # If tall, prefer starting from the top
             smallest_degree_nodes = [node for node, _ in sorted(graph.degree(), key=lambda item: item[1])[:RASM_CANDIDATE]]
             #node_start = min(smallest_degree_nodes, key=lambda node: pos[node][0]) # cari yang paling kanan (Zulhaj)
@@ -664,14 +613,14 @@ for k in range(len(components)):
             # Step 1: Get the rightmost nodes
             topmost_nodes = sorted([node for node in rightmost_nodes],key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
             # Zulhaj @jendralhxr
-            # smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
-            #node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
+            smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE/PHI)]
+            node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
             #node_start = max(rightmost_nodes, key=lambda node: pos[node][1] )
 			# @FadhilatulFitriyah
             # Step 2: Get the topmost nodes from the rightmost nodes
             # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
             # Step 3: Get the node with the node start from topmost nodes
-            node_start  = min(topmost_nodes, key=lambda node: graph.degree(node))
+            # node_start  = min(topmost_nodes, key=lambda node: graph.degree(node))
         
         components[k].node_start= node_start
         scribe.nodes[node_start]['color']= '#F00000' # starting node is red
@@ -732,7 +681,7 @@ for k in range(len(components)):
             scribe_dia.nodes[j]['rasm']=True
         scribe_dia.nodes[components[k].node_start]['color']= '#F00000' # initialize with red
 
-# TODO: merging close diacritics
+# merging close diacritics
 for i in range(len(components)):
     for j in range(i + 1, len(components)):
         dia_dist= pdistance(components[i].centroid, components[j].centroid)
@@ -761,12 +710,67 @@ components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 while components[-1].centroid == (0,0):
     del components[-1]
         
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/withdiacritics.png', None)
 degree_dia= scribe.degree()
+
+graphfile= 'graph-'+imagename+ext
+#draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/withdiacritics.png', None)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 
 ###### graph construction from line image ends here
 ###### ----------------------------------------------------
 ###### path finding routines starts here
+
+def path_vane_nodes(G, path): # if path is written as series of nodes
+    pathstring=''
+    for i in range(len(path) - 1):
+        src= G.nodes[path[i]]
+        dst= G.nodes[path[i+1]]
+        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
+        pathstring+=str(tvane)
+    return pathstring
+
+def get_edge_colors_of_node(G, node):
+    edges = G.edges(node, data=True)
+    colors = [(edge[0], edge[1], edge[2].get('color', 'No color assigned')) for edge in edges]
+    return colors
+
+# TODO: indexing writing out the diacritics info during traversing
+def path_vane_edges(G, path): # if path is written is written as series of edges
+
+    # dari contekan
+    def find_blue_edges(G, node):
+        for neighbor in G.neighbors(node):
+            edge_data = G.get_edge_data(node, neighbor)
+            if edge_data.get('color') == 'blue':
+                print(f"Node {node} has a blue edge with node {neighbor}")
+    
+    pathstring=''
+    for n in path:
+        # vane code
+        src= G.nodes[n[0]]
+        dst= G.nodes[n[1]]
+        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
+        G.edges[n]['vane']=tvane
+        scribe_dia.edges[n]['vane']=tvane
+        if (G.edges[n]['color']=='#00FF00'): # main stroke
+            pathstring+=str(tvane)
+        
+        # diacritics mark
+        # may need duplicate check so that not printed twice if node is revisited from another edge(s)
+        diacolor= hex_and(src['color'], '#0000FF')
+        if diacolor:
+            if diacolor == 255:
+                pathstring+='-'
+            elif diacolor == 128:
+                pathstring+='+'
+        else:
+            diacolor= hex_and(dst['color'], '#0000FF')
+            if diacolor:
+                if diacolor == 255:
+                    pathstring+='-'
+                elif diacolor == 128:
+                    pathstring+='+'
+    return pathstring
 
 def bfs_with_closest_priority(G, start_node):
     visited = set()  # track visited nodes
@@ -832,8 +836,7 @@ for i in range(len(components)):
         # draw(ccv)
         # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
     
-graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
+
 
 
 #################  -----------------
@@ -876,7 +879,7 @@ def predictfromimage(cueimage, pos):
     predicted_class = np.argmax(prediction, axis=-1)
     return hurf[int(predicted_class)]
 
-for i in scribe.nodes():
+for i in scribe.nodes:
     pos= scribe.nodes[i]['pos_bitmap']
     # should be safe to handle nodes closer to image edges 
     # if pos[1]>IMG_HEIGHT and pos[1]<cue.shape[0]-IMG_HEIGHT/2 and  \
@@ -887,118 +890,3 @@ for i in scribe.nodes():
     #else:
     #   scribe.nodes[i]['hurf']= '' 
     #   scribe_dia.nodes[i]['hurf']= '' 
-
-
-
-
-
-############ scratchpad
-# path_vane_edges(scribe, list(custom_bfs_dfs(extract_subgraph(scribe, node_start), node_start)))
-
-# def non_returning_tspNORE(graph, start_node):
-#     visited_nodes = set()  # Set to keep track of visited nodes
-#     visited_edges = set()  # Set to keep track of visited edges
-#     tour = []  # List to store the edges of the tour
-
-#     def dfs(node):
-#         visited_nodes.add(node)
-#         neighbors = sorted(graph.neighbors(node), key=lambda neighbor: pos[neighbor][0], reverse=True)
-#         for neighbor in neighbors:
-#             edge = (node, neighbor) if node < neighbor else (neighbor, node)  # Normalize edge (undirected graph)
-#             if edge not in visited_edges:
-#                 # Mark this edge as visited
-#                 visited_edges.add(edge)
-#                 # Store the edge in the tour
-#                 tour.append(edge)
-#                 # Continue DFS traversal on the neighbor
-#                 if neighbor not in visited_nodes:
-#                     dfs(neighbor)
-
-#     # Start the DFS traversal from the start node
-#     dfs(start_node)
-
-#     # Return the tour (edges traversed in the TSP-like traversal)
-#     return tour
-
-# def non_returning_tsp(graph, start_node):
-#     visited_nodes = set()  # Set to keep track of visited nodes
-#     tour = []  # List to store the edges of the tour
-
-#     def dfs(node):
-#         visited_nodes.add(node)
-#         neighbors = sorted(graph.neighbors(node), key=lambda neighbor: pos[neighbor][0], reverse=True)
-#         for neighbor in neighbors:
-#             edge = (node, neighbor) if node < neighbor else (neighbor, node)  # Normalize edge (undirected graph)
-            
-#             # Store the edge in the tour even if it's been visited
-#             tour.append(edge)
-#             #print(f"Traversing edge: {edge}")
-            
-#             # Continue DFS traversal on the neighbor
-#             if neighbor not in visited_nodes:
-#                 dfs(neighbor)
-
-#     # Start the DFS traversal from the start node
-#     dfs(start_node)
-
-#     cond_tour = []
-#     for t in tour:
-#         if t not in cond_tour :
-#             cond_tour .append(t)
-        
-#     #return tour
-#     return cond_tour
-
-
-# # kalo keciiil
-# i=2
-# G=extract_subgraph(scribe, 132)
-# draw_graph_edgelabel(G, 'pos_render', 2, "ntsp-sungguh3-asis.png")
-# path_vane_edges(G, list(non_returning_tsp(G, components[i].node_start)))
-
-# Gk= nx.minimum_spanning_tree(G, algorithm='kruskal')
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-kruskal.png")
-# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
-
-# Gk= nx.minimum_spanning_tree(G, algorithm='boruvka')
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-boruvka.png")
-# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
-
-# Gk= nx.minimum_spanning_tree(G, algorithm='prim')
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "TSPrepeat-sungguh3-prim.png")
-# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
-
-# Gk= prune_edges(G, 2)
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop2.png")
-# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
-
-# Gk= prune_edges(G, 5)
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "ntsp-sungguh3-hop5.png")
-# path_vane_edges(Gk, list(non_returning_tsp(Gk, components[i].node_start)))
-
-# # kalo gede
-# i=1
-# G=extract_subgraph(scribe, 431)
-# draw_graph_edgelabel(G, 'pos_render', 2, "sungguh3-asis.png")
-# path_vane_edges(G, list(custom_bfs_dfs(G, components[i].node_start)))
-
-# Gk= nx.minimum_spanning_tree(G, algorithm='kruskal')
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-kruskal.png")
-# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
-
-# Gk= nx.minimum_spanning_tree(G, algorithm='boruvka')
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-boruvka.png")
-# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
-
-# Gk= nx.minimum_spanning_tree(G, algorithm='prim')
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-prim.png")
-# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
-
-# Gk= prune_edges(G, 2)
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-hop2.png")
-# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
-
-# Gk= prune_edges(G, 4)
-# draw_graph_edgelabel(Gk, 'pos_render', 2, "sungguh3-hop4.png")
-# path_vane_edges(Gk, list(custom_bfs_dfs(Gk, components[i].node_start)))
-

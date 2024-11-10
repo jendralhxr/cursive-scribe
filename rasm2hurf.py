@@ -263,7 +263,7 @@ fieldstring= 'rasm'
 fieldval= 'val'
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
-    fcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(' ', ''))
+    fcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(" ", "").replace("+", "").replace("-", ""))
 
 top_fcs = {}
 for hurf_class, rasm_seq in score.items():

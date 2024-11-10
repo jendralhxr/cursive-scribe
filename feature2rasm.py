@@ -704,7 +704,7 @@ for i in range(len(components)):
                                   
             
             components[j].centroid= (0,0) # components to be removed
-            print(f"gonna remove {j}")
+            # print(f"gonna remove {j}")
 
 # removing merged diacritics components
 components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
@@ -734,35 +734,35 @@ def get_edge_colors_of_node(G, node):
     colors = [(edge[0], edge[1], edge[2].get('color', 'No color assigned')) for edge in edges]
     return colors
 
-# dari contekan
 def find_diacritics_edges(G, node):
-    for neighbor in G.neighbors(node):
-        if G.edges[(node, neighbor)]['color'] == '#0000FF':
-            size= G.nodes[neighbor]['dia_size']
-            if pos[neighbor][1] > pos[node][1]:
-                size = size.lower()
-            return size
-    return None
+    neighbors= list(G.neighbors(node))
+    if len(neighbors) >= 2:
+        for neighbor in neighbors:
+            if G.edges[(node, neighbor)]['color'] == '#0000FF':
+                size= G.nodes[neighbor]['dia_size']
+                if pos[neighbor][1] > pos[node][1]:
+                    size = size.lower()
+                return size
+    return ''
 
 def path_vane_edges(G, path): # if path is written is written as series of edges
     pathstring=''
     for n in path:
         # vane code
-        src= G.nodes[n[0]]
-        dst= G.nodes[n[1]]
-        tvane= freeman(dst['pos_bitmap'][0]-src['pos_bitmap'][0], -(dst['pos_bitmap'][1]-src['pos_bitmap'][1]))
-        G.edges[n]['vane']=tvane
+        src= n[0]
+        dst= n[1]
+        tvane= freeman(pos[dst][0]-pos[src][0], -(pos[dst][1]-pos[src][1]))
         G.edges[n]['vane']=tvane
         if (G.edges[n]['color']=='#00FF00'): # main stroke
             pathstring+=str(tvane)
         
         # diacritics mark
-        mark= find_diacritics_edges(scribe_dia, src)
-        if mark!= None:
+        mark= ''
+        mark= find_diacritics_edges(G, src)
+        if mark != '':
             pathstring += mark
-        mark= None
         
-        return pathstring
+    return pathstring
 
 def bfs_with_closest_priority(G, start_node):
     visited = set()  # track visited nodes
@@ -800,7 +800,8 @@ for i in range(len(components)):
 
         # path finding along rasm
         node_start= components[i].node_start
-        remainder_stroke= path_vane_edges(scribe, list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start)))
+        path = list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start))
+        remainder_stroke= path_vane_edges(scribe_dia, path)
         if len(remainder_stroke) >2:
             print(remainder_stroke)
         

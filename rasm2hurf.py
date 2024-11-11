@@ -656,16 +656,15 @@ import textdistance
 FACTOR_LENGTH= 1.00
 VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 
-
 remainder_stroke= '66676543535364667075444' # terlaLU with pruning
 remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
-
 
 def stringtorasm_MC_jagokandang(chaincode):
     remainder_stroke= chaincode
     rasm=''
     
     while len(remainder_stroke)>=2 and remainder_stroke!='':
+        hurf_best=''
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
         score_mc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
         score_mc_acc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
@@ -735,25 +734,28 @@ def stringtorasm_MC_jagokandang(chaincode):
         draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'FCS-sequence product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                      +'\n'+remainder_stroke)
         
-        
         # this choice condition is subject to change
         row_sums = np.sum(score_mc_mul, axis=1)
         class_best= np.argmax(row_sums);
         
         max_row = score_mc[class_best]
-        max_row /= np.max(max_row)
         len_best= np.argmax(max_row); # minimum estimate for hurf length
-        asymptote = np.mean(max_row[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do row value?
-        divergence_val = np.where(np.abs(max_row - asymptote) > asymptote/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
         
-        column_variances = np.var(score_mc, axis=0)
-        column_variances /= np.max(column_variances)
-        asymptote_var = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do variance?
-        divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
-
-        len_best= min(divergence_var, divergence_val)
+        if len_best <= LENGTH_MIN*PHI:
+            len_best += LENGTH_MIN
+        else:
+            asymptote = np.mean(max_row[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do row value?
+            divergence_val = np.where(np.abs(max_row - asymptote) > asymptote/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
+            column_variances = np.var(score_mc, axis=0)
+            column_variances /= np.max(column_variances) # scale max to 1
+            asymptote_var = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do variance?
+            divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
+            len_best= min(divergence_var, divergence_val)
+        
+        if len_best > len(remainder_stroke):
+            len_best= len(remainder_stroke)
+            
         tee_best= remainder_stroke[:len_best]
-
         hurf_best= hurf[class_best]
         rasm+= hurf_best
         
@@ -829,12 +831,12 @@ def stringtorasm_MC_jagokandang(chaincode):
             fontsize=12, color='black')
 
         # terminus hurfs            
-        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' \
-            or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و ' or hurf_best=='ۏ':
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و ' or hurf_best=='ۏ':
             remainder_stroke=''
         else:
             remainder_stroke= remainder_stroke[len_best:]
-        if remainder_stroke=='':
+        
+        if remainder_stroke=='' or len(remainder_stroke)<2:
             break
     return(rasm)
 

@@ -482,58 +482,6 @@ def stringtorasm_MC_substring(chaincode):
         hurf_best= hurf[class_best]
         print(f"BEST class{class_best} ({hurf_best})\tscore{score_best:.2f}\t{tee_best}\t{lookup_best}")
         
-        # diacritics selection
-        if hurf_best=='ب' or hurf_best=='ت' or hurf_best=='ث' or hurf_best=='ن' or hurf_best=='ي' or hurf_best=='ڽ' or hurf_best=='ی':
-            if 'A' in tee_best:
-                hurf_best= 'ن'
-            elif 'B' in tee_best:
-                hurf_best= 'ت'
-            elif 'C' in tee_best:
-                hurf_best= 'ث'
-            elif 'a' in tee_best:
-                hurf_best= 'ب'
-            elif 'b' in tee_best or 'c' in tee_best:
-                hurf_best= 'ي'
-        if hurf_best=='ج' or hurf_best=='چ' or hurf_best=='ح' or hurf_best=='خ':
-            if 'A' in tee_best:
-                hurf_best= 'خ'
-            elif 'a' in tee_best:
-                hurf_best= 'ج'
-            elif 'b' in tee_best or 'c' in tee_best:
-                hurf_best= 'چ'        
-        if hurf_best=='د' or hurf_best=='ذ' :
-            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
-                hurf_best= 'ذ'
-        if hurf_best=='ر' or hurf_best=='ز' :
-            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
-                hurf_best= 'ز'
-        if hurf_best=='س' or hurf_best=='ش' :
-            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
-                hurf_best= 'ش'
-        if hurf_best=='ص' or hurf_best=='ض' :
-            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
-                hurf_best= 'ض'
-        if hurf_best=='ع' or hurf_best=='غ' or hurf_best=='ڠ':
-            if 'A' in tee_best :
-                hurf_best= 'غ'
-            elif 'B' in tee_best or 'C' in tee_best  :
-                hurf_best= 'ڠ'
-        if hurf_best=='ف' or hurf_best=='ڤ' or hurf_best=='ق':
-            if 'A' in tee_best:
-                hurf_best= 'ف'
-            elif 'B' in tee_best:
-                hurf_best= 'ق'
-            elif 'C' in tee_best :
-                hurf_best= 'ڤ'
-        if hurf_best=='ک' or hurf_best=='ݢ' or hurf_best=='ك' or hurf_best=='ل':
-            if 'B' in tee_best or 'C' in tee_best:
-                hurf_best= 'ك'
-            if 'A' in tee_best or 'a' in tee_best: # some styles write the dot either on top or bottom
-                hurf_best= 'ݢ'
-        if hurf_best=='و' or hurf_best=='ۏ':
-            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
-                hurf_best= 'ۏ'
-        
         # MAY allow to skip of evaluation if we are unsure
         # if eval_best > 0.5 and len_current<LENGTH_MIN*PHI:
         #     rasm+= hurf_best
@@ -546,8 +494,6 @@ def stringtorasm_MC_substring(chaincode):
             break
     return(rasm)
 
-
-appearance = np.zeros(len(source), dtype=float)
 def stringtorasm_MC_wholestring(chaincode):
     remainder_stroke= chaincode
     rasm=''
@@ -742,46 +688,40 @@ def stringtorasm_MC_jagokandang(chaincode):
                         fcs_prob *= sfcs[mc_class][mc_index]
                 
                     if len(top_fcs[ str(mc_class) ]) != 0:
-                        #score_tee= textdistance.jaro.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
-                        #score_tee= textdistance.jaro_winkler.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.jaro.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.jaro_winkler.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         # score_tee= textdistance.strcmp95.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
-                        #score_tee= textdistance.gotoh.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.gotoh.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         # score_tee= textdistance.jaccard.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
-                        # tanimoto agak2
-                        #score_tee=  2-textdistance.tanimoto.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         # score_tee= textdistance.sorensen.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         # score_tee= textdistance.sorensen_dice.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         # score_tee= textdistance.dice.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         # score_tee= textdistance.tversky.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         # score_tee= textdistance.overlap.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         # score_tee= textdistance.cosine.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
-                        #score_tee= textdistance.monge_elkan.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        # score_tee= textdistance.monge_elkan.similarity( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         
-                        # metropolis
+                        # evaluation
                         score_tee1= myjaro( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
-                        if len_mc <= 4:
-                            score_tee2= myjaro( reverseFreeman(remainder_stroke[0:len_mc]), fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        score_tee2= myjaro( reverseFreeman(remainder_stroke[0:len_mc]), fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
+                        if len_mc <= int (LENGTH_MIN * pow(PHI,2)):
                             score_tee= max(score_tee1, score_tee2) # * fcs_prob
                         else:
                             score_tee = score_tee1 # * fcs_prob
+                        
+                        # cumulative addition
                         score_mc_acc[int(mc_class)][len_mc] += score_tee
+                        
+                        # cumulative product
                         score_mc_mul[int(mc_class)][len_mc] *= score_tee
                         
+                        # metropolis
                         if score_tee > score_mc[int(mc_class)][len_mc]:
                             string_mc[int(mc_class)][len_mc]= fcs_lookup
                             #score_mc[int(mc_class)][len_mc] = score_tee
                             score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
                         
                 mc_retry += 1 # can also be neseted one down
-        
-        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                     +'\n'+remainder_stroke)
-        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence addition MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                     +'\n'+remainder_stroke)
-        score_mc_mul[score_mc_mul == 1.0] = 0.0
-        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'FCS-sequence product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                     +'\n'+remainder_stroke)
-        
         
         # this choice condition is subject to change
         row_sums = np.sum(score_mc_mul, axis=1)
@@ -799,9 +739,72 @@ def stringtorasm_MC_jagokandang(chaincode):
         divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
 
         len_best= min(divergence_var, divergence_val)
+        tee_best= remainder_stroke[:len_best]
 
+        hurf_best= hurf[class_best]
+        rasm+= hurf_best
+        
+        # diacritics selection
+        if hurf_best=='ب' or hurf_best=='ت' or hurf_best=='ث' or hurf_best=='ن' or hurf_best=='ي' or hurf_best=='ڽ' or hurf_best=='ی':
+            if 'A' in tee_best:
+                hurf_best= 'ن'
+            elif 'B' in tee_best:
+                hurf_best= 'ت'
+            elif 'C' in tee_best:
+                hurf_best= 'ث'
+            elif 'a' in tee_best:
+                hurf_best= 'ب'
+            elif 'b' in tee_best or 'c' in tee_best:
+                hurf_best= 'ي'
+        if hurf_best=='ج' or hurf_best=='چ' or hurf_best=='ح' or hurf_best=='خ':
+            if 'A' in tee_best:
+                hurf_best= 'خ'
+            elif 'a' in tee_best:
+                hurf_best= 'ج'
+            elif 'b' in tee_best or 'c' in tee_best:
+                hurf_best= 'چ'        
+        if hurf_best=='د' or hurf_best=='ذ' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ذ'
+        if hurf_best=='ر' or hurf_best=='ز' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ز'
+        if hurf_best=='س' or hurf_best=='ش' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ش'
+        if hurf_best=='ص' or hurf_best=='ض' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ض'
+        if hurf_best=='ع' or hurf_best=='غ' or hurf_best=='ڠ':
+            if 'A' in tee_best :
+                hurf_best= 'غ'
+            elif 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ڠ'
+        if hurf_best=='ف' or hurf_best=='ڤ' or hurf_best=='ق':
+            if 'A' in tee_best:
+                hurf_best= 'ف'
+            elif 'B' in tee_best:
+                hurf_best= 'ق'
+            elif 'C' in tee_best :
+                hurf_best= 'ڤ'
+        if hurf_best=='ک' or hurf_best=='ݢ' or hurf_best=='ك' or hurf_best=='ل':
+            if 'B' in tee_best or 'C' in tee_best:
+                hurf_best= 'ك'
+            if 'A' in tee_best or 'a' in tee_best: # some styles write the dot either on top or bottom
+                hurf_best= 'ݢ'
+        if hurf_best=='و' or hurf_best=='ۏ':
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
+                hurf_best= 'ۏ'
 
         # plot the stop selection criteria
+        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke)
+        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence addition MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke)
+        score_mc_mul[score_mc_mul == 1.0] = 0.0
+        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'FCS-sequence product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke)
+        
         from matplotlib.ticker import MultipleLocator, FuncFormatter
         plt.figure(dpi=300)
         fig, ax = plt.subplots()
@@ -821,15 +824,8 @@ def stringtorasm_MC_jagokandang(chaincode):
             #arrowprops=dict(arrowstyle="->", color='black'),
             fontsize=12, color='black')
 
-        hurf_best= hurf[class_best]
-        rasm+= hurf_best
-
-        #draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-        #             +'\n'+remainder_stroke+' as '+hurf_best)
-        #draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence accumulative MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-        #             +'\n'+remainder_stroke+' as '+hurf_best)
-            
-        if hurf_best=='ا' or hurf_best=='ء' or hurf_best=='د' or hurf_best=='ذ' \
+        # terminus hurfs            
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' \
             or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و ' or hurf_best=='ۏ':
             remainder_stroke=''
         else:
@@ -837,7 +833,6 @@ def stringtorasm_MC_jagokandang(chaincode):
         if remainder_stroke=='':
             break
     return(rasm)
-
 
 
 def stringtorasm_MC_metropolis(chaincode):

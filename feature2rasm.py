@@ -62,9 +62,9 @@ def draw(img): # draw the bitmap
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
         
-#filename= sys.argv[1]
+filename= sys.argv[1]
 #filename= 'topanribut.png'
-filename='perangjohor-p1-lineimg1.png'
+#filename='perangjohor-p1-lineimg1.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -102,7 +102,8 @@ render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 
 #SLIC
 gray= cv.dilate(gray, np.ones((DILATION_Y,DILATION_X), np.uint8), iterations=DILATION_I) # turns out gray is actually already too thin to begin with 
-cue= gray.copy() # turns out gray is actually already too thin to begin with 
+cue= gray.copy() 
+stroke= cv.dilate(cue, np.ones((int(SLIC_SPACE),int(SLIC_SPACE)), np.uint8), iterations=1) # this is for the connectedcomponent check
 slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = SLIC_SPACE)
 slic.iterate()
 mask= slic.getLabelContourMask()
@@ -163,7 +164,7 @@ def pdistance(point1, point2):
     distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     return distance
 
-# connected componentscv.circle(disp, pos[compodef line_iterator(img, point0, point1):
+# connected components
 from dataclasses import dataclass, field
 from typing import List
 from typing import Optional
@@ -417,10 +418,6 @@ def line_iterator(img, P1, P2):
     if P1==P2:
         return 1
     
-    # perhaps optional
-    img = cv.dilate(img, np.ones((int(SLIC_SPACE),int(SLIC_SPACE)), np.uint8), iterations=1)
-    #draw(img)
-    
     imageH = img.shape[0]
     imageW = img.shape[1]
     P1X = int(P1[0])
@@ -498,7 +495,7 @@ for k in range(len(components)):
             dst= scribe.nodes[n]
             cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
             if (m!=n):
-                linepart= line_iterator(cue, src['pos_bitmap'], dst['pos_bitmap'])
+                linepart= line_iterator(stroke, src['pos_bitmap'], dst['pos_bitmap'])
             # add the checking for line segment
             if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)*2 and linepart > pow(PHI, -PHI):
                 if cdist<ndist[2]: # #1 shortest
@@ -535,7 +532,6 @@ for k in range(len(components)):
                     break
                     
 # draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/withedges.png', None)
-# draw_graph(scribe, 'pos_render', 8)
 
 def prune_edges(graph, hop):
     G= graph.copy()
@@ -582,7 +578,7 @@ for k in range(len(components)):
     # valid rasm
     # large size
     # more likely to be close to or intersecting the baseline
-    if  intersect==True or \
+    if  intersect==True and \
         components[k].area>pow(SLIC_SPACE,2)*pow(PHI,4): \
         #or (abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,3) and components[k].area>pow(SLIC_SPACE,2)*pow(PHI,3)): 
         
@@ -831,55 +827,54 @@ for i in range(len(components)):
     
 
 
+# ##################################
+# ## ambil data dari hasil CNN
+# import cnn48syairperahu
+# import rasm2hurf
 
-#################  -----------------
-## ambil data dari hasil CNN
-import cnn48syairperahu
-import rasm2hurf
-
-from keras.models import load_model
-model = load_model('syairperahu.keras')
+# from keras.models import load_model
+# model = load_model('syairperahu.keras')
 
 
-IMG_WIDTH= 48
-IMG_HEIGHT= IMG_WIDTH
+# IMG_WIDTH= 48
+# IMG_HEIGHT= IMG_WIDTH
 
-def predictfromimage(cueimage, pos):
-    cx= pos[0]
-    cy= pos[1]
-    cy_min= int(cy-IMG_WIDTH/2)
-    cy_max= int(cy+IMG_WIDTH/2)
-    cx_min= int(cx-IMG_WIDTH/2)
-    cx_max= int(cx+IMG_WIDTH/2)
-    if (cy_min<0):
-        cy_min= 0
-        cy_max= IMG_HEIGHT
-    if (cy_max > cueimage.shape[0]):
-        cy_max= cueimage.shape[0]
-        cy_min= cy_max - IMG_HEIGHT
-    if (cx_min<0):
-        cx_min= 0
-        cx_max= IMG_WIDTH
-    if (cx_max > cueimage.shape[1]):
-        cx_max= cueimage.shape[1]
-        cx_min= cx_max - IMG_HEIGHT   
+# def predictfromimage(cueimage, pos):
+#     cx= pos[0]
+#     cy= pos[1]
+#     cy_min= int(cy-IMG_WIDTH/2)
+#     cy_max= int(cy+IMG_WIDTH/2)
+#     cx_min= int(cx-IMG_WIDTH/2)
+#     cx_max= int(cx+IMG_WIDTH/2)
+#     if (cy_min<0):
+#         cy_min= 0
+#         cy_max= IMG_HEIGHT
+#     if (cy_max > cueimage.shape[0]):
+#         cy_max= cueimage.shape[0]
+#         cy_min= cy_max - IMG_HEIGHT
+#     if (cx_min<0):
+#         cx_min= 0
+#         cx_max= IMG_WIDTH
+#     if (cx_max > cueimage.shape[1]):
+#         cx_max= cueimage.shape[1]
+#         cx_min= cx_max - IMG_HEIGHT   
     
-    roi= cueimage[cy_min:cy_max,cx_min:cx_max]
-    roi = roi / THREVAL
-    roi = np.expand_dims(roi, axis=0) 
-    roi = np.expand_dims(roi, axis=-1)
-    prediction = model.predict(roi)
-    predicted_class = np.argmax(prediction, axis=-1)
-    return hurf[int(predicted_class)]
+#     roi= cueimage[cy_min:cy_max,cx_min:cx_max]
+#     roi = roi / THREVAL
+#     roi = np.expand_dims(roi, axis=0) 
+#     roi = np.expand_dims(roi, axis=-1)
+#     prediction = model.predict(roi)
+#     predicted_class = np.argmax(prediction, axis=-1)
+#     return hurf[int(predicted_class)]
 
-for i in scribe.nodes:
-    pos= scribe.nodes[i]['pos_bitmap']
-    # should be safe to handle nodes closer to image edges 
-    # if pos[1]>IMG_HEIGHT and pos[1]<cue.shape[0]-IMG_HEIGHT/2 and  \
-    #    pos[0]>IMG_WIDTH and pos[0]<cue.shape[1]-IMG_WIDTH:       
-    scribe.nodes[i]['hurf']= predictfromimage(cue, scribe.nodes[i]['pos_bitmap'])
-    scribe_dia.nodes[i]['hurf']= scribe.nodes[i]['hurf']
-    print(f"node{i}: {scribe.nodes[i]['hurf']} ada di {pos[0]}{pos[1]}")
-    #else:
-    #   scribe.nodes[i]['hurf']= '' 
-    #   scribe_dia.nodes[i]['hurf']= '' 
+# for i in scribe.nodes:
+#     pos= scribe.nodes[i]['pos_bitmap']
+#     # should be safe to handle nodes closer to image edges 
+#     # if pos[1]>IMG_HEIGHT and pos[1]<cue.shape[0]-IMG_HEIGHT/2 and  \
+#     #    pos[0]>IMG_WIDTH and pos[0]<cue.shape[1]-IMG_WIDTH:       
+#     scribe.nodes[i]['hurf']= predictfromimage(cue, scribe.nodes[i]['pos_bitmap'])
+#     scribe_dia.nodes[i]['hurf']= scribe.nodes[i]['hurf']
+#     print(f"node{i}: {scribe.nodes[i]['hurf']} ada di {pos[0]}{pos[1]}")
+#     #else:
+#     #   scribe.nodes[i]['hurf']= '' 
+#     #   scribe_dia.nodes[i]['hurf']= '' 

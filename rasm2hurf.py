@@ -482,6 +482,58 @@ def stringtorasm_MC_substring(chaincode):
         hurf_best= hurf[class_best]
         print(f"BEST class{class_best} ({hurf_best})\tscore{score_best:.2f}\t{tee_best}\t{lookup_best}")
         
+        # diacritics selection
+        if hurf_best=='ب' or hurf_best=='ت' or hurf_best=='ث' or hurf_best=='ن' or hurf_best=='ي' or hurf_best=='ڽ' or hurf_best=='ی':
+            if 'A' in tee_best:
+                hurf_best= 'ن'
+            elif 'B' in tee_best:
+                hurf_best= 'ت'
+            elif 'C' in tee_best:
+                hurf_best= 'ث'
+            elif 'a' in tee_best:
+                hurf_best= 'ب'
+            elif 'b' in tee_best or 'c' in tee_best:
+                hurf_best= 'ي'
+        if hurf_best=='ج' or hurf_best=='چ' or hurf_best=='ح' or hurf_best=='خ':
+            if 'A' in tee_best:
+                hurf_best= 'خ'
+            elif 'a' in tee_best:
+                hurf_best= 'ج'
+            elif 'b' in tee_best or 'c' in tee_best:
+                hurf_best= 'چ'        
+        if hurf_best=='د' or hurf_best=='ذ' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ذ'
+        if hurf_best=='ر' or hurf_best=='ز' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ز'
+        if hurf_best=='س' or hurf_best=='ش' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ش'
+        if hurf_best=='ص' or hurf_best=='ض' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ض'
+        if hurf_best=='ع' or hurf_best=='غ' or hurf_best=='ڠ':
+            if 'A' in tee_best :
+                hurf_best= 'غ'
+            elif 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ڠ'
+        if hurf_best=='ف' or hurf_best=='ڤ' or hurf_best=='ق':
+            if 'A' in tee_best:
+                hurf_best= 'ف'
+            elif 'B' in tee_best:
+                hurf_best= 'ق'
+            elif 'C' in tee_best :
+                hurf_best= 'ڤ'
+        if hurf_best=='ک' or hurf_best=='ݢ' or hurf_best=='ك' or hurf_best=='ل':
+            if 'B' in tee_best or 'C' in tee_best:
+                hurf_best= 'ك'
+            if 'A' in tee_best or 'a' in tee_best: # some styles write the dot either on top or bottom
+                hurf_best= 'ݢ'
+        if hurf_best=='و' or hurf_best=='ۏ':
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
+                hurf_best= 'ۏ'
+        
         # MAY allow to skip of evaluation if we are unsure
         # if eval_best > 0.5 and len_current<LENGTH_MIN*PHI:
         #     rasm+= hurf_best

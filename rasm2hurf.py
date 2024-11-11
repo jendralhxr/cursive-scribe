@@ -3,6 +3,7 @@ import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
 import random    
+from scipy.signal import find_peaks
 
 # todo
 # and-or graph network (based on tabulated fcs?)
@@ -427,7 +428,7 @@ def myjaro(s1,s2):
     # weight += (1.0 - weight) * tmp
     return weight
 
-MC_RETRY_MAX= 1e5
+MC_RETRY_MAX= 1e4
 
 def stringtorasm_MC_substring(chaincode):
     remainder_stroke= chaincode
@@ -734,17 +735,21 @@ def stringtorasm_MC_jagokandang(chaincode):
         draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                      +'\n'+remainder_stroke)
         
-        # this choice condition is subject to change
+        # optimum class selection
         if len(remainder_stroke) <= LENGTH_MIN*PHI:
             row_sums = np.sum(score_mc_acc, axis=1)
-            class_best= np.argmax(row_sums);
-            max_row = score_mc_acc[class_best]
+            peaks= find_peaks(row_sums, threshold=max(row_sums)/pow(PHI,4))[0]
+            tophurf = [[myjaro(remainder_stroke, lookup) for lookup in string_mc[peak]] for peak in peaks]
+            row_sums = np.sum(tophurf, axis=1)
+            class_best= peaks[np.argmax(row_sums)];
+            max_row = np.argmax(tophurf[np.argmax(row_sums)])
         else:
             row_sums = np.sum(score_mc_mul, axis=1)
             class_best= np.argmax(row_sums);
             max_row = score_mc[class_best]
         len_best= np.argmax(max_row); # minimum estimate for hurf length
         
+        # optimum stop-length selection
         if len_best <= LENGTH_MIN*PHI:
             len_best += LENGTH_MIN
         else:

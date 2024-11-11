@@ -103,6 +103,7 @@ FCS_APPEARANCE_MIN= 2
 score = {f'{i}': [] for i in range(0, NUM_CLASSES)}
 appearance = np.zeros(40, dtype=float)
 
+# TODO: adding more weight to longer subsequences
 def update_rasm_score(hurf_class, rasm_seq):
     if hurf_class in score:
         for chaincode in score[hurf_class]:
@@ -133,6 +134,7 @@ for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
     fcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(" ", "").replace("+", "").replace("-", ""))
 
+# TODO: top_LCS
 top_fcs = {}
 for hurf_class, rasm_seq in score.items():
     sorted_token = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)

@@ -412,18 +412,19 @@ def stringtorasm_MC_jagokandang(chaincode):
         
         score_mc_mul[score_mc_mul == 1.0] = 0.0
         # plot the stop selection criteria
-        # draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-        #              +'\n'+remainder_stroke)
-        # draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-        #              +'\n'+remainder_stroke)
-        # draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-        #              +'\n'+remainder_stroke)
+        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                      +'\n'+remainder_stroke)
+        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                      +'\n'+remainder_stroke)
+        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                      +'\n'+remainder_stroke)
         
         # optimum class selection
-        if len(remainder_stroke) <= LENGTH_MIN*PHI:
+        if len(remainder_stroke) <= LENGTH_MIN*pow(PHI,2): # can be extended further
             row_sums = np.sum(score_mc_acc, axis=1)
-            peaks= find_peaks(row_sums, threshold=max(row_sums)/pow(PHI,4))[0]
-            tophurf = [[myjaro(remainder_stroke, lookup) for lookup in string_mc[peak]] for peak in peaks]
+            peaks= find_peaks(row_sums, threshold=max(row_sums)/pow(PHI,LENGTH_MIN*PHI))[0]
+            tophurf = [[ max(myjaro(remainder_stroke, lookup), myjaro(reverseFreeman(remainder_stroke), lookup)) \
+                        for lookup in string_mc[peak]] for peak in peaks]
             row_sums = np.sum(tophurf, axis=1)
             class_best= peaks[np.argmax(row_sums)];
             max_row = np.argmax(tophurf[np.argmax(row_sums)])

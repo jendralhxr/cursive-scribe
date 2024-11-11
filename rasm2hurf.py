@@ -62,6 +62,8 @@ NUM_CLASSES = 40  # Number of classes
 
 # data
 source = pd.read_csv('olah.csv').drop_duplicates()
+source = source.reset_index(drop=True)
+
 #random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
 #random_labels=pd.concat([source['label'], source['label']])
 random_strings=pd.concat([source['rasm']])
@@ -100,19 +102,20 @@ from collections import defaultdict
 FCS_MAX_NUM= 16
 FCS_APPEARANCE_MIN= 2
 
-score = {f'{i}': [] for i in range(0, NUM_CLASSES)}
-appearance = np.zeros(40, dtype=float)
+tokens = {f'{i}': [] for i in range(0, NUM_CLASSES)}
+appearance = np.zeros(40, dtype=float) # hurf appearance
 
-# TODO: adding more weight to longer subsequences
+# TODO: adding more weight to longer subsequences, aiming for 4-5char long subsequences
+# ACTUAL TODO
 def update_rasm_score(hurf_class, rasm_seq):
-    if hurf_class in score:
-        for chaincode in score[hurf_class]:
-            if chaincode['seq'] == rasm_seq:
-                chaincode['score'] += 1  
-                return True  # Successfully updated
-        score[hurf_class].append({'seq': rasm_seq, 'score': 1})
-        return False  
-    return False  
+    if hurf_class in tokens:
+        for subsequence in tokens[hurf_class]:
+            if subsequence['seq'] == rasm_seq:
+                subsequence['score'] += pow(PHI,len(rasm_seq)/LENGTH_MIN)
+                subsequence['freq'] += 1
+                return True  # early exit if already present
+        # add new seq if not already present
+        tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq))})
 
 
 def fcs_tabulate(val, string):
@@ -136,9 +139,27 @@ for i in range(0,source.shape[0]):
 
 # TODO: top_LCS
 top_fcs = {}
-for hurf_class, rasm_seq in score.items():
-    sorted_token = sorted(rasm_seq, key=lambda x: x['score'], reverse=True)
-    top_fcs[hurf_class] = [token for token in sorted_token[:FCS_MAX_NUM] if token['score'] >= FCS_APPEARANCE_MIN]
+for hurf_class, rasm_seq in tokens.items():
+    top_fcs[hurf_class] = sorted(\
+        [x for x in rasm_seq if x['freq'] > FCS_APPEARANCE_MIN],
+        key=lambda x: x['score'],
+        reverse=True)
+    
+top_fcs = {}
+for hurf_class, rasm_seq in tokens.items():
+    # Ensure rasm_seq is a list of dictionaries
+    if isinstance(rasm_seq, list) and all(isinstance(token, dict) for token in rasm_seq):
+        # Sort by score in descending order
+        sorted_token = sorted(rasm_seq, key=lambda x: x.get('score', 0), reverse=True)
+        
+        # Filter by frequency and take top FCS_MAX_NUM
+        top_fcs[hurf_class] = [
+            token for token in sorted_token[:FCS_MAX_NUM] 
+            if token.get('freq', 0) >= FCS_APPEARANCE_MIN
+        ]
+    else:
+        print(f"Warning: '{hurf_class}' does not contain a list of dictionaries.")
+
 
 
 # check for duplicates
@@ -152,17 +173,19 @@ duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(in
 FCS_THINNING= char_lengths.mode()[0] # the mode of strings length, still feels inappropriate
 
 lfcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM))
+ffcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM))
 sfcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM))
 afcs = [["" for i in range(FCS_MAX_NUM)] for j in range(NUM_CLASSES)]
 
-for j in range(0, NUM_CLASSES):
+for j in range(0, NUM_CLASSES): # the hurf
     if top_fcs[str(j)] is not None:
-        for i in range(0, len(top_fcs[str(j)]) ):
-            tee_score = top_fcs[str(j)][i]['score']/appearance[j]
-            if tee_score >= 1/pow(PHI,FCS_THINNING):
-                sfcs[j][i] = tee_score # apperance frequency of each substring
+        for i in range(0, len(top_fcs[str(j)]) ): # the subsequences
+            tee_score = top_fcs[str(j)][i]['freq']/appearance[j]
+            #if tee_score >= 1/pow(PHI,FCS_THINNING): # the 1/phi^6
+            if tee_score >= 1/pow(PHI,FCS_THINNING): # the 1/phi^6
+                ffcs[j][i] = tee_score # apperance frequency of each substring
                 lfcs[j][i] = len(top_fcs[str(j)][i]['seq']) # length of each substring
-                sfcs[j][i] = top_fcs[str(j)][i]['score']/appearance[j] # apperance frequency of each substring
+                sfcs[j][i] = top_fcs[str(j)][i]['freq']/appearance[j] # length-dependent score of each substring
                 afcs[j][i] = top_fcs[str(j)][i]['seq'] # the substring itself
 
 

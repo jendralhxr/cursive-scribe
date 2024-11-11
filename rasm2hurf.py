@@ -427,7 +427,7 @@ def myjaro(s1,s2):
     # weight += (1.0 - weight) * tmp
     return weight
 
-MC_RETRY_MAX= 1e4
+MC_RETRY_MAX= 1e5
 
 def stringtorasm_MC_substring(chaincode):
     remainder_stroke= chaincode
@@ -726,19 +726,23 @@ def stringtorasm_MC_jagokandang(chaincode):
                 mc_retry += 1 # can also be neseted one down
         
         # plot the stop selection criteria
-        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                      +'\n'+remainder_stroke)
-        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence addition MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                      +'\n'+remainder_stroke)
         score_mc_mul[score_mc_mul == 1.0] = 0.0
-        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'FCS-sequence product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                      +'\n'+remainder_stroke)
         
         # this choice condition is subject to change
-        row_sums = np.sum(score_mc_mul, axis=1)
-        class_best= np.argmax(row_sums);
-        
-        max_row = score_mc[class_best]
+        if len(remainder_stroke) <= LENGTH_MIN*PHI:
+            row_sums = np.sum(score_mc_acc, axis=1)
+            class_best= np.argmax(row_sums);
+            max_row = score_mc_acc[class_best]
+        else:
+            row_sums = np.sum(score_mc_mul, axis=1)
+            class_best= np.argmax(row_sums);
+            max_row = score_mc[class_best]
         len_best= np.argmax(max_row); # minimum estimate for hurf length
         
         if len_best <= LENGTH_MIN*PHI:
@@ -751,6 +755,25 @@ def stringtorasm_MC_jagokandang(chaincode):
             asymptote_var = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do variance?
             divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
             len_best= min(divergence_var, divergence_val)
+            
+            # from matplotlib.ticker import MultipleLocator, FuncFormatter
+            # plt.figure(dpi=300)
+            # fig, ax = plt.subplots()
+            # ax.plot(max_row, color='red', label='best-match hurf values')
+            # ax.plot(column_variances, color='blue', label='inter-hurf variance')
+            # ax.set_title(f'{remainder_stroke} ({hurf[class_best]})', fontsize=14)
+            # ax.set_xlabel('hurf character length', fontsize=12)
+            # ax.set_ylabel('normalized similarity score', fontsize=12)
+            # ax.tick_params(axis='both', which='major', labelsize=10)
+            # ax.xaxis.set_major_locator(MultipleLocator(2))
+            # ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.0f}'))
+            # ax.legend()
+            # ax.axvline(x=len_best, color='gray', linestyle='--', linewidth=1, label='divergence point')
+            # ax.annotate(f"optimum length is {len_best}", 
+            #     xy=(len_best, ax.get_ylim()[1]), 
+            #     xytext=(len_best + 0.5, ax.get_ylim()[1] * 0.3),
+            #     #arrowprops=dict(arrowstyle="->", color='black'),
+            #     fontsize=12, color='black')
         
         if len_best > len(remainder_stroke):
             len_best= len(remainder_stroke)
@@ -810,25 +833,6 @@ def stringtorasm_MC_jagokandang(chaincode):
         if hurf_best=='و' or hurf_best=='ۏ':
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
                 hurf_best= 'ۏ'
-
-        from matplotlib.ticker import MultipleLocator, FuncFormatter
-        plt.figure(dpi=300)
-        fig, ax = plt.subplots()
-        ax.plot(max_row, color='red', label='best-match hurf values')
-        ax.plot(column_variances, color='blue', label='inter-hurf variance')
-        ax.set_title(f'{remainder_stroke} ({hurf[class_best]})', fontsize=14)
-        ax.set_xlabel('hurf character length', fontsize=12)
-        ax.set_ylabel('normalized similarity score', fontsize=12)
-        ax.tick_params(axis='both', which='major', labelsize=10)
-        ax.xaxis.set_major_locator(MultipleLocator(2))
-        ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.0f}'))
-        ax.legend()
-        ax.axvline(x=len_best, color='gray', linestyle='--', linewidth=1, label='divergence point')
-        ax.annotate(f"optimum length is {len_best}", 
-            xy=(len_best, ax.get_ylim()[1]), 
-            xytext=(len_best + 0.5, ax.get_ylim()[1] * 0.3),
-            #arrowprops=dict(arrowstyle="->", color='black'),
-            fontsize=12, color='black')
 
         # terminus hurfs            
         if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و ' or hurf_best=='ۏ':

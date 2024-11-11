@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
+import random    
 
 # todo
 # and-or graph network (based on tabulated fcs?)
@@ -555,7 +556,6 @@ def stringtorasm_MC_wholestring(chaincode):
     return(rasm)
 
 
-import random    
 
 def draw_heatmap(data, xlabel, ylabel, title):
     plt.figure(dpi=300)
@@ -678,6 +678,9 @@ def stringtorasm_MC_jagokandang(chaincode):
         while(mc_retry < MC_RETRY_MAX):
             fcs_lookup=''
             mc_class= random.randint(1, len(top_fcs)-1)  # may also compare to the whole string
+            if len(remainder_stroke)>LENGTH_MIN*pow(PHI,LENGTH_MIN) and\
+                (hurf[mc_class]=='ا' or hurf[mc_class]=='د' or hurf[mc_class]=='ذ' or hurf[mc_class]=='ر' or hurf[mc_class]=='ز' or hurf[mc_class]=='و')  :
+                continue
             if len(top_fcs[str(mc_class)]) != 0:
                 fcs_prob= 1
                 
@@ -713,7 +716,7 @@ def stringtorasm_MC_jagokandang(chaincode):
                         score_mc_acc[int(mc_class)][len_mc] += score_tee
                         
                         # cumulative product
-                        score_mc_mul[int(mc_class)][len_mc] *= score_tee
+                        score_mc_mul[int(mc_class)][len_mc] *= score_tee*PHI
                         
                         # metropolis
                         if score_tee > score_mc[int(mc_class)][len_mc]:
@@ -722,6 +725,16 @@ def stringtorasm_MC_jagokandang(chaincode):
                             score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
                         
                 mc_retry += 1 # can also be neseted one down
+        
+        # plot the stop selection criteria
+        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke)
+        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence addition MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke)
+        score_mc_mul[score_mc_mul == 1.0] = 0.0
+        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'FCS-sequence product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                     +'\n'+remainder_stroke)
+        
         
         # this choice condition is subject to change
         row_sums = np.sum(score_mc_mul, axis=1)
@@ -796,15 +809,6 @@ def stringtorasm_MC_jagokandang(chaincode):
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
                 hurf_best= 'ۏ'
 
-        # plot the stop selection criteria
-        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'FCS-sequence MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                     +'\n'+remainder_stroke)
-        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'FCS-sequence addition MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                     +'\n'+remainder_stroke)
-        score_mc_mul[score_mc_mul == 1.0] = 0.0
-        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'FCS-sequence product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                     +'\n'+remainder_stroke)
-        
         from matplotlib.ticker import MultipleLocator, FuncFormatter
         plt.figure(dpi=300)
         fig, ax = plt.subplots()

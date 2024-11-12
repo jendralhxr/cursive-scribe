@@ -106,7 +106,6 @@ tokens = {f'{i}': [] for i in range(0, NUM_CLASSES)}
 appearance = np.zeros(40, dtype=float) # hurf appearance
 
 # TODO: adding more weight to longer subsequences, aiming for 4-5char long subsequences
-# ACTUAL TODO
 def update_rasm_score(hurf_class, rasm_seq):
     if hurf_class in tokens:
         for subsequence in tokens[hurf_class]:
@@ -122,6 +121,9 @@ def fcs_tabulate(val, string):
     appearance[val] += 1
     length = len(string)
     unique_substrings = set()  # Use a set to store unique substrings
+    
+    # TODO: parse based on delta stroke
+    # also: pemotongan dengan proyeksi histogram untuk potong substroke
     
     for i in range(length):
         for j in range(i + 1, length + 1):
@@ -301,6 +303,10 @@ def myjaro(s1,s2):
     #     return weight
     # tmp = (common_chars - i - 1) / (s1_len + s2_len - i * 2 + 2)
     # weight += (1.0 - weight) * tmp
+    
+    # TODO: discard low score, apply some threshold
+    
+    
     return weight
 
 MC_RETRY_MAX= 1e4
@@ -391,6 +397,7 @@ def stringtorasm_MC_jagokandang(chaincode):
             if len(top_fcs[str(mc_class)]) != 0:
                 fcs_prob= 1
                 
+        # TODO: short subsequence can just be compared as is without being appended
                 for len_mc in range(LENGTH_MIN, len_mc_max+LENGTH_MIN+1):
                     while len(fcs_lookup)<=len_mc:
                         mc_index= random.randint(0, len(afcs[mc_class])-1) 

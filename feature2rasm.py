@@ -716,8 +716,10 @@ draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 ###### ----------------------------------------------------
 ###### path finding routines starts here
 
+# TODO: jangan cetak dua kali yang sudah visited
 def path_vane_nodes(G, path): # if path is written as series of nodes
     pathstring=''
+    # TODO: no edge shall be visited twice
     for i in range(len(path) - 1):
         src= G.nodes[path[i]]
         dst= G.nodes[path[i+1]]
@@ -742,6 +744,7 @@ def find_diacritics_edges(G, node):
     return ''
 
 def path_vane_edges(G, path): # if path is written is written as series of edges
+    visited=[]    
     pathstring=''
     for n in path:
         # vane code
@@ -753,10 +756,16 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
             pathstring+=str(tvane)
         
         # diacritics mark
+        # TODO: yang sudah visited jangan dicetak lagi
+        # cek ini sudah bener atau belum
         mark= ''
-        mark= find_diacritics_edges(G, src)
-        if mark != '':
-            pathstring += mark
+        if src not in visited:
+            mark= find_diacritics_edges(G, src)
+            if mark != '':
+                pathstring += mark
+            
+        visited.append(dst)
+        visited.append(src)
         
     return pathstring
 

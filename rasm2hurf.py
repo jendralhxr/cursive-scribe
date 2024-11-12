@@ -433,6 +433,7 @@ def stringtorasm_MC_jagokandang(chaincode):
         if len(remainder_stroke) <= LENGTH_MIN*pow(PHI,2): # can be extended further
             row_sums = np.sum(score_mc_acc, axis=1)
             peaks= find_peaks(row_sums, threshold=np.mean(row_sums)/pow(PHI,len_mc_max))[0]
+            lookupCS = [[ lookup for lookup in string_mc[peak]] for peak in peaks]
             tophurf = [[ max(myjaro(remainder_stroke, lookup), myjaro(reverseFreeman(remainder_stroke), lookup)) \
                         for lookup in string_mc[peak]] for peak in peaks]
             row_sums = np.sum(tophurf, axis=1)
@@ -442,6 +443,7 @@ def stringtorasm_MC_jagokandang(chaincode):
             row_sums = np.sum(score_mc_mul, axis=1)
             class_best= np.argmax(row_sums);
             max_row = score_mc[class_best]
+        hurf_best= hurf[class_best]
         len_best= np.argmax(max_row); # minimum estimate for hurf length
         
         # optimum stop-length selection
@@ -474,13 +476,10 @@ def stringtorasm_MC_jagokandang(chaincode):
             #     xytext=(len_best + 0.5, ax.get_ylim()[1] * 0.3),
             #     #arrowprops=dict(arrowstyle="->", color='black'),
             #     fontsize=12, color='black')
-        
         if len_best > len(remainder_stroke):
             len_best= len(remainder_stroke)
-            
         tee_best= remainder_stroke[:len_best]
-        hurf_best= hurf[class_best]
-        rasm+= hurf_best
+        
         
         # diacritics selection
         if hurf_best=='ب' or hurf_best=='ت' or hurf_best=='ث' or hurf_best=='ن' or hurf_best=='ي' or hurf_best=='ڽ' or hurf_best=='ی':
@@ -544,13 +543,14 @@ def stringtorasm_MC_jagokandang(chaincode):
                 hurf_best= 'ك'
             if 'A' in tee_best or 'a' in tee_best: # some styles write the dot either on top or bottom
                 hurf_best= 'ݢ'
-            else:
-                hurf_best= 'ک'    
         if hurf_best=='و' or hurf_best=='ۏ':
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
                 hurf_best= 'ۏ'
             else:
                 hurf_best= 'و'
+
+        # append to rasm        
+        rasm+= hurf_best
 
         # terminus hurfs            
         if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و ' or hurf_best=='ۏ':

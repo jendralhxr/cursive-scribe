@@ -4,8 +4,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random    
 from scipy.signal import find_peaks
+import seaborn as sns
+from collections import defaultdict
 
-# todo
+# TODO?
 # and-or graph network (based on tabulated fcs?)
 # or perhaps a leaf node is a set of path with +/-1 variation
 
@@ -96,10 +98,8 @@ quartiles = char_lengths.quantile([0.25, 0.5, 0.75])
 
 #### FCS stands for frequent common substring/subsequence/substroke
 
-import seaborn as sns
-from collections import defaultdict
 
-FCS_MAX_NUM= 16
+FCS_MAX_NUM= 18
 FCS_APPEARANCE_MIN= 2
 
 tokens = {f'{i}': [] for i in range(0, NUM_CLASSES)}
@@ -115,7 +115,7 @@ def update_rasm_score(hurf_class, rasm_seq):
                 subsequence['freq'] += 1
                 return True  # early exit if already present
         # add new seq if not already present
-        tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq))})
+        tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN)})
 
 
 def fcs_tabulate(val, string):
@@ -144,31 +144,15 @@ for hurf_class, rasm_seq in tokens.items():
         [x for x in rasm_seq if x['freq'] > FCS_APPEARANCE_MIN],
         key=lambda x: x['score'],
         reverse=True)
-    
-top_fcs = {}
-for hurf_class, rasm_seq in tokens.items():
-    # Ensure rasm_seq is a list of dictionaries
-    if isinstance(rasm_seq, list) and all(isinstance(token, dict) for token in rasm_seq):
-        # Sort by score in descending order
-        sorted_token = sorted(rasm_seq, key=lambda x: x.get('score', 0), reverse=True)
-        
-        # Filter by frequency and take top FCS_MAX_NUM
-        top_fcs[hurf_class] = [
-            token for token in sorted_token[:FCS_MAX_NUM] 
-            if token.get('freq', 0) >= FCS_APPEARANCE_MIN
-        ]
-    else:
-        print(f"Warning: '{hurf_class}' does not contain a list of dictionaries.")
-
 
 
 # check for duplicates
-seq_indices = defaultdict(list)
-for key, entries in top_fcs.items():
-    for i, entry in enumerate(entries):
-        #seq_indices[entry['seq']].append(key)
-        seq_indices[entry['seq']].append(hurf[int(key)])
-duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
+# seq_indices = defaultdict(list)
+# for key, entries in top_fcs.items():
+#     for i, entry in enumerate(entries):
+#         #seq_indices[entry['seq']].append(key)
+#         seq_indices[entry['seq']].append(hurf[int(key)])
+# duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
 FCS_THINNING= char_lengths.mode()[0] # the mode of strings length, still feels inappropriate
 
@@ -180,31 +164,32 @@ afcs = [["" for i in range(FCS_MAX_NUM)] for j in range(NUM_CLASSES)]
 for j in range(0, NUM_CLASSES): # the hurf
     if top_fcs[str(j)] is not None:
         for i in range(0, len(top_fcs[str(j)]) ): # the subsequences
-            tee_score = top_fcs[str(j)][i]['freq']/appearance[j]
-            #if tee_score >= 1/pow(PHI,FCS_THINNING): # the 1/phi^6
-            if tee_score >= 1/pow(PHI,FCS_THINNING): # the 1/phi^6
-                ffcs[j][i] = tee_score # apperance frequency of each substring
-                lfcs[j][i] = len(top_fcs[str(j)][i]['seq']) # length of each substring
-                sfcs[j][i] = top_fcs[str(j)][i]['freq']/appearance[j] # length-dependent score of each substring
+            if i >= FCS_MAX_NUM:
+                break
+            score_max= max(top_fcs[str(j)], key=lambda x: x['score'])['score']/appearance[j]
+            if top_fcs[str(j)][i]['score']/appearance[j] > score_max/pow(PHI,FCS_THINNING):
+                ffcs[j][i] = top_fcs[str(j)][i]['freq']/appearance[j] # apperance frequency of each substring
+                sfcs[j][i] = top_fcs[str(j)][i]['score']/appearance[j] # length-dependent score of each substring
                 afcs[j][i] = top_fcs[str(j)][i]['seq'] # the substring itself
+                lfcs[j][i] = len(top_fcs[str(j)][i]['seq']) # length of each substring
 
 
 # important to plot these graphs 
 plt.figure(dpi=300)
 sns.set_theme(rc={
-    'figure.figsize': (8, 8),
+    'figure.figsize': (16, 8),
     'font.family': ['Noto Naskh Arabic', 'Noto Sans'],
     'font.size': 6,  # Adjust font size if necessary
     'xtick.labelsize': 6,
     'ytick.labelsize': 6
 })
 #sns.heatmap(lfcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
-sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.2f"})
-plt.imshow(lfcs, cmap='nipy_spectral', interpolation='nearest')
+#sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.2f"})
+sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"format": "%.2f"})
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
-plt.xticks(fontsize=6, rotation=45)
-plt.title("FCS with lower threshold of 1/φ^"+str(FCS_THINNING))
-plt.savefig("/shm/heatmapFCS-"+str(FCS_THINNING)+".png")
+plt.xticks(fontsize=6, rotation=0)
+plt.title("FCS score: PHI^(len(subsequence)/2) / hurf-apperance")
+plt.savefig("/shm/heatmapLCS.png")
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 #ax = plt.gca()
 #for tick in ax.get_yticklabels():
@@ -408,7 +393,7 @@ def stringtorasm_MC_jagokandang(chaincode):
                 
                 for len_mc in range(LENGTH_MIN, len_mc_max+LENGTH_MIN+1):
                     while len(fcs_lookup)<=len_mc:
-                        mc_index= random.randint(0, len(top_fcs[str(mc_class)])-1) 
+                        mc_index= random.randint(0, len(afcs[mc_class])-1) 
                         fcs_lookup += afcs[mc_class][mc_index]
                         fcs_prob *= sfcs[mc_class][mc_index]
                 
@@ -447,7 +432,7 @@ def stringtorasm_MC_jagokandang(chaincode):
         # optimum class selection
         if len(remainder_stroke) <= LENGTH_MIN*pow(PHI,2): # can be extended further
             row_sums = np.sum(score_mc_acc, axis=1)
-            peaks= find_peaks(row_sums, threshold=max(row_sums)/pow(PHI,LENGTH_MIN*PHI))[0]
+            peaks= find_peaks(row_sums, threshold=np.mean(row_sums)/pow(PHI,len_mc_max))[0]
             tophurf = [[ max(myjaro(remainder_stroke, lookup), myjaro(reverseFreeman(remainder_stroke), lookup)) \
                         for lookup in string_mc[peak]] for peak in peaks]
             row_sums = np.sum(tophurf, axis=1)

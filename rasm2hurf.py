@@ -500,24 +500,36 @@ def stringtorasm_MC_jagokandang(chaincode):
             elif 'a' in tee_best:
                 hurf_best= 'ج'
             elif 'b' in tee_best or 'c' in tee_best:
-                hurf_best= 'چ'        
+                hurf_best= 'چ'
+            else:
+                hurf_best= 'ح'
         if hurf_best=='د' or hurf_best=='ذ' :
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
                 hurf_best= 'ذ'
+            else:
+                hurf_best= 'د'
         if hurf_best=='ر' or hurf_best=='ز' :
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
                 hurf_best= 'ز'
+            else:
+                hurf_best= 'ر'
         if hurf_best=='س' or hurf_best=='ش' :
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
                 hurf_best= 'ش'
+            else:
+                hurf_best= 'س'
         if hurf_best=='ص' or hurf_best=='ض' :
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
                 hurf_best= 'ض'
+            else:
+                hurf_best= 'ص'
         if hurf_best=='ع' or hurf_best=='غ' or hurf_best=='ڠ':
             if 'A' in tee_best :
                 hurf_best= 'غ'
             elif 'B' in tee_best or 'C' in tee_best  :
                 hurf_best= 'ڠ'
+            else:
+                hurf_best= 'ع'
         if hurf_best=='ف' or hurf_best=='ڤ' or hurf_best=='ق':
             if 'A' in tee_best:
                 hurf_best= 'ف'
@@ -525,14 +537,20 @@ def stringtorasm_MC_jagokandang(chaincode):
                 hurf_best= 'ق'
             elif 'C' in tee_best :
                 hurf_best= 'ڤ'
+            else:
+                hurf_best= 'ف'
         if hurf_best=='ک' or hurf_best=='ݢ' or hurf_best=='ك' or hurf_best=='ل':
             if 'B' in tee_best or 'C' in tee_best:
                 hurf_best= 'ك'
             if 'A' in tee_best or 'a' in tee_best: # some styles write the dot either on top or bottom
                 hurf_best= 'ݢ'
+            else:
+                hurf_best= 'ک'    
         if hurf_best=='و' or hurf_best=='ۏ':
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
                 hurf_best= 'ۏ'
+            else:
+                hurf_best= 'و'
 
         # terminus hurfs            
         if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و ' or hurf_best=='ۏ':

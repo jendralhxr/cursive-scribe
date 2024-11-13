@@ -63,9 +63,9 @@ def draw(img): # draw the bitmap
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
         
-#filename= sys.argv[1]
+filename= sys.argv[1]
 #filename= 'topanribut.png'
-filename='dengarkan.png'
+#filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -314,17 +314,12 @@ def draw_graph(graph, posstring, scale):
             )
 
 from matplotlib import font_manager
+font_path = '/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf'  # Adjust to your Arabic font path
 arabic_font_path = '/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf'  # Arabic-supporting font
 fallback_font_path = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'           # General-purpose fallback font
-
-# Load the fonts
+arabic_font = font_manager.FontProperties(fname=font_path)
 arabic_font = font_manager.FontProperties(fname=arabic_font_path)
 fallback_font = font_manager.FontProperties(fname=fallback_font_path)
-
-
-
-font_path = '/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf'  # Adjust to your Arabic font path
-arabic_font = font_manager.FontProperties(fname=font_path)
 
 def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
     plt.figure(figsize=(4*scale,4)) 
@@ -794,9 +789,6 @@ while components[-1].centroid == (0,0):
         
 degree_dia= scribe.degree()
 
-graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
-
 # substroke identification
 # slanted projection histogram for segmenting the strokes
 SLANT= 3.1415 / 4  # pi/4 aka 45 degree
@@ -838,7 +830,7 @@ for x_start in valleys:
             if ccv[y_pos][x_pos][0] == STROKEVAL:
                 ccv[y_pos][x_pos][2] = 240
 
-draw(ccv)
+#draw(ccv)
 
 ###### graph construction from line image ends here
 ###### ----------------------------------------------------
@@ -959,64 +951,66 @@ for i in range(len(components)):
         # draw(ccv)
         # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
     
+graphfile= 'graph-'+imagename+ext
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 
 
-# ##################################
-# ## ambil data dari hasil CNN
-import cnn48syairperahu
-import rasm2hurf
+# # ##################################
+# # ## ambil data dari hasil CNN
+# import cnn48syairperahu
+# import rasm2hurf
 
-from keras.models import load_model
-model = load_model('syairperahu.keras')
+# from keras.models import load_model
+# model = load_model('syairperahu.keras')
 
-IMG_WIDTH= 48 # window size of the trained model
-IMG_HEIGHT= IMG_WIDTH
+# IMG_WIDTH= 48 # window size of the trained model
+# IMG_HEIGHT= IMG_WIDTH
 
-# scale takes into account SLIC_SPACE and RESIZE_FACTOR
-# can also be checked from mean_closest_distance
-def predictfromimage(cueimage, pos, scale):
-    cx= int (pos[0])
-    cy= int (pos[1])
-    cy_min= int(cy -IMG_WIDTH/2*scale )
-    cy_max= int(cy +IMG_WIDTH/2*scale )
-    cx_min= int(cx -IMG_WIDTH/2*scale )
-    cx_max= int(cx +IMG_WIDTH/2*scale )
-    if (cy_min<0):
-        cy_min= 0
-        cy_max= IMG_HEIGHT * scale
-    if (cy_max > cueimage.shape[0]):
-        cy_max= cueimage.shape[0]
-        cy_min= cy_max - IMG_HEIGHT*scale
-    if (cx_min<0):
-        cx_min= 0
-        cx_max= IMG_WIDTH * scale
-    if (cx_max > cueimage.shape[1]):
-        cx_max= cueimage.shape[1]
-        cx_min= cx_max - IMG_HEIGHT*scale
+# # scale takes into account SLIC_SPACE and RESIZE_FACTOR
+# # can also be checked from mean_closest_distance
+# def predictfromimage(cueimage, pos, scale):
+#     cx= int (pos[0])
+#     cy= int (pos[1])
+#     cy_min= int(cy -IMG_WIDTH/2*scale )
+#     cy_max= int(cy +IMG_WIDTH/2*scale )
+#     cx_min= int(cx -IMG_WIDTH/2*scale )
+#     cx_max= int(cx +IMG_WIDTH/2*scale )
+#     if (cy_min<0):
+#         cy_min= 0
+#         cy_max= IMG_HEIGHT * scale
+#     if (cy_max > cueimage.shape[0]):
+#         cy_max= cueimage.shape[0]
+#         cy_min= cy_max - IMG_HEIGHT*scale
+#     if (cx_min<0):
+#         cx_min= 0
+#         cx_max= IMG_WIDTH * scale
+#     if (cx_max > cueimage.shape[1]):
+#         cx_max= cueimage.shape[1]
+#         cx_min= cx_max - IMG_HEIGHT*scale
     
-    roi= cueimage[int(cy_min):int(cy_max),int(cx_min):int(cx_max)]
-    roi= cv.resize(roi, None, fx=1/scale, fy=1/scale, interpolation=cv.INTER_LINEAR)
-    #draw(roi)
-    roi = roi / THREVAL
-    roi = np.expand_dims(roi, axis=0) 
-    roi = np.expand_dims(roi, axis=-1)
+#     roi= cueimage[int(cy_min):int(cy_max),int(cx_min):int(cx_max)]
+#     roi= cv.resize(roi, None, fx=1/scale, fy=1/scale, interpolation=cv.INTER_LINEAR)
+#     #draw(roi)
+#     roi = roi / THREVAL
+#     roi = np.expand_dims(roi, axis=0) 
+#     roi = np.expand_dims(roi, axis=-1)
     
-    prediction = model.predict(roi)
-    predicted_class = np.argmax(prediction, axis=-1)[0]
-    return hurf[int(predicted_class)]
+#     prediction = model.predict(roi)
+#     predicted_class = np.argmax(prediction, axis=-1)[0]
+#     return hurf[int(predicted_class)]
 
-for i in scribe_dia.nodes:
-    scribe_dia.nodes[i]['hurf']= ' ' 
+# for i in scribe_dia.nodes:
+#     scribe_dia.nodes[i]['hurf']= ' ' 
 
-_, cuecnn = cv.threshold(cue, 20, 255, cv.THRESH_BINARY)
+# _, cuecnn = cv.threshold(cue, 20, 255, cv.THRESH_BINARY)
 
-for i in scribe_dia.nodes:
-    if scribe_dia.nodes[i]['rasm']==True:
-        pos= scribe_dia.nodes[i]['pos_bitmap']
-        scribe_dia.nodes[i]['hurf']= predictfromimage(cuecnn, scribe_dia.nodes[i]['pos_bitmap'], 1.333333333333333333)
-        print(f"node{i}: {scribe_dia.nodes[i]['hurf']} ada di {pos[0]},{pos[1]}")
-    else:
-        scribe_dia.nodes[i]['hurf']= ' ' 
+# for i in scribe_dia.nodes:
+#     if scribe_dia.nodes[i]['rasm']==True:
+#         pos= scribe_dia.nodes[i]['pos_bitmap']
+#         scribe_dia.nodes[i]['hurf']= predictfromimage(cuecnn, scribe_dia.nodes[i]['pos_bitmap'], 1.333333333333333333)
+#         print(f"node{i}: {scribe_dia.nodes[i]['hurf']} ada di {pos[0]},{pos[1]}")
+#     else:
+#         scribe_dia.nodes[i]['hurf']= ' ' 
 
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/dengarkan-nomer.png', None)
-draw_graph_edgelabel_ara(scribe_dia, 'pos_render', 8, '/shm/dengarkan-hurfcnn.png', 'hurf')
+# draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/dengarkan-nomer.png', None)
+# draw_graph_edgelabel_ara(scribe_dia, 'pos_render', 8, '/shm/dengarkan-hurfcnn.png', 'hurf')

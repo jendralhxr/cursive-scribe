@@ -113,9 +113,9 @@ print(f"Test accuracy: {test_accuracy}")
 # Test accuracy: 0.05236907675862312
 # may prone to overfitting, but works just okay atm
 
+# load trained model
 from keras.models import load_model
 model = load_model('syairperahucnn/syairperahu.keras')
-
 
 #### prediction
 # Load and preprocess the image
@@ -182,8 +182,3 @@ disp.plot(cmap='Blues', values_format='d', ax=plt.gca())  # `values_format='d'` 
 plt.xticks(rotation=45, ha="right", fontsize=12)
 plt.yticks(fontsize=12)
 plt.title('Confusion Matrix', fontsize=16)
-
-
-
-# TODO: CNN dengan titik2
-

@@ -182,8 +182,17 @@ class ConnectedComponents:
     node_end: Optional[int] = field(default=-1)      # left-down
     distance_end: Optional[int] = field(default=0)   # left-down
 
-
 pos = nx.get_node_attributes(scribe,'pos_bitmap')
+def euclidean_distance(p1, p2):
+    return np.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+min_distances = []
+for key1, point1 in pos.items():
+    distances = [ euclidean_distance(point1, point2)
+        for key2, point2 in pos.items() if key1 != key2 ]
+    min_distance = min(distances)
+    min_distances.append(min_distance)
+mean_closest_distance = np.mean(min_distances) # this should closely resembles SLIC_SPACE
+
 components=[]
 for n in range(scribe.number_of_nodes()):
     # fill
@@ -304,6 +313,19 @@ def draw_graph(graph, posstring, scale):
             width=weights*2,
             )
 
+from matplotlib import font_manager
+arabic_font_path = '/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf'  # Arabic-supporting font
+fallback_font_path = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'           # General-purpose fallback font
+
+# Load the fonts
+arabic_font = font_manager.FontProperties(fname=arabic_font_path)
+fallback_font = font_manager.FontProperties(fname=fallback_font_path)
+
+
+
+font_path = '/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf'  # Adjust to your Arabic font path
+arabic_font = font_manager.FontProperties(fname=font_path)
+
 def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
     plt.figure(figsize=(4*scale,4)) 
     # nodes
@@ -330,6 +352,7 @@ def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
                 labels= custom_labels,
                 node_size=100,
                 font_size=6,
+                fontproperties=arabic_font,  # Set Arabic font for edge labels
                 # edges' param
                 edge_color=edge_colors, 
                 width=weights*2,
@@ -354,6 +377,77 @@ def draw_graph_edgelabel(graph, posstring, scale, filename, labelfield):
             font_color='red')
     if filename is not None:
         plt.savefig(filename, dpi=300)
+
+def draw_graph_edgelabel_ara(graph, posstring, scale, filename, labelfield):
+    plt.figure(figsize=(4 * scale, 4))
+    
+    # Set an Arabic-supporting font
+    font_path = '/usr/share/fonts/truetype/noto/NotoNaskhArabic-Regular.ttf'  # Adjust to your Arabic font path
+    arabic_font = font_manager.FontProperties(fname=font_path)
+
+    # Nodes
+    if posstring is None:
+        positions = nx.spring_layout(graph)
+    else:
+        positions = nx.get_node_attributes(graph, posstring)
+
+    node_colors = list(nx.get_node_attributes(graph, 'color').values())
+    
+    if labelfield is not None:
+        custom_labels = {node: graph.nodes[node][labelfield] for node in graph.nodes}
+    else:
+        custom_labels = None
+    
+    # Edges
+    edge_lbls = nx.get_edge_attributes(graph, 'vane')
+    edge_colors = list(nx.get_edge_attributes(graph, 'color').values())
+    weights = np.array(list(nx.get_edge_attributes(graph, 'weight').values()))
+
+    # Draw the graph without labels
+    nx.draw(
+        graph,
+        pos=positions,
+        with_labels=False,  # Temporarily disable labels for custom handling
+        node_color=node_colors,
+        node_size=100,
+        font_size=6,
+        edge_color=edge_colors,
+        width=weights * 2,
+    )
+
+    # Draw custom node labels with Arabic font
+    if custom_labels:
+        for node, (x, y) in positions.items():
+            plt.text(
+                x,
+                y,
+                custom_labels[node],
+                ha='center',
+                fontproperties=arabic_font,
+                fontsize=6,
+                color="black"
+            )
+
+    # Draw edge labels with Arabic font
+    for (node1, node2), label in edge_lbls.items():
+        # Calculate the midpoint for the edge label
+        x = (positions[node1][0] + positions[node2][0]) / 2
+        y = (positions[node1][1] + positions[node2][1]) / 2
+        plt.text(
+            x,
+            y,
+            label,
+            ha='center',
+            fontproperties=arabic_font,
+            fontsize=5,
+            color='red'
+        )
+
+    # Save the figure if filename is provided
+    if filename is not None:
+        plt.savefig(filename, dpi=300)
+
+    plt.show()
 
 def extract_subgraph(G, start): # for a connected component
     if start!=-1:
@@ -792,13 +886,11 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
             mark= find_diacritics_edges(G, src)
             if mark != '':
                 pathstring += mark
-                print(f"dia {mark} at node {src}")
         visited.append(src)
         if dst not in visited:
             mark= find_diacritics_edges(G, dst)
             if mark != '':
                 pathstring += mark
-                print(f"dia {mark} at node {dst}")
         visited.append(dst)
         
     return pathstring
@@ -871,56 +963,60 @@ for i in range(len(components)):
 
 # ##################################
 # ## ambil data dari hasil CNN
-# TODO: CNN dengan titik2 sampai pojok: 
-#    - benerin syair perahu
-#    - skalakan ke perang johor
-# ## ambil data dari hasil CNN
-# import cnn48syairperahu
-# import rasm2hurf
+import cnn48syairperahu
+import rasm2hurf
 
-# from keras.models import load_model
-# model = load_model('syairperahu.keras')
+from keras.models import load_model
+model = load_model('syairperahu.keras')
 
+IMG_WIDTH= 48 # window size of the trained model
+IMG_HEIGHT= IMG_WIDTH
 
-# IMG_WIDTH= 48
-# IMG_HEIGHT= IMG_WIDTH
-
-# def predictfromimage(cueimage, pos):
-#     cx= pos[0]
-#     cy= pos[1]
-#     cy_min= int(cy-IMG_WIDTH/2)
-#     cy_max= int(cy+IMG_WIDTH/2)
-#     cx_min= int(cx-IMG_WIDTH/2)
-#     cx_max= int(cx+IMG_WIDTH/2)
-#     if (cy_min<0):
-#         cy_min= 0
-#         cy_max= IMG_HEIGHT
-#     if (cy_max > cueimage.shape[0]):
-#         cy_max= cueimage.shape[0]
-#         cy_min= cy_max - IMG_HEIGHT
-#     if (cx_min<0):
-#         cx_min= 0
-#         cx_max= IMG_WIDTH
-#     if (cx_max > cueimage.shape[1]):
-#         cx_max= cueimage.shape[1]
-#         cx_min= cx_max - IMG_HEIGHT   
+# scale takes into account SLIC_SPACE and RESIZE_FACTOR
+# can also be checked from mean_closest_distance
+def predictfromimage(cueimage, pos, scale):
+    cx= int (pos[0])
+    cy= int (pos[1])
+    cy_min= int(cy -IMG_WIDTH/2*scale )
+    cy_max= int(cy +IMG_WIDTH/2*scale )
+    cx_min= int(cx -IMG_WIDTH/2*scale )
+    cx_max= int(cx +IMG_WIDTH/2*scale )
+    if (cy_min<0):
+        cy_min= 0
+        cy_max= IMG_HEIGHT * scale
+    if (cy_max > cueimage.shape[0]):
+        cy_max= cueimage.shape[0]
+        cy_min= cy_max - IMG_HEIGHT*scale
+    if (cx_min<0):
+        cx_min= 0
+        cx_max= IMG_WIDTH * scale
+    if (cx_max > cueimage.shape[1]):
+        cx_max= cueimage.shape[1]
+        cx_min= cx_max - IMG_HEIGHT*scale
     
-#     roi= cueimage[cy_min:cy_max,cx_min:cx_max]
-#     roi = roi / THREVAL
-#     roi = np.expand_dims(roi, axis=0) 
-#     roi = np.expand_dims(roi, axis=-1)
-#     prediction = model.predict(roi)
-#     predicted_class = np.argmax(prediction, axis=-1)
-#     return hurf[int(predicted_class)]
+    roi= cueimage[int(cy_min):int(cy_max),int(cx_min):int(cx_max)]
+    roi= cv.resize(roi, None, fx=1/scale, fy=1/scale, interpolation=cv.INTER_LINEAR)
+    #draw(roi)
+    roi = roi / THREVAL
+    roi = np.expand_dims(roi, axis=0) 
+    roi = np.expand_dims(roi, axis=-1)
+    
+    prediction = model.predict(roi)
+    predicted_class = np.argmax(prediction, axis=-1)[0]
+    return hurf[int(predicted_class)]
 
-# for i in scribe.nodes:
-#     pos= scribe.nodes[i]['pos_bitmap']
-#     # should be safe to handle nodes closer to image edges 
-#     # if pos[1]>IMG_HEIGHT and pos[1]<cue.shape[0]-IMG_HEIGHT/2 and  \
-#     #    pos[0]>IMG_WIDTH and pos[0]<cue.shape[1]-IMG_WIDTH:       
-#     scribe.nodes[i]['hurf']= predictfromimage(cue, scribe.nodes[i]['pos_bitmap'])
-#     scribe_dia.nodes[i]['hurf']= scribe.nodes[i]['hurf']
-#     print(f"node{i}: {scribe.nodes[i]['hurf']} ada di {pos[0]}{pos[1]}")
-#     #else:
-#     #   scribe.nodes[i]['hurf']= '' 
-#     #   scribe_dia.nodes[i]['hurf']= '' 
+for i in scribe_dia.nodes:
+    scribe_dia.nodes[i]['hurf']= ' ' 
+
+_, cuecnn = cv.threshold(cue, 20, 255, cv.THRESH_BINARY)
+
+for i in scribe_dia.nodes:
+    if scribe_dia.nodes[i]['rasm']==True:
+        pos= scribe_dia.nodes[i]['pos_bitmap']
+        scribe_dia.nodes[i]['hurf']= predictfromimage(cuecnn, scribe_dia.nodes[i]['pos_bitmap'], 1.333333333333333333)
+        print(f"node{i}: {scribe_dia.nodes[i]['hurf']} ada di {pos[0]},{pos[1]}")
+    else:
+        scribe_dia.nodes[i]['hurf']= ' ' 
+
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/dengarkan-nomer.png', None)
+draw_graph_edgelabel_ara(scribe_dia, 'pos_render', 8, '/shm/dengarkan-hurfcnn.png', 'hurf')

@@ -1,0 +1,13 @@
+dengarkan.png
+SLIC_SPACE= 8
+DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
+DILATION_X= 4  #some vertical lines are just too thin
+DILATION_I= 1        
+
+topanribut.png
+RESIZE_FACTOR=2
+SLIC_SPACE= 3
+DILATION_Y= 1 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
+DILATION_X= 2  #some vertical lines are just too thin
+DILATION_I= 1        
+

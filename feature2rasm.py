@@ -703,19 +703,14 @@ degree_dia= scribe.degree()
 graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 
-# histogram projection for splitting the substrokes
-
-# draw each components separately, sorted right to left
+# substroke identification
+# slanted projection histogram for segmenting the strokes
+SLANT= 3.1415 / 4  # pi/4 aka 45 degree
 ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):
     if scribe_dia.nodes[components[n].nodes[0]]['rasm'] == True:
         seed= pos[components[n].nodes[0]]
         cv.floodFill(ccv, None, seed, (STROKEVAL, THREVAL, THREVAL), loDiff=(5), upDiff=(5))
-# draw(ccv) # along with the neighbor
-# cv.imwrite('/shm/rasm'+str(n)+'.png', ccv)    
-
-# slanted projection histogram for segmenting the strokes
-SLANT= 3.1415 / 4  # pi/4 aka 45 degree
 
 projection_hist= np.zeros(ccv.shape[1], np.uint8)
 
@@ -729,7 +724,17 @@ for x in range(ccv.shape[1]-1,0,-1):
                 projection_hist[x_start] += 1
                 
 from scipy.signal import find_peaks
-valleys= find_peaks(-projection_hist)[0] 
+from scipy.ndimage import gaussian_filter1d
+
+plt.plot(projection_hist, label="projection histogram")  
+plt.title("slanted projection histogram (raw) at angle "+str(SLANT)+" rad")
+
+projection_hist_smoothed= gaussian_filter1d(projection_hist, pow(PHI,3))
+valleys= find_peaks(-projection_hist_smoothed)[0] 
+
+plt.plot(projection_hist_smoothed, label="smoothed")  
+plt.scatter(valleys, [projection_hist_smoothed[i] for i in valleys], color='red', marker='o', s=10, label="valleys")  # Adjust marker size with 's'
+plt.title("slanted projection histogram (smoothed) at angle "+str(SLANT)+" rad")
 
 for x_start in valleys:
     x_end= x_start- math.tan(SLANT) * ccv.shape[0]
@@ -739,16 +744,14 @@ for x_start in valleys:
             if ccv[y_pos][x_pos][0] == STROKEVAL:
                 ccv[y_pos][x_pos][2] = 240
 
-
+draw(ccv)
 
 ###### graph construction from line image ends here
 ###### ----------------------------------------------------
 ###### path finding routines starts here
 
-# TODO: jangan cetak dua kali yang sudah visited
 def path_vane_nodes(G, path): # if path is written as series of nodes
     pathstring=''
-    # TODO: no edge shall be visited twice
     for i in range(len(path) - 1):
         src= G.nodes[path[i]]
         dst= G.nodes[path[i+1]]
@@ -784,17 +787,19 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         if (G.edges[n]['color']=='#00FF00'): # main stroke
             pathstring+=str(tvane)
         
-        # diacritics mark
-        # TODO: yang sudah visited jangan dicetak lagi
-        # cek ini sudah bener atau belum
         mark= ''
         if src not in visited:
             mark= find_diacritics_edges(G, src)
             if mark != '':
                 pathstring += mark
-            
-        visited.append(dst)
+                print(f"dia {mark} at node {src}")
         visited.append(src)
+        if dst not in visited:
+            mark= find_diacritics_edges(G, dst)
+            if mark != '':
+                pathstring += mark
+                print(f"dia {mark} at node {dst}")
+        visited.append(dst)
         
     return pathstring
 
@@ -823,7 +828,6 @@ def bfs_with_closest_priority(G, start_node):
 
 # drawing the rasm graph
 from PIL import ImageFont, ImageDraw, Image
-
 FONTSIZE= 24
 
 for i in range(len(components)):

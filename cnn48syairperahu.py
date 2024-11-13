@@ -184,3 +184,6 @@ plt.yticks(fontsize=12)
 plt.title('Confusion Matrix', fontsize=16)
 
 
+
+# TODO: CNN dengan titik2
+

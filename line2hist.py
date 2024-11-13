@@ -279,3 +279,6 @@ for n, row in enumerate(edge_top):
 plt.ylabel("contour position")
 plt.title("top-bottom contour for each connected component (rasm)")
 plt.show()
+
+
+# TODO: SLANTED HISTOGRAM

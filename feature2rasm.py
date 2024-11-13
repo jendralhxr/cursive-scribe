@@ -50,6 +50,7 @@ RASM_EDGE_MAXDEG= 2
 RASM_CANDIDATE= SLIC_SPACE
 
 THREVAL= 60
+STROKEVAL= 160
 CHANNEL= 2
 
 
@@ -62,9 +63,9 @@ def draw(img): # draw the bitmap
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
         
-filename= sys.argv[1]
+#filename= sys.argv[1]
 #filename= 'topanribut.png'
-#filename='perangjohor-p1-lineimg1.png'
+filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -98,7 +99,6 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
 DILATION_X= 4  #some vertical lines are just too thin
 DILATION_I= 1        
-render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 
 #SLIC
 gray= cv.dilate(gray, np.ones((DILATION_Y,DILATION_X), np.uint8), iterations=DILATION_I) # turns out gray is actually already too thin to begin with 
@@ -112,6 +112,7 @@ num_slic = slic.getNumberOfSuperpixels()
 lbls = slic.getLabels()
 
 # moments calculation for each superpixels, either voids or filled (in-stroke)
+render = cv.cvtColor(gray, cv.COLOR_GRAY2BGR)
 moments = [np.zeros((1, 2)) for _ in range(num_slic)]
 moments_void = [np.zeros((1, 2)) for _ in range(num_slic)]
 # tabulating the superpixel labels
@@ -119,7 +120,7 @@ for j in range(height):
     for i in range(width):
         if cue[j,i]!=0:
             moments[lbls[j,i]] = np.append(moments[lbls[j,i]], np.array([[i,j]]), axis=0)
-            render[j,i,0]= 140-(10*(lbls[j,i]%6))
+            render[j,i,0]= THREVAL-(10*(lbls[j,i]%6))
         else:
             moments_void[lbls[j,i]] = np.append(moments_void[lbls[j,i]], np.array([[i,j]]), axis=0)
 
@@ -181,7 +182,6 @@ class ConnectedComponents:
     node_end: Optional[int] = field(default=-1)      # left-down
     distance_end: Optional[int] = field(default=0)   # left-down
 
-STROKEVAL= 160
 
 pos = nx.get_node_attributes(scribe,'pos_bitmap')
 components=[]
@@ -281,15 +281,6 @@ components = [c for c in components if c.area >= pow(SLIC_SPACE,2)+SLIC_SPACE*PH
 # date_time_str = now.strftime("%Y%m%d%H%M%S")
 # cv.imwrite('/shm/'+date_time_str+'-render.png', render)    
 
-# draw each components separately, sorted right to left
-# ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
-# for n in range(len(components)):
-#     # ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
-#     seed= pos[components[n].nodes[0]]
-#     cv.floodFill(ccv, None, seed, (STROKEVAL,STROKEVAL,STROKEVAL), loDiff=(5), upDiff=(5))
-#     cv.putText(ccv, str(n), components[n].centroid, cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 200, 0), 2)
-# draw(ccv) # along with the neighbor
-# cv.imwrite('/shm/rasm'+str(n)+'.png', ccv)    
         
 def draw_graph(graph, posstring, scale):
     # nodes
@@ -712,6 +703,44 @@ degree_dia= scribe.degree()
 graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 
+# histogram projection for splitting the substrokes
+
+# draw each components separately, sorted right to left
+ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
+for n in range(len(components)):
+    if scribe_dia.nodes[components[n].nodes[0]]['rasm'] == True:
+        seed= pos[components[n].nodes[0]]
+        cv.floodFill(ccv, None, seed, (STROKEVAL, THREVAL, THREVAL), loDiff=(5), upDiff=(5))
+# draw(ccv) # along with the neighbor
+# cv.imwrite('/shm/rasm'+str(n)+'.png', ccv)    
+
+# slanted projection histogram for segmenting the strokes
+SLANT= 3.1415 / 4  # pi/4 aka 45 degree
+
+projection_hist= np.zeros(ccv.shape[1], np.uint8)
+
+for x in range(ccv.shape[1]-1,0,-1):
+    x_start= x
+    x_end= x_start- math.tan(SLANT) * ccv.shape[0]
+    if (x_end>=0):
+        for y_pos in range(ccv.shape[0]):
+            x_pos= int (x_start - math.tan(SLANT)*y_pos)
+            if ccv[y_pos][x_pos][0] == STROKEVAL:
+                projection_hist[x_start] += 1
+                
+from scipy.signal import find_peaks
+valleys= find_peaks(-projection_hist)[0] 
+
+for x_start in valleys:
+    x_end= x_start- math.tan(SLANT) * ccv.shape[0]
+    if (x_end>=0):
+        for y_pos in range(ccv.shape[0]):
+            x_pos= int (x_start - math.tan(SLANT)*y_pos)
+            if ccv[y_pos][x_pos][0] == STROKEVAL:
+                ccv[y_pos][x_pos][2] = 240
+
+
+
 ###### graph construction from line image ends here
 ###### ----------------------------------------------------
 ###### path finding routines starts here
@@ -837,6 +866,10 @@ for i in range(len(components)):
 
 
 # ##################################
+# ## ambil data dari hasil CNN
+# TODO: CNN dengan titik2 sampai pojok: 
+#    - benerin syair perahu
+#    - skalakan ke perang johor
 # ## ambil data dari hasil CNN
 # import cnn48syairperahu
 # import rasm2hurf

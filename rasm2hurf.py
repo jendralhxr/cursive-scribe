@@ -116,6 +116,38 @@ def update_rasm_score(hurf_class, rasm_seq):
         # add new seq if not already present
         tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN)})
 
+def parse_chaincode(input_string):
+    SUBSTROKE_MIN_LENGTH= 4
+    result = []
+    current_group = input_string[0]  # Start with the first character
+    stroke_prev= True
+    
+    for i in range(1, len(input_string)):
+        diff= abs ( ord(input_string[i]) - ord(input_string[i-1]) )
+        if diff==0 or diff==1 or diff==7:  # smooth stroke Freeman code
+            straight_stroke= True 
+        else:  # Different digit
+            straight_stroke= False
+        
+        if stroke_prev==straight_stroke:
+            current_group += input_string[i]
+        elif stroke_prev!=straight_stroke:
+            if len(current_group) >= SUBSTROKE_MIN_LENGTH:  # Ensure group has at least 4 chars
+                result.append(current_group)
+                current_group = input_string[i]
+                if straight_stroke== True:
+                    current_group = input_string[i-1]+current_group
+            else:  # new substroke
+                current_group += input_string[i]
+        stroke_prev= straight_stroke
+    
+    if len(current_group) >= SUBSTROKE_MIN_LENGTH:
+        result.append(current_group)
+    elif result:  # merge remaining characters
+        result[-(SUBSTROKE_MIN_LENGTH-1):] += current_group
+
+    return result
+
 
 def fcs_tabulate(val, string):
     appearance[val] += 1

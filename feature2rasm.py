@@ -41,8 +41,8 @@ def freeman(x, y):
         elif (y<0) and (abs(y)>abs(x)):
             return(6)
 
-RESIZE_FACTOR=1
-SLIC_SPACE= 8
+RESIZE_FACTOR=2
+SLIC_SPACE= 3
 SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
 WHITESPACE_INTERVAL= 4
 
@@ -63,8 +63,8 @@ def draw(img): # draw the bitmap
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
         
-filename= sys.argv[1]
-#filename= 'topanribut.png'
+#filename= sys.argv[1]
+filename= 'topanribut.png'
 #filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
@@ -96,8 +96,8 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #cv.imwrite('dilated_text.png', dilated_image)
 
 
-DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
-DILATION_X= 4  #some vertical lines are just too thin
+DILATION_Y= 1 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
+DILATION_X= 2  #some vertical lines are just too thin
 DILATION_I= 1        
 
 #SLIC

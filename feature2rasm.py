@@ -791,7 +791,7 @@ degree_dia= scribe.degree()
 
 # substroke identification
 # slanted projection histogram for segmenting the strokes
-SLANT= 3.1415 / 4  # pi/4 aka 45 degree
+SLANT= 3.1415 / 1.4  # pi/4 aka 45 degree
 ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):
     if scribe_dia.nodes[components[n].nodes[0]]['rasm'] == True:
@@ -800,26 +800,29 @@ for n in range(len(components)):
 
 projection_hist= np.zeros(ccv.shape[1], np.uint8)
 
+# bulding the projection histogram
 for x in range(ccv.shape[1]-1,0,-1):
     x_start= x
-    x_end= x_start- math.tan(SLANT) * ccv.shape[0]
-    if (x_end>=0):
+    x_end= x_start- math.tan(SLANT) * ccv.shape[0] # can start beyond image width
+    if (x_end>=0): # may not be needed
         for y_pos in range(ccv.shape[0]):
             x_pos= int (x_start - math.tan(SLANT)*y_pos)
-            if ccv[y_pos][x_pos][0] == STROKEVAL:
-                projection_hist[x_start] += 1
+            if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
+                if ccv[y_pos][x_pos][0] == STROKEVAL:
+                    projection_hist[x_start] += 1
                 
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
 
-plt.plot(projection_hist, label="projection histogram")  
-plt.title("slanted projection histogram (raw) at angle "+str(SLANT)+" rad")
+#plt.plot(projection_hist, label="projection histogram")  
+#plt.title("slanted projection histogram (raw) at angle "+str(SLANT)+" rad")
 
 projection_hist_smoothed= gaussian_filter1d(projection_hist, pow(PHI,3))
 valleys= find_peaks(-projection_hist_smoothed)[0] 
 
 plt.plot(projection_hist_smoothed, label="smoothed")  
 plt.scatter(valleys, [projection_hist_smoothed[i] for i in valleys], color='red', marker='o', s=10, label="valleys")  # Adjust marker size with 's'
+
 plt.title("slanted projection histogram (smoothed) at angle "+str(SLANT)+" rad")
 
 for x_start in valleys:
@@ -827,10 +830,11 @@ for x_start in valleys:
     if (x_end>=0):
         for y_pos in range(ccv.shape[0]):
             x_pos= int (x_start - math.tan(SLANT)*y_pos)
-            if ccv[y_pos][x_pos][0] == STROKEVAL:
-                ccv[y_pos][x_pos][2] = 240
+            if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
+                if ccv[y_pos][x_pos][0] == STROKEVAL:
+                    ccv[y_pos][x_pos][2] = 240
 
-#draw(ccv)
+draw(ccv)
 
 ###### graph construction from line image ends here
 ###### ----------------------------------------------------

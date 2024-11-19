@@ -98,7 +98,7 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 
 
 DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
-DILATION_X= 6  #some vertical lines are just too thin
+DILATION_X= 3  #some vertical lines are just too thin
 DILATION_I= 1        
 
 #SLIC
@@ -808,15 +808,15 @@ def find_histogram_min(img, ANGLE):
 
     projection_hist_smoothed= gaussian_filter1d(projection_hist, pow(PHI,3))
     valleys= find_peaks(-projection_hist_smoothed)[0] 
-    plt.plot(projection_hist_smoothed, label="projection histogram")  
-    plt.title("slanted projection histogram (smoothed) at angle "+f"{ANGLE:.4f}"+" rad")
-    plt.scatter(valleys, [projection_hist_smoothed[i] for i in valleys], color='red', marker='o', s=10)
+    #plt.plot(projection_hist_smoothed, label="projection histogram")  
+    #plt.title("slanted projection histogram (smoothed) at angle "+f"{ANGLE:.4f}"+" rad")
+    #plt.scatter(valleys, [projection_hist_smoothed[i] for i in valleys], color='red', marker='o', s=10)
     #peaks= find_peaks(projection_hist_smoothed)[0] 
     
     return projection_hist_smoothed, valleys
 
 # 1ed projection histogram for segmenting the strokes
-SLANT1= 3.1415
+SLANT1= 3.1415 # 90 degree
 SLANT2= 3.1415 / pow(PHI,3)
 
 ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
@@ -973,7 +973,7 @@ for i in range(len(components)):
         # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
     
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, 'F://'+graphfile, None)
 
 
 # # ##################################

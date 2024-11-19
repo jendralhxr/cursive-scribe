@@ -41,8 +41,8 @@ def freeman(x, y):
         elif (y<0) and (abs(y)>abs(x)):
             return(6)
 
-RESIZE_FACTOR=2
-SLIC_SPACE= 3
+RESIZE_FACTOR=1
+SLIC_SPACE= 8
 SLIC_SPACE= SLIC_SPACE*RESIZE_FACTOR
 WHITESPACE_INTERVAL= 4
 
@@ -51,6 +51,7 @@ RASM_CANDIDATE= SLIC_SPACE
 
 THREVAL= 60
 STROKEVAL= 160
+FOCUSVAL= 240
 CHANNEL= 2
 
 
@@ -64,8 +65,8 @@ def draw(img): # draw the bitmap
         
         
 #filename= sys.argv[1]
-filename= 'topanribut.png'
-#filename='dengarkan.png'
+#filename= 'topanribut.png'
+filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -96,8 +97,8 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #cv.imwrite('dilated_text.png', dilated_image)
 
 
-DILATION_Y= 1 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
-DILATION_X= 2  #some vertical lines are just too thin
+DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
+DILATION_X= 6  #some vertical lines are just too thin
 DILATION_I= 1        
 
 #SLIC
@@ -790,50 +791,66 @@ while components[-1].centroid == (0,0):
 degree_dia= scribe.degree()
 
 # substroke identification
-# slanted projection histogram for segmenting the strokes
-SLANT= 3.1415 / 1.4  # pi/4 aka 45 degree
+from scipy.signal import find_peaks
+from scipy.ndimage import gaussian_filter1d
+
+def find_histogram_min(img, ANGLE):
+    
+    projection_hist= np.zeros(img.shape[1], np.uint8)
+    for x in range(img.shape[1]-1,0,-1):
+        x_start= x
+        x_end= x_start- math.tan(ANGLE) * img.shape[0] # can start beyond image width
+        for y_pos in range(img.shape[0]):
+            x_pos= int (x_start - math.tan(ANGLE)*y_pos)
+            if y_pos<img.shape[0] and x_pos<img.shape[1]:
+                if ccv[y_pos][x_pos][0] == STROKEVAL:
+                    projection_hist[x_start] += 1
+
+    projection_hist_smoothed= gaussian_filter1d(projection_hist, pow(PHI,3))
+    valleys= find_peaks(-projection_hist_smoothed)[0] 
+    plt.plot(projection_hist_smoothed, label="projection histogram")  
+    plt.title("slanted projection histogram (smoothed) at angle "+f"{ANGLE:.4f}"+" rad")
+    plt.scatter(valleys, [projection_hist_smoothed[i] for i in valleys], color='red', marker='o', s=10)
+    #peaks= find_peaks(projection_hist_smoothed)[0] 
+    
+    return projection_hist_smoothed, valleys
+
+# 1ed projection histogram for segmenting the strokes
+SLANT1= 3.1415
+SLANT2= 3.1415 / pow(PHI,3)
+
 ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):
     if scribe_dia.nodes[components[n].nodes[0]]['rasm'] == True:
         seed= pos[components[n].nodes[0]]
         cv.floodFill(ccv, None, seed, (STROKEVAL, THREVAL, THREVAL), loDiff=(5), upDiff=(5))
 
-projection_hist= np.zeros(ccv.shape[1], np.uint8)
+hist1, valleys1= find_histogram_min(ccv, SLANT1)
+hist2, valleys2= find_histogram_min(ccv, SLANT2)
 
-# bulding the projection histogram
-for x in range(ccv.shape[1]-1,0,-1):
-    x_start= x
-    x_end= x_start- math.tan(SLANT) * ccv.shape[0] # can start beyond image width
-    if (x_end>=0): # may not be needed
-        for y_pos in range(ccv.shape[0]):
-            x_pos= int (x_start - math.tan(SLANT)*y_pos)
-            if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
-                if ccv[y_pos][x_pos][0] == STROKEVAL:
-                    projection_hist[x_start] += 1
-                
-from scipy.signal import find_peaks
-from scipy.ndimage import gaussian_filter1d
-
-#plt.plot(projection_hist, label="projection histogram")  
-#plt.title("slanted projection histogram (raw) at angle "+str(SLANT)+" rad")
-
-projection_hist_smoothed= gaussian_filter1d(projection_hist, pow(PHI,3))
-valleys= find_peaks(-projection_hist_smoothed)[0] 
-
-plt.plot(projection_hist_smoothed, label="smoothed")  
-plt.scatter(valleys, [projection_hist_smoothed[i] for i in valleys], color='red', marker='o', s=10, label="valleys")  # Adjust marker size with 's'
-
-plt.title("slanted projection histogram (smoothed) at angle "+str(SLANT)+" rad")
-
-for x_start in valleys:
-    x_end= x_start- math.tan(SLANT) * ccv.shape[0]
+# plt.plot(hist1, color='red', label="projection angle "+f"{SLANT1:.4f}"+" rad")  
+# plt.plot(hist2, color='green', label="projection angle "+f"{SLANT2:.4f}"+" rad")  
+# plt.scatter(valleys1, [hist1[i] for i in valleys1], color='red', marker='o', s=10)
+# plt.scatter(valleys2, [hist2[i] for i in valleys2], color='green', marker='o', s=10)
+# plt.legend()
+# plt.title("slanted projection histogram")
+    
+for x_start in valleys1:
+    x_end= x_start- math.tan(SLANT1) * ccv.shape[0]
     if (x_end>=0):
         for y_pos in range(ccv.shape[0]):
-            x_pos= int (x_start - math.tan(SLANT)*y_pos)
+            x_pos= int (x_start - math.tan(SLANT1)*y_pos)
             if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
                 if ccv[y_pos][x_pos][0] == STROKEVAL:
-                    ccv[y_pos][x_pos][2] = 240
-
+                    ccv[y_pos][x_pos][2] = FOCUSVAL
+for x_start in valleys2:
+    x_end= x_start- math.tan(SLANT2) * ccv.shape[0]
+    if (x_end>=0):
+        for y_pos in range(ccv.shape[0]):
+            x_pos= int (x_start - math.tan(SLANT2)*y_pos)
+            if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
+                if ccv[y_pos][x_pos][0] == STROKEVAL:
+                    ccv[y_pos][x_pos][1] = FOCUSVAL
 draw(ccv)
 
 ###### graph construction from line image ends here

@@ -63,7 +63,7 @@ LENGTH_MAX = 16  # Max length of the strings
 NUM_CLASSES = 40  # Number of classes
 
 # data
-source = pd.read_csv('olah.csv').drop_duplicates()
+source = pd.read_csv('syairperahu.csv').drop_duplicates()
 source = source.reset_index(drop=True)
 
 #random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
@@ -150,19 +150,30 @@ def parse_chaincode(input_string):
 
 
 def fcs_tabulate(val, string):
+    #print(f"class{val} {string}")
     appearance[val] += 1
     length = len(string)
-    unique_substrings = set()  # Use a set to store unique substrings
     
     # TODO: parse based on delta stroke
     # also: pemotongan dengan proyeksi histogram untuk potong substroke
+    substrokes= parse_chaincode(string)
+    print(f" class{val} {substrokes}") 
     
-    for i in range(length):
-        for j in range(i + 1, length + 1):
-            substring = string[i:j]
-            if len(substring) > 2 and substring not in unique_substrings:  # agar tidak overlap
-                unique_substrings.add(substring)  
-                update_rasm_score(str(val), substring)
+    unique_substrings = set()  # Use a set to store unique substrings
+    for substring in substrokes:
+        #unique_substrings.add(substring)
+        if len(substring) > LENGTH_MIN and substring not in unique_substrings:
+            #print(f"adding {substring} to {val}")
+            unique_substrings.add(substring)
+            update_rasm_score(str(val), substring)
+            
+    # sliding substing sampler, the old
+    # for i in range(length):
+    #     for j in range(i + 1, length + 1):
+    #         substring = string[i:j]
+    #         if len(substring) > 2 and substring not in unique_substrings:  # agar tidak overlap
+    #             unique_substrings.add(substring)  
+                
 
 
 fieldstring= 'rasm'

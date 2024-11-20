@@ -6,6 +6,7 @@ import random
 from scipy.signal import find_peaks
 import seaborn as sns
 from collections import defaultdict
+from matplotlib.ticker import MultipleLocator, FuncFormatter
 
 # TODO-later
 # AND-OR graph network (based on tabulated fcs?)
@@ -418,6 +419,8 @@ VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 remainder_stroke= '66676543535364667075444' # terlaLU with pruning
 remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
+
+
 def stringtorasm_MC_jagokandang(chaincode):
     remainder_stroke= chaincode
     rasm=''
@@ -425,12 +428,11 @@ def stringtorasm_MC_jagokandang(chaincode):
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         hurf_best=''
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
-        score_mc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
-        score_mc_acc = np.zeros((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
-        score_mc_mul = np.ones((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), dtype=float)
-        # if numpy 2
-        # string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype=StringDType())
-        string_mc = np.full((NUM_CLASSES, LENGTH_MIN+len_mc_max+1), "", dtype='<U20')
+        len_mc_search= LENGTH_MIN+len_mc_max+1
+        score_mc = np.zeros((NUM_CLASSES, len_mc_search), dtype=float)
+        score_mc_acc = np.zeros((NUM_CLASSES, len_mc_search), dtype=float)
+        score_mc_mul = np.ones((NUM_CLASSES, len_mc_search), dtype=float)
+        string_mc = np.full((NUM_CLASSES, len_mc_search), "", dtype='<U20')
         
         mc_retry= 0
         while(mc_retry < MC_RETRY_MAX):
@@ -442,8 +444,7 @@ def stringtorasm_MC_jagokandang(chaincode):
             if len(top_fcs[str(mc_class)]) != 0:
                 fcs_prob= 1
                 
-        # TODO: short subsequence can just be compared as is without being appended
-                for len_mc in range(LENGTH_MIN, len_mc_max+LENGTH_MIN+1):
+                for len_mc in range(LENGTH_MIN, len_mc_search):
                     while len(fcs_lookup)<=len_mc:
                         mc_index= random.randint(0, len(afcs[mc_class])-1) 
                         fcs_lookup += afcs[mc_class][mc_index]
@@ -469,8 +470,8 @@ def stringtorasm_MC_jagokandang(chaincode):
                             string_mc[int(mc_class)][len_mc]= fcs_lookup
                             #score_mc[int(mc_class)][len_mc] = score_tee
                             score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
-                        
-                mc_retry += 1 # can also be neseted one down
+                            
+                mc_retry += 1 # can also be nested one down
         
         score_mc_mul[score_mc_mul == 1.0] = 0.0
         # plot the stop selection criteria
@@ -492,38 +493,37 @@ def stringtorasm_MC_jagokandang(chaincode):
         class_best= peaks[np.argmax(row_sums)];
         max_row = tophurf[np.argmax(row_sums)]
         hurf_best= hurf[class_best]
-        len_best= np.argmax(max_row); # minimum estimate for hurf length
+        len_best= np.argmax(max_row); # minimum tentative estimate for hurf length
         
         # optimum stop-length selection
         if len_best <= LENGTH_MIN*PHI:
             len_best += LENGTH_MIN
         else:
             asymptote = np.mean(max_row[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do row value?
-            divergence_val = np.where(np.abs(max_row - asymptote) > asymptote/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
+            divergence_val = np.where(np.abs(max_row - asymptote) > asymptote/pow(PHI,4))[0][-1]
             column_variances = np.var(score_mc, axis=0)
             column_variances /= np.max(column_variances) # scale max to 1
             asymptote_var = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do variance?
             divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
             len_best= min(divergence_var, divergence_val)
             
-            from matplotlib.ticker import MultipleLocator, FuncFormatter
-            # plt.figure(dpi=300)
-            # fig, ax = plt.subplots()
-            # ax.plot(max_row, color='red', label='best-match hurf values')
-            # ax.plot(column_variances, color='blue', label='inter-hurf variance')
-            # ax.set_title(f'{remainder_stroke} ({hurf[class_best]})', fontsize=14)
-            # ax.set_xlabel('hurf character length', fontsize=12)
-            # ax.set_ylabel('normalized similarity score', fontsize=12)
-            # ax.tick_params(axis='both', which='major', labelsize=10)
-            # ax.xaxis.set_major_locator(MultipleLocator(2))
-            # ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.0f}'))
-            # ax.legend()
-            # ax.axvline(x=len_best, color='gray', linestyle='--', linewidth=1, label='divergence point')
-            # ax.annotate(f"optimum length is {len_best}", 
-            #     xy=(len_best, ax.get_ylim()[1]), 
-            #     xytext=(len_best + 0.5, ax.get_ylim()[1] * 0.3),
-            #     #arrowprops=dict(arrowstyle="->", color='black'),
-            #     fontsize=12, color='black')
+            plt.figure(dpi=300)
+            fig, ax = plt.subplots()
+            ax.plot(max_row, color='red', label='best-match hurf values')
+            ax.plot(column_variances, color='blue', label='inter-hurf variance')
+            ax.set_title(f'{remainder_stroke} ({hurf[class_best]})', fontsize=14)
+            ax.set_xlabel('hurf character length', fontsize=12)
+            ax.set_ylabel('normalized similarity score', fontsize=12)
+            ax.tick_params(axis='both', which='major', labelsize=10)
+            ax.xaxis.set_major_locator(MultipleLocator(2))
+            ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:.0f}'))
+            ax.legend()
+            ax.axvline(x=len_best, color='gray', linestyle='--', linewidth=1, label='divergence point')
+            ax.annotate(f"optimum length is {len_best}", 
+                xy=(len_best, ax.get_ylim()[1]), 
+                xytext=(len_best + 0.5, ax.get_ylim()[1] * 0.3),
+                #arrowprops=dict(arrowstyle="->", color='black'),
+                fontsize=12, color='black')
         if len_best > len(remainder_stroke):
             len_best= len(remainder_stroke)
         tee_best= remainder_stroke[:len_best]

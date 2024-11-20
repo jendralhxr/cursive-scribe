@@ -7,8 +7,8 @@ from scipy.signal import find_peaks
 import seaborn as sns
 from collections import defaultdict
 
-# TODO?
-# and-or graph network (based on tabulated fcs?)
+# TODO-later
+# AND-OR graph network (based on tabulated fcs?)
 # or perhaps a leaf node is a set of path with +/-1 variation
 
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
@@ -105,7 +105,6 @@ FCS_APPEARANCE_MIN= 2
 tokens = {f'{i}': [] for i in range(0, NUM_CLASSES)}
 appearance = np.zeros(40, dtype=float) # hurf appearance
 
-# TODO: adding more weight to longer subsequences, aiming for 4-5char long subsequences
 def update_rasm_score(hurf_class, rasm_seq):
     if hurf_class in tokens:
         for subsequence in tokens[hurf_class]:
@@ -116,6 +115,7 @@ def update_rasm_score(hurf_class, rasm_seq):
         # add new seq if not already present
         tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN)})
 
+# TODO-later: pemotongan dengan proyeksi histogram untuk potong substroke
 def parse_chaincode(input_string):
     SUBSTROKE_MIN_LENGTH= 4
     result = []
@@ -154,8 +154,6 @@ def fcs_tabulate(val, string):
     appearance[val] += 1
     length = len(string)
     
-    # TODO: parse based on delta stroke
-    # also: pemotongan dengan proyeksi histogram untuk potong substroke
     substrokes= parse_chaincode(string)
     print(f" class{val} {substrokes}") 
     
@@ -182,14 +180,13 @@ for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
     fcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(" ", "").replace("+", "").replace("-", ""))
 
-# TODO: top_LCS
+FCS_APPEARANCE_MIN= 0
 top_fcs = {}
 for hurf_class, rasm_seq in tokens.items():
     top_fcs[hurf_class] = sorted(\
         [x for x in rasm_seq if x['freq'] > FCS_APPEARANCE_MIN],
         key=lambda x: x['score'],
         reverse=True)
-
 
 # check for duplicates
 # seq_indices = defaultdict(list)
@@ -212,7 +209,8 @@ for j in range(0, NUM_CLASSES): # the hurf
             if i >= FCS_MAX_NUM:
                 break
             score_max= max(top_fcs[str(j)], key=lambda x: x['score'])['score']/appearance[j]
-            if top_fcs[str(j)][i]['score']/appearance[j] > score_max/pow(PHI,FCS_THINNING):
+            #if top_fcs[str(j)][i]['score']/appearance[j] > score_max/pow(PHI,FCS_THINNING):
+            if top_fcs[str(j)][i]['score']/appearance[j] > 0:
                 ffcs[j][i] = top_fcs[str(j)][i]['freq']/appearance[j] # apperance frequency of each substring
                 sfcs[j][i] = top_fcs[str(j)][i]['score']/appearance[j] # length-dependent score of each substring
                 afcs[j][i] = top_fcs[str(j)][i]['seq'] # the substring itself
@@ -234,7 +232,7 @@ sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=0)
 plt.title("FCS score: PHI^(len(subsequence)/2) / hurf-apperance")
-plt.savefig("/shm/heatmapLCS.png")
+plt.savefig("F://heatmapLCS.png")
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 #ax = plt.gca()
 #for tick in ax.get_yticklabels():

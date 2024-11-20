@@ -253,12 +253,12 @@ plt.ylabel("Adjusted Probability of subsequence from the kitab")
 plt.title("Subsequence Appearance Probability")
 plt.grid(True)  # Enable grid
 # the limit
-distribution_threshold = 1 - (1/PHI)
-plt.axvline(x=distribution_threshold, color='red', linestyle='--', linewidth=2)
-plt.annotate("1-(1/φ)",
-             xy=(distribution_threshold, 0),
-             xytext=(distribution_threshold + 0.05, 0.3),
-             fontsize=12, color='black')
+# distribution_threshold = 1 - (1/PHI)
+# plt.axvline(x=distribution_threshold, color='red', linestyle='--', linewidth=2)
+# plt.annotate("1-(1/φ)",
+#              xy=(distribution_threshold, 0),
+#              xytext=(distribution_threshold + 0.05, 0.3),
+#              fontsize=12, color='black')
 
 
 def myjaro(s1,s2):
@@ -474,27 +474,23 @@ def stringtorasm_MC_jagokandang(chaincode):
         
         score_mc_mul[score_mc_mul == 1.0] = 0.0
         # plot the stop selection criteria
-        draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                      +'\n'+remainder_stroke)
+        # draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        #               +'\n'+remainder_stroke)
         draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                       +'\n'+remainder_stroke)
-        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                      +'\n'+remainder_stroke)
+        # draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        #               +'\n'+remainder_stroke)
         
         # optimum class selection
-        if len(remainder_stroke) <= LENGTH_MIN*pow(PHI,2): # can be extended further
-            row_sums = np.sum(score_mc_acc, axis=1)
-            peaks= find_peaks(row_sums, threshold=np.mean(row_sums)/pow(PHI,len_mc_max))[0]
-            lookupCS = [[ lookup for lookup in string_mc[peak]] for peak in peaks]
-            tophurf = [[ max(myjaro(remainder_stroke, lookup), myjaro(reverseFreeman(remainder_stroke), lookup)) \
-                        for lookup in string_mc[peak]] for peak in peaks]
-            row_sums = np.sum(tophurf, axis=1)
-            class_best= peaks[np.argmax(row_sums)];
-            max_row = np.argmax(tophurf[np.argmax(row_sums)])
-        else:
-            row_sums = np.sum(score_mc_mul, axis=1)
-            class_best= np.argmax(row_sums);
-            max_row = score_mc[class_best]
+        row_sums = np.sum(score_mc_acc, axis=1)
+        row_sums_nonzero = [x for x in row_sums if x != 0]
+        peaks= find_peaks(row_sums, threshold=np.mean(row_sums_nonzero)/len_mc_max)[0]
+        lookupCS = [[ lookup for lookup in string_mc[peak]] for peak in peaks]
+        tophurf = [[ max(myjaro(remainder_stroke, lookup), myjaro(reverseFreeman(remainder_stroke), lookup)) \
+        for lookup in string_mc[peak]] for peak in peaks]
+        row_sums = np.sum(tophurf, axis=1)
+        class_best= peaks[np.argmax(row_sums)];
+        max_row = tophurf[np.argmax(row_sums)]
         hurf_best= hurf[class_best]
         len_best= np.argmax(max_row); # minimum estimate for hurf length
         
@@ -510,7 +506,7 @@ def stringtorasm_MC_jagokandang(chaincode):
             divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
             len_best= min(divergence_var, divergence_val)
             
-            # from matplotlib.ticker import MultipleLocator, FuncFormatter
+            from matplotlib.ticker import MultipleLocator, FuncFormatter
             # plt.figure(dpi=300)
             # fig, ax = plt.subplots()
             # ax.plot(max_row, color='red', label='best-match hurf values')

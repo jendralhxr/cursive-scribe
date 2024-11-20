@@ -63,7 +63,7 @@ LENGTH_MAX = 16  # Max length of the strings
 NUM_CLASSES = 40  # Number of classes
 
 # data
-source = pd.read_csv('syairperahu.csv').drop_duplicates()
+source = pd.read_csv('syairperahu.csv')
 source = source.reset_index(drop=True)
 
 #random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
@@ -97,7 +97,7 @@ plt.grid(True)
 quartiles = char_lengths.quantile([0.25, 0.5, 0.75])
 
 #### FCS stands for frequent common substring/subsequence/substroke
-
+# since there is preference for longest ones, it is now FLCS/LFCS
 
 FCS_MAX_NUM= 18
 FCS_APPEARANCE_MIN= 2
@@ -155,7 +155,7 @@ def fcs_tabulate(val, string):
     length = len(string)
     
     substrokes= parse_chaincode(string)
-    print(f" class{val} {substrokes}") 
+    #print(f" class{val} {substrokes}") 
     
     unique_substrings = set()  # Use a set to store unique substrings
     for substring in substrokes:
@@ -189,12 +189,16 @@ for hurf_class, rasm_seq in tokens.items():
         reverse=True)
 
 # check for duplicates
-# seq_indices = defaultdict(list)
-# for key, entries in top_fcs.items():
-#     for i, entry in enumerate(entries):
-#         #seq_indices[entry['seq']].append(key)
-#         seq_indices[entry['seq']].append(hurf[int(key)])
-# duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
+seq_indices = defaultdict(list)
+for key, entries in top_fcs.items():
+    for i, entry in enumerate(entries):
+        #seq_indices[entry['seq']].append(key)
+        seq_indices[entry['seq']].append(hurf[int(key)])
+duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
+
+# removing the duplicates
+for hurf_class, entries in top_fcs.items():
+    top_fcs[hurf_class] = [entry for entry in entries if entry['seq'] not in duplicates_fcs]
 
 FCS_THINNING= char_lengths.mode()[0] # the mode of strings length, still feels inappropriate
 
@@ -211,8 +215,8 @@ for j in range(0, NUM_CLASSES): # the hurf
             score_max= max(top_fcs[str(j)], key=lambda x: x['score'])['score']/appearance[j]
             #if top_fcs[str(j)][i]['score']/appearance[j] > score_max/pow(PHI,FCS_THINNING):
             if top_fcs[str(j)][i]['score']/appearance[j] > 0:
-                ffcs[j][i] = top_fcs[str(j)][i]['freq']/appearance[j] # apperance frequency of each substring
-                sfcs[j][i] = top_fcs[str(j)][i]['score']/appearance[j] # length-dependent score of each substring
+                ffcs[j][i] = top_fcs[str(j)][i]['freq'] # apperance frequency of each substring
+                sfcs[j][i] = top_fcs[str(j)][i]['score'] # length-dependent score of each substring
                 afcs[j][i] = top_fcs[str(j)][i]['seq'] # the substring itself
                 lfcs[j][i] = len(top_fcs[str(j)][i]['seq']) # length of each substring
 

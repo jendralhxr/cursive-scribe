@@ -816,8 +816,8 @@ def find_histogram_min(img, ANGLE):
     return projection_hist_smoothed, valleys
 
 # 1ed projection histogram for segmenting the strokes
-SLANT1= 3.1415 # 90 degree
-SLANT2= 3.1415 / pow(PHI,3)
+SLANT1= 0
+SLANT2= 3.1415 / pow(PHI,4)
 
 ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):
@@ -834,23 +834,61 @@ hist2, valleys2= find_histogram_min(ccv, SLANT2)
 # plt.scatter(valleys2, [hist2[i] for i in valleys2], color='green', marker='o', s=10)
 # plt.legend()
 # plt.title("slanted projection histogram")
+
+def find_closest_node(G, midx, midy):
+    min_distance = float('inf')
+    closest_node = None
+    for n in G.nodes:
+        pos = G.nodes[n]['pos_bitmap']
+        distance = np.sqrt((pos[0] - midx) ** 2 + (pos[1] - midy) ** 2)
+        if distance < min_distance:
+            min_distance = distance
+            closest_node = n
+    return closest_node
     
 for x_start in valleys1:
     x_end= x_start- math.tan(SLANT1) * ccv.shape[0]
     if (x_end>=0):
+        active_stroke= False
         for y_pos in range(ccv.shape[0]):
             x_pos= int (x_start - math.tan(SLANT1)*y_pos)
             if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
                 if ccv[y_pos][x_pos][0] == STROKEVAL:
                     ccv[y_pos][x_pos][2] = FOCUSVAL
+                    if active_stroke== False:
+                        active_stroke= True
+                        cut_start= (x_pos, y_pos)
+                else: 
+                    if active_stroke== True:
+                        active_stroke= False
+                        cut_end= (x_pos, y_pos)
+                        midpoint= ((cut_end[0]+cut_start[0])/2,
+                                   (cut_end[1]+cut_start[1])/2)
+                        transition_node= find_closest_node(scribe_dia, midpoint[0], midpoint[1])
+                        if scribe_dia.nodes[transition_node]['rasm']==True:
+                            scribe_dia.nodes[transition_node]['color']='#10F010'
+                    
 for x_start in valleys2:
-    x_end= x_start- math.tan(SLANT2) * ccv.shape[0]
+    x_end= x_start- math.tan(SLANT1) * ccv.shape[0]
     if (x_end>=0):
+        active_stroke= False
         for y_pos in range(ccv.shape[0]):
-            x_pos= int (x_start - math.tan(SLANT2)*y_pos)
+            x_pos= int (x_start - math.tan(SLANT1)*y_pos)
             if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
                 if ccv[y_pos][x_pos][0] == STROKEVAL:
                     ccv[y_pos][x_pos][1] = FOCUSVAL
+                    if active_stroke== False:
+                        active_stroke= True
+                        cut_start= (x_pos, y_pos)
+                else: 
+                    if active_stroke== True:
+                        active_stroke= False
+                        cut_end= (x_pos, y_pos)
+                        midpoint= ((cut_end[0]+cut_start[0])/2,
+                                   (cut_end[1]+cut_start[1])/2)
+                        transition_node= find_closest_node(scribe_dia, midpoint[0], midpoint[1])
+                        if scribe_dia.nodes[transition_node]['rasm']==True:
+                            scribe_dia.nodes[transition_node]['color']='#10A010'
 draw(ccv)
 
 ###### graph construction from line image ends here

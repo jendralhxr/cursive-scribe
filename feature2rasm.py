@@ -818,6 +818,9 @@ def find_histogram_min(img, ANGLE):
 # slanted projection histogram for segmenting the strokes
 SLANT1= 0
 SLANT2= 3.1415 / pow(PHI,3)
+COLOR_TRANS1='#10F010'
+COLOR_TRANS2='#10A010'
+
 
 ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):
@@ -866,7 +869,7 @@ for x_start in valleys1:
                                    (cut_end[1]+cut_start[1])/2)
                         transition_node= find_closest_node(scribe_dia, midpoint[0], midpoint[1])
                         if scribe_dia.nodes[transition_node]['rasm']==True:
-                            scribe_dia.nodes[transition_node]['color']='#10F010'
+                            scribe_dia.nodes[transition_node]['color']=COLOR_TRANS1
                     
 for x_start in valleys2:
     x_end= x_start- math.tan(SLANT2) * ccv.shape[0]
@@ -888,7 +891,7 @@ for x_start in valleys2:
                                    (cut_end[1]+cut_start[1])/2)
                         transition_node= find_closest_node(scribe_dia, midpoint[0], midpoint[1])
                         if scribe_dia.nodes[transition_node]['rasm']==True:
-                            scribe_dia.nodes[transition_node]['color']='#10A010'
+                            scribe_dia.nodes[transition_node]['color']=COLOR_TRANS2
 
 draw(ccv)
 

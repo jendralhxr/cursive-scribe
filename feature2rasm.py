@@ -817,7 +817,7 @@ def find_histogram_min(img, ANGLE):
 
 # slanted projection histogram for segmenting the strokes
 SLANT1= 0
-SLANT2= 3.1415 / pow(PHI,4)
+SLANT2= 3.1415 / pow(PHI,3)
 
 ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):

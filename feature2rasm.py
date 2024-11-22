@@ -630,7 +630,7 @@ def prune_edges(graph, hop):
                     G.remove_edge(u, v)
     return(G)
 
-#scribe= prune_edges(scribe, 3)
+scribe= prune_edges(scribe, 3)
 #scribe= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
 
 def hex_or(color1, color2):
@@ -815,12 +815,14 @@ def find_histogram_min(img, ANGLE):
     
     return projection_hist_smoothed, valleys
 
+# TODO: PRUNING! 
+scribe_dia= prune_edges(scribe, 3)
+
 # slanted projection histogram for segmenting the strokes
 SLANT1= 0
 SLANT2= 3.1415 / pow(PHI,3)
 COLOR_TRANS1='#10F010'
 COLOR_TRANS2='#10A010'
-
 
 ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
 for n in range(len(components)):
@@ -868,7 +870,8 @@ for x_start in valleys1:
                         midpoint= ((cut_end[0]+cut_start[0])/2,
                                    (cut_end[1]+cut_start[1])/2)
                         transition_node= find_closest_node(scribe_dia, midpoint[0], midpoint[1])
-                        if scribe_dia.nodes[transition_node]['rasm']==True:
+                        if scribe_dia.nodes[transition_node]['rasm']==True and scribe_dia.nodes[transition_node]['color'] != '#F00000'\
+                            and len(list(scribe_dia.neighbors(transition_node)))>=2:
                             scribe_dia.nodes[transition_node]['color']=COLOR_TRANS1
                     
 for x_start in valleys2:
@@ -890,7 +893,8 @@ for x_start in valleys2:
                         midpoint= ((cut_end[0]+cut_start[0])/2,
                                    (cut_end[1]+cut_start[1])/2)
                         transition_node= find_closest_node(scribe_dia, midpoint[0], midpoint[1])
-                        if scribe_dia.nodes[transition_node]['rasm']==True:
+                        if scribe_dia.nodes[transition_node]['rasm']==True and scribe_dia.nodes[transition_node]['color'] != '#F00000'\
+                            and len(list(scribe_dia.neighbors(transition_node)))>=2:
                             scribe_dia.nodes[transition_node]['color']=COLOR_TRANS2
 
 draw(ccv)
@@ -970,8 +974,7 @@ def bfs_with_closest_priority(G, start_node):
                     heapq.heappush(priority_queue, (distance, neighbor))
                     edges.append((current_node, neighbor))
     
-    #return visited # if handling the nodes
-    return edges # if handling the edges
+    return visited, edges # if handling the edges
 
 # drawing the rasm graph
 from PIL import ImageFont, ImageDraw, Image
@@ -985,7 +988,7 @@ for i in range(len(components)):
 
         # path finding along rasm
         node_start= components[i].node_start
-        path = list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start))
+        visited_nodes, path = list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start))
         remainder_stroke= path_vane_edges(scribe_dia, path)
         if len(remainder_stroke) >2:
             print(remainder_stroke)
@@ -1015,7 +1018,7 @@ for i in range(len(components)):
         # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
     
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, 'F://'+graphfile, None)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 
 
 # # ##################################

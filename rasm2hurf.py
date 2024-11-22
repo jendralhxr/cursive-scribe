@@ -149,7 +149,6 @@ def parse_chaincode(input_string):
 
     return result
 
-
 def fcs_tabulate(val, string):
     #print(f"class{val} {string}")
     appearance[val] += 1

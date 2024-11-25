@@ -605,15 +605,20 @@ for k in range(len(components)):
                     filled[i]= True
                 # this is for 2+alpha
                 if (i==2) or \
-                   (i==1 and scribe.has_edge(ndst[2],ndst[1])==False ) or \
+                   (i==1 and scribe.has_edge(ndst[2],ndst[1])==False) or \
                    (i==0 and scribe.has_edge(ndst[2],ndst[0])==False and scribe.has_edge(ndst[1],ndst[0])==False):
                     scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane)
                     #print(f'{m} to {ndst[i]}: {ndist[i]}')            
                 if filled[2]==False and filled[1]==False and i==(3-RASM_EDGE_MAXDEG):
                     break
-                    
-# draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/withedges.png', None)
-
+        # some initial pruning
+        if scribe.has_edge(m, ndst[1]) and scribe.has_edge(ndst[2],ndst[1]):
+            #print(f'hapus {m} to {ndst[1]}')            
+            scribe.remove_edge(m, ndst[1])
+        if scribe.has_edge(m, ndst[0]) and (scribe.has_edge(ndst[2],ndst[0]) or scribe.has_edge(ndst[1],ndst[0])):
+            #print(f'hapus {m} to {ndst[0]}')            
+            scribe.remove_edge(m, ndst[0])
+        
 def prune_edges(graph, hop):
     G= graph.copy()
     temp= G.copy()
@@ -630,8 +635,16 @@ def prune_edges(graph, hop):
                     G.remove_edge(u, v)
     return(G)
 
+draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/prune1.png', None)
+prun= prune_edges(scribe, 2)
+draw_graph_edgelabel(prun, 'pos_render', 8, '/shm/prune1.png', None)
+krus= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
+draw_graph_edgelabel(krus, 'pos_render', 8, '/shm/kruskal.png', None)
+
 scribe= prune_edges(scribe, 3)
 #scribe= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
+# scribe= prune_edges(scribe, 3)
+# scribe.number_of_nodes()
 
 def hex_or(color1, color2):
     int1 = int(color1.lstrip('#'), 16)

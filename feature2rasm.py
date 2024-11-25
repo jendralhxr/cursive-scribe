@@ -615,10 +615,10 @@ for k in range(len(components)):
                     break
         # some initial pruning
         if scribe.has_edge(m, ndst[1]) and scribe.has_edge(ndst[2],ndst[1]):
-            print(f'hapus {m} to {ndst[1]}')            
+            # print(f'hapus {m} to {ndst[1]}')            
             scribe.remove_edge(m, ndst[1])
         if scribe.has_edge(m, ndst[0]) and (scribe.has_edge(ndst[2],ndst[0]) or scribe.has_edge(ndst[1],ndst[0])):
-            print(f'hapus {m} to {ndst[0]}')            
+            # print(f'hapus {m} to {ndst[0]}')            
             scribe.remove_edge(m, ndst[0])
         
 def prune_edges(graph, hop):
@@ -637,15 +637,12 @@ def prune_edges(graph, hop):
                     G.remove_edge(u, v)
     return(G)
 
-prun= prune_edges(scribe, 2)
-draw_graph_edgelabel(prun, 'pos_render', 8, '/shm/prune2.png', None)
+prun2= prune_edges(scribe, 2)
+draw_graph_edgelabel(prun2, 'pos_render', 8, '/shm/prune2.png', None)
 krus= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
 draw_graph_edgelabel(krus, 'pos_render', 8, '/shm/kruskal.png', None)
-scribe= prune_edges(scribe, 3)
-draw_graph_edgelabel(krus, 'pos_render', 8, '/shm/kruskal.png', None)
-
-#scribe= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
-# scribe= prune_edges(scribe, 3)
+prun3= prune_edges(scribe, 3)
+draw_graph_edgelabel(krus, 'pos_render', 8, '/shm/prun3.png', None)
 # scribe.number_of_nodes()
 
 def hex_or(color1, color2):

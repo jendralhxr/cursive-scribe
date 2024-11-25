@@ -574,11 +574,13 @@ for k in range(len(components)):
         ndst= [-1, -1, -1]
         for n in components[k].nodes:
             dst= scribe.nodes[n]
-            cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
+            cdist= pdistance(pos[m], pos[n])
             if (m!=n):
                 linepart= line_iterator(stroke, src['pos_bitmap'], dst['pos_bitmap'])
+                # print(f"{m} to {n}: {linepart}")
             # add the checking for line segment
             if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)*2 and linepart > pow(PHI, -PHI):
+                # print(f'ada yang cocok {m} {n}')
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]
@@ -613,10 +615,10 @@ for k in range(len(components)):
                     break
         # some initial pruning
         if scribe.has_edge(m, ndst[1]) and scribe.has_edge(ndst[2],ndst[1]):
-            #print(f'hapus {m} to {ndst[1]}')            
+            print(f'hapus {m} to {ndst[1]}')            
             scribe.remove_edge(m, ndst[1])
         if scribe.has_edge(m, ndst[0]) and (scribe.has_edge(ndst[2],ndst[0]) or scribe.has_edge(ndst[1],ndst[0])):
-            #print(f'hapus {m} to {ndst[0]}')            
+            print(f'hapus {m} to {ndst[0]}')            
             scribe.remove_edge(m, ndst[0])
         
 def prune_edges(graph, hop):
@@ -635,13 +637,13 @@ def prune_edges(graph, hop):
                     G.remove_edge(u, v)
     return(G)
 
-draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/prune1.png', None)
 prun= prune_edges(scribe, 2)
-draw_graph_edgelabel(prun, 'pos_render', 8, '/shm/prune1.png', None)
+draw_graph_edgelabel(prun, 'pos_render', 8, '/shm/prune2.png', None)
 krus= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
 draw_graph_edgelabel(krus, 'pos_render', 8, '/shm/kruskal.png', None)
-
 scribe= prune_edges(scribe, 3)
+draw_graph_edgelabel(krus, 'pos_render', 8, '/shm/kruskal.png', None)
+
 #scribe= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
 # scribe= prune_edges(scribe, 3)
 # scribe.number_of_nodes()

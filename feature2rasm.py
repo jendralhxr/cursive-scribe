@@ -654,10 +654,10 @@ for k in range(len(components)):
                     ndst[0]= n
     
         if scribe.has_edge(m, ndst[1]) and scribe.has_edge(ndst[2],ndst[1]):
-            print(f'hapus2 {m} to {ndst[1]}')            
+            # print(f'hapus2 {m} to {ndst[1]}')            
             scribe.remove_edge(m, ndst[1])
         if scribe.has_edge(m, ndst[0]) and (scribe.has_edge(ndst[2],ndst[0]) or scribe.has_edge(ndst[1],ndst[0])):
-            print(f'hapus2 {m} to {ndst[0]}')            
+            # print(f'hapus2 {m} to {ndst[0]}')            
             scribe.remove_edge(m, ndst[0])
 
         
@@ -677,13 +677,9 @@ def prune_edges(graph, hop):
                     G.remove_edge(u, v)
     return(G)
 
-draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/scribe.png', None)
-prun2= prune_edges(scribe, 2)
-draw_graph_edgelabel(prun2, 'pos_render', 8, '/shm/prune2.png', None)
-krus= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
-draw_graph_edgelabel(krus, 'pos_render', 8, '/shm/kruskal.png', None)
-prun3= prune_edges(scribe, 3)
-draw_graph_edgelabel(krus, 'pos_render', 8, '/shm/prun3.png', None)
+# draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/scribe.png', None)
+# krus= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
+# prun3= prune_edges(scribe, 3)
 # scribe.number_of_nodes()
 
 def hex_or(color1, color2):
@@ -699,6 +695,7 @@ def hex_and(color1, color2):
     return int1 & int2
 
 degree_rasm= scribe.degree()
+
 scribe_dia= scribe.copy()
 baseline_pos= np.mean(np.array([value[1] for value in pos.values()]))
 
@@ -988,11 +985,12 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
         # vane code
         src= n[0]
         dst= n[1]
-        tvane= freeman(pos[dst][0]-pos[src][0], -(pos[dst][1]-pos[src][1]))
-        G.edges[n]['vane']=tvane
-        if (G.edges[n]['color']=='#00FF00'): # main stroke
-            pathstring+=str(tvane)
-        
+        if G.has_edge(n): # ideally not necessary
+            tvane= freeman(pos[dst][0]-pos[src][0], -(pos[dst][1]-pos[src][1]))
+            G.edges[n]['vane']=tvane
+            if (G.edges[n]['color']=='#00FF00'): # main stroke
+                pathstring+=str(tvane)
+            
         mark= ''
         if src not in visited:
             mark= find_diacritics_edges(G, src)

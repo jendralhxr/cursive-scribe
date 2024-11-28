@@ -865,9 +865,6 @@ def find_histogram_min(img, ANGLE):
     
     return projection_hist_smoothed, valleys
 
-# TODO: PRUNING! 
-scribe_dia= prune_edges(scribe, 3)
-
 # slanted projection histogram for segmenting the strokes
 SLANT1= 0
 SLANT2= 3.1415 / pow(PHI,3)
@@ -982,10 +979,10 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
     visited=[]    
     pathstring=''
     for n in path:
-        # vane code
-        src= n[0]
-        dst= n[1]
-        if G.has_edge(n): # ideally not necessary
+        if G.has_edge(n[0], n[1]): # ideally not necessary
+            # vane code
+            src= n[0]
+            dst= n[1]
             tvane= freeman(pos[dst][0]-pos[src][0], -(pos[dst][1]-pos[src][1]))
             G.edges[n]['vane']=tvane
             if (G.edges[n]['color']=='#00FF00'): # main stroke

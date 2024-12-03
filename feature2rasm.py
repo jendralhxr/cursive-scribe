@@ -905,6 +905,7 @@ for x_start in valleys1:
         for y_pos in range(ccv.shape[0]):
             x_pos= int (x_start - math.tan(SLANT1)*y_pos)
             if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
+                ccv[y_pos][x_pos][2] = STROKEVAL
                 if ccv[y_pos][x_pos][0] == STROKEVAL:
                     ccv[y_pos][x_pos][2] = FOCUSVAL
                     if active_stroke== False:
@@ -928,6 +929,7 @@ for x_start in valleys2:
         for y_pos in range(ccv.shape[0]):
             x_pos= int (x_start - math.tan(SLANT2)*y_pos)
             if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
+                ccv[y_pos][x_pos][1] = STROKEVAL
                 if ccv[y_pos][x_pos][0] == STROKEVAL:
                     ccv[y_pos][x_pos][1] = FOCUSVAL
                     if active_stroke== False:

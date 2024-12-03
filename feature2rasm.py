@@ -620,46 +620,53 @@ for k in range(len(components)):
         if scribe.has_edge(m, ndst[0]) and (scribe.has_edge(ndst[2],ndst[0]) or scribe.has_edge(ndst[1],ndst[0])):
             #print(f'hapus {m} to {ndst[0]}')            
             scribe.remove_edge(m, ndst[0])
+            
+#draw_graph_edgelabel(scribe, 'pos_render', 8, 'F://beforeprune.png', None)
 
-# rescan for more purning, no
-for k in range(len(components)):
-    for m in components[k].nodes:
-        scribe.nodes[m]['component_id']=k
-        src= scribe.nodes[m]
-        ndist=[1e9, 1e9, 1e9]
-        ndst= [-1, -1, -1]
-        for n in components[k].nodes:
-            dst= scribe.nodes[n]
-            cdist= pdistance(pos[m], pos[n])
-            if (m!=n):
-                linepart= line_iterator(stroke, src['pos_bitmap'], dst['pos_bitmap'])
-                # print(f"{m} to {n}: {linepart}")
-            # add the checking for line segment
-            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)*2 and linepart > pow(PHI, -PHI):
-                # print(f'ada yang cocok {m} {n}')
-                if cdist<ndist[2]: # #1 shortest
-                    ndist[0]= ndist[1]
-                    ndist[1]= ndist[2]
-                    ndist[2]= cdist
-                    ndst[0]= ndst[1]
-                    ndst[1]= ndst[2]
-                    ndst[2]= n
-                elif cdist>=ndist[2] and cdist<=ndist[1]:
-                    ndist[0]= ndist[1]
-                    ndist[1]= cdist
-                    ndst[0]= ndst[1]
-                    ndst[1]= n
-                elif cdist<ndist[0]:
-                    ndist[0]= cdist
-                    ndst[0]= n
+# # rescan for more purning, no
+# for k in range(len(components)):
+#     for m in components[k].nodes:
+#         #scribe.nodes[m]['component_id']=k
+#         src= scribe.nodes[m]
+#         ndist=[1e9, 1e9, 1e9]
+#         ndst= [-1, -1, -1]
+#         nvane= [-1, -1, -1]
+#         for n in components[k].nodes:
+#             dst= scribe.nodes[n]
+#             cdist= pdistance(pos[m], pos[n])
+#             if (m!=n):
+#                 linepart= line_iterator(stroke, src['pos_bitmap'], dst['pos_bitmap'])
+#                 # print(f"{m} to {n}: {linepart}")
+#             # add the checking for line segment
+#             if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)*2 and linepart > pow(PHI, -PHI):
+#                 # print(f'ada yang cocok {m} {n}')
+#                 if cdist<ndist[2]: # #1 shortest
+#                     ndist[0]= ndist[1]
+#                     ndist[1]= ndist[2]
+#                     ndist[2]= cdist
+#                     ndst[0]= ndst[1]
+#                     ndst[1]= ndst[2]
+#                     ndst[2]= n
+#                     nvane[2]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
+#                 elif cdist>=ndist[2] and cdist<=ndist[1]:
+#                     ndist[0]= ndist[1]
+#                     ndist[1]= cdist
+#                     ndst[0]= ndst[1]
+#                     ndst[1]= n
+#                     nvane[1]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
+#                 elif cdist<ndist[0]:
+#                     ndist[0]= cdist
+#                     ndst[0]= n
+#                     nvane[0]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
     
-        if scribe.has_edge(m, ndst[1]) and scribe.has_edge(ndst[2],ndst[1]):
-            # print(f'hapus2 {m} to {ndst[1]}')            
-            scribe.remove_edge(m, ndst[1])
-        if scribe.has_edge(m, ndst[0]) and (scribe.has_edge(ndst[2],ndst[0]) or scribe.has_edge(ndst[1],ndst[0])):
-            # print(f'hapus2 {m} to {ndst[0]}')            
-            scribe.remove_edge(m, ndst[0])
-
+#         if scribe.has_edge(m, ndst[2]) and scribe.has_edge(m, ndst[1]) and scribe.has_edge(ndst[2],ndst[1]) and\
+#             nvane[2]==nvane[1] and nvane[1]==nvane[2]:
+#             # print(f'hapus2 {m} to {ndst[1]}')            
+#             scribe.remove_edge(m, ndst[1])
+#         # if scribe.has_edge(m, ndst[0]) and (scribe.has_edge(ndst[2],ndst[0]) or scribe.has_edge(ndst[1],ndst[0])):
+#         #     # print(f'hapus2 {m} to {ndst[0]}')            
+#         #     scribe.remove_edge(m, ndst[0])
+# draw_graph_edgelabel(scribe, 'pos_render', 8, 'F://afterprune.png', None)
         
 def prune_edges(graph, hop):
     G= graph.copy()
@@ -1068,7 +1075,7 @@ for i in range(len(components)):
         # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
     
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, 'F://'+graphfile, None)
 
 
 # # ##################################

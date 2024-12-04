@@ -964,22 +964,22 @@ for x_start in valleys2:
                             and len(list(scribe_dia.neighbors(transition_node)))>=2:
                             scribe_dia.nodes[transition_node]['color']=COLOR_TRANS2
 
-draw(ccv)
+#draw(ccv)
 
 green_ccv = ccv[:, :, 1]
 green_only = np.where(green_ccv >= MEDVAL , THREVAL, 0).astype(np.uint8)
 ccv2= np.zeros(ccv.shape, dtype=np.uint8)
 ccv2[:, :, 1]= green_only
-shade= np.random.randint(10)*15
+shade= THREVAL+ np.random.randint(12)*5
 midline= int(ccv2.shape[0]/2)
 for x in range(ccv2.shape[1]):
     if ccv2[midline][x][1]== 0:
         cv.floodFill(ccv2, None, (x,midline), (0,shade,0), loDiff=(5), upDiff=(5))    
     if ccv2[midline][x][1]== THREVAL:
-        shade= THREVAL+ np.random.randint(10)*15
+        shade= THREVAL+ np.random.randint(12)*5
 ccv_hl= ccv.copy()
 ccv_hl[:, :, 1]= ccv2[:, :, 1]
-draw(ccv_hl)   
+#draw(ccv_hl)   
  
 ###### graph construction from line image ends here
 ###### ----------------------------------------------------

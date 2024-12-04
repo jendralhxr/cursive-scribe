@@ -50,7 +50,8 @@ RASM_EDGE_MAXDEG= 2
 RASM_CANDIDATE= SLIC_SPACE
 
 THREVAL= 60
-STROKEVAL= 160
+STROKEVAL= 120
+MEDVAL= 180
 FOCUSVAL= 240
 CHANNEL= 2
 
@@ -631,7 +632,7 @@ for k in range(len(components)):
             # print(f'hapus2 {m} to {ndst[0]}')            
             scribe.remove_edge(m, ndst[0])
             
-draw_graph_edgelabel(scribe, 'pos_render', 8, 'F://2plusalpha.png', None)
+#draw_graph_edgelabel(scribe, 'pos_render', 8, '2plusalpha.png', None)
 
 # # rescan for more purning, no
 # for k in range(len(components)):
@@ -863,7 +864,6 @@ from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
 
 def find_histogram_min(img, ANGLE):
-    
     projection_hist= np.zeros(img.shape[1], np.uint8)
     for x in range(img.shape[1]-1,0,-1):
         x_start= x
@@ -923,7 +923,7 @@ for x_start in valleys1:
         for y_pos in range(ccv.shape[0]):
             x_pos= int (x_start - math.tan(SLANT1)*y_pos)
             if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
-                ccv[y_pos][x_pos][2] = STROKEVAL
+                ccv[y_pos][x_pos][2] = MEDVAL
                 if ccv[y_pos][x_pos][0] == STROKEVAL:
                     ccv[y_pos][x_pos][2] = FOCUSVAL
                     if active_stroke== False:
@@ -947,7 +947,7 @@ for x_start in valleys2:
         for y_pos in range(ccv.shape[0]):
             x_pos= int (x_start - math.tan(SLANT2)*y_pos)
             if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
-                ccv[y_pos][x_pos][1] = STROKEVAL
+                ccv[y_pos][x_pos][1] = MEDVAL
                 if ccv[y_pos][x_pos][0] == STROKEVAL:
                     ccv[y_pos][x_pos][1] = FOCUSVAL
                     if active_stroke== False:
@@ -966,6 +966,21 @@ for x_start in valleys2:
 
 draw(ccv)
 
+green_ccv = ccv[:, :, 1]
+green_only = np.where(green_ccv >= MEDVAL , THREVAL, 0).astype(np.uint8)
+ccv2= np.zeros(ccv.shape, dtype=np.uint8)
+ccv2[:, :, 1]= green_only
+shade= np.random.randint(10)*15
+midline= int(ccv2.shape[0]/2)
+for x in range(ccv2.shape[1]):
+    if ccv2[midline][x][1]== 0:
+        cv.floodFill(ccv2, None, (x,midline), (0,shade,0), loDiff=(5), upDiff=(5))    
+    if ccv2[midline][x][1]== THREVAL:
+        shade= THREVAL+ np.random.randint(10)*15
+ccv_hl= ccv.copy()
+ccv_hl[:, :, 1]= ccv2[:, :, 1]
+draw(ccv_hl)   
+ 
 ###### graph construction from line image ends here
 ###### ----------------------------------------------------
 ###### path finding routines starts here

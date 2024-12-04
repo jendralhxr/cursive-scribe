@@ -236,7 +236,7 @@ sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws
 plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=0)
 plt.title("FCS score: PHI^(len(subsequence)/2) / hurf-apperance")
-plt.savefig("/shm/heatmapLCS.png")
+#plt.savefig("/shm/heatmapLCS.png")
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 #ax = plt.gca()
 #for tick in ax.get_yticklabels():

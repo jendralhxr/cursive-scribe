@@ -727,7 +727,7 @@ for k in range(len(components)):
     # large size
     # more likely to be close to or intersecting the baseline
     if  intersect==True and \
-        len(components[22].nodes) >= 2 and \
+        len(components[k].nodes) >= 2 and \
         components[k].area>pow(SLIC_SPACE,2)*pow(PHI,4): \
         #or (abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,3) and components[k].area>pow(SLIC_SPACE,2)*pow(PHI,3)): 
         

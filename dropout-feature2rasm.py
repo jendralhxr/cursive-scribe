@@ -5,9 +5,10 @@ import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
-import sys
+# import sys
 import math
 import heapq
+# import csv
 
 # freeman code going anti-clockwise like trigonometrics angle
 #    3   2   1
@@ -50,8 +51,7 @@ RASM_EDGE_MAXDEG= 2
 RASM_CANDIDATE= SLIC_SPACE
 
 THREVAL= 60
-STROKEVAL= 120
-MEDVAL= 180
+STROKEVAL= 160
 FOCUSVAL= 240
 CHANNEL= 2
 
@@ -72,11 +72,11 @@ imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
 image= resz.copy()
-image=  cv.bitwise_not(image)
+# image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
 
-image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+grayImg= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 image_gray= image[:,:,CHANNEL]
 _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #_, gray= cv.threshold(selective_eroded, 0, THREVAL, cv.THRESH_TRIANGLE) # works better with dynamic-selective erosion
@@ -151,13 +151,247 @@ scribe= nx.Graph() # start anew, just in case
 
 # valid superpixel
 filled=0
+
+
+from skimage.morphology import skeletonize
+#angle histogram
+#We use a filter to blur out the noise from the image.
+gaussianFilter = cv.GaussianBlur(grayImg, (5,5), 0) #grayImg,(5,5)
+plt.imshow(gaussianFilter, cmap="gray")
+cv.imwrite("GaussianFilter.png", gaussianFilter)
+
+#binarize and invert the image.  # gaussianFilter
+# _, binarizedImg = cv2.threshold(gaussianFilter, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+_, binarizedImg = cv.threshold(gaussianFilter, 0, 180, cv.THRESH_BINARY | cv.THRESH_OTSU)
+
+# plt.imshow(binarizedImg, cmap="gray")
+cv.imwrite("binarizedImg.png", binarizedImg)
+
+binarizedImg[binarizedImg < 180] = 0 #1
+binarizedImg[binarizedImg > 180] = 1 #0
+# Taking a matrix of size 5 as the kernel 
+kernel = np.ones((5, 5), np.uint8) 
+# #Erosion using skeletonize
+skeletonImg = skeletonize(binarizedImg)
+# cv.imwrite("skeletonImg.png", skeletonImg)
+plt.imshow(skeletonImg, cmap="gray")
+plt.savefig("skeletonImg.png", dpi=300)
+
+
+list_space_angle_start = []
+list_space_angle_end = []
+print("width ",width)
+step = -0.48
+
+def search_list_area() : #cari list angle sebelum gambar diputar
+    # titik_random = point  #misal area yg dipilih
+    count_contigu = 0 
+    before = (-1,-1)
+    j= width -1   #memotong sumbu x : x = -c/m untuk y = 0, c = -192
+    while j < (width) and j> 0 :
+        j-=1
+        k3 = j
+        k4 = 0
+        sum = 0 
+        # count +=1
+        while k4 < (height-1)  and k3 >-1: #and count <20:       
+            k3 = round(k3 + (1/step))  #k3-1
+            k4 = k4+1 #int(round(k4-step))        
+            # print("saja k3,k4 ",k3,k4)
+            #nanti for loop titik random ada banyak, batas1_x ada banyak(append)
+            # if k4==titik_random[1] and k3==titik_random[0] :
+                #ambil batas area yg sebelumnya: list_split_angle_start[-1][0]
+                # if len(list_space_angle_start)>0 :
+                #     batas1_x = list_space_angle_start[-1][0]
+                # else : #ambil width
+                #     batas1_x = width
+                # print("batas1_x ",batas1_x)
+                
+            try :
+                sum = sum + skeletonImg[k4,k3] #skeletonImg
+                # print("k3,k4 ",k3,k4,skeletonImg[k4,k3],sum) #skeletonImg
+            except: print()
+        # arr_sum.append(sum)
+        
+        if sum==0 : 
+            if before[0]==(j+1) or before[0]==(j+2) or before[0]==(j+3) or before[0]==(j+4) :
+                count_contigu +=1
+                if count_contigu > 0 :  #jika ada beberapa berdampingan, dipilih yg contigu
+                    if  len(list_space_angle_start)>0 :  #jika sudah ada list berdampingan
+                        # if list_split[-1][0]!=(j+1) and  list_split[-1][0]!=(j+2) and list_split[-1][0]!=(j+3) and list_split[-1][0]!=(j+4) : #jika elemen list terakhir tidak sama dg j+1
+                        if list_space_angle_start[-1][0] - j >  5 :
+                            # list_split.append((j,0)) #add baru
+                            list_space_angle_start.append((j,0))
+                            list_space_angle_end.append((k3,k4))
+                        # elif list_split[-1][0]==(j+1) or list_split[-1][0]==(j+2) or list_split[-1][0]==(j+3) or list_split[-1][0]==(j+4) :    
+                        #elif list_split[-1][0] - j <= 13 :    
+                        else  :
+                            #jika elemen list terakhir sama dg j+1, atau berurutan, atau j+2,j+3,j+4
+                            # list_split[-1]=(j,0)  #update j yg terakhir , untuk yg berdampingan sela 0,1,2,3,4
+                            list_space_angle_start[-1]=(j,0)
+                            list_space_angle_end[-1]=(k3,k4)                           
+                    else :
+                        # list_split.append((j,0))
+                        list_space_angle_start.append((j,0))
+                        list_space_angle_end.append((k3,k4))
+                    # print(list_split," lstsplt ")
+            else:
+                count_contigu =0
+            #if count_contigu == 0 :
+            before = (j,0)
+            
+            # print(count_contigu," countigu ", before)
+            
+            # print(count,"########",j,k3,k4)
+              #tidak dipilih
+    if (len(list_space_angle_start)>0) :
+        dy = list_space_angle_end[0][0] - list_space_angle_start[0][0] 
+        dx = list_space_angle_end[0][1] - list_space_angle_start[0][1]
+        global deg
+        deg =-1 * int(np.rad2deg(  np.arctan((dy)/dx)) )
+    
+    global rotated
+    rotated = imutils.rotate_bound(image, -deg)
+    
+
+    for r in range (len(list_space_angle_start)) :
+        
+        x3_end = (list_space_angle_end[r][0] - center[0]) * np.cos(deg/180*np.pi)
+        
+        x3 = (list_space_angle_start[r][0] - center[0]) * np.cos(deg/180*np.pi)
+
+        x4_end = -1*( list_space_angle_end[r][1] - center[1])
+
+        x4 = -1*(list_space_angle_start[r][1] - center[1])
+
+        x5_end = x4_end * np.sin(deg/180*np.pi)
+        x5 = x4 * np.sin(deg/180*np.pi)
+
+        x6_end = x3_end-x5_end
+        x6 = x3-x5
+        # print("x3=list_space_angle_start[r][0] - center[0]) * np.sin(deg/180*np.pi)",list_space_angle_start[r][0], center[0], np.sin(deg/180*np.pi))
+        x33 = (list_space_angle_start[r][0] - center[0]) * np.sin(deg/180*np.pi)
+
+        x33_end = (list_space_angle_end[r][0] - center[0]) * np.sin(deg/180*np.pi)
+        # print("x3_end =list_space_angle_end[r][0] - center[0]) * np.sin(deg/180*np.pi)",list_space_angle_end[r][0], center[0], np.sin(deg/180*np.pi))
+
+        x55 = -1*(list_space_angle_start[r][1] - center[1]) * np.cos(deg/180*np.pi)
+        x55_end = -1*(list_space_angle_end[r][1] - center[1]) * np.cos(deg/180*np.pi)
+
+        # print("x55_end=list_space_angle_end[r][1] + center[1]) * np.cos(deg/180*np.pi)", list_space_angle_end[r][1] , center[1], np.sin(deg/180*np.pi))
+         # * np.sin(deg/180*np.pi)
+        y6_end = x33_end + x55_end 
+        y6 = x33 + x55 
+
+        x7_end = x6_end + 0.5 * rotated.shape[1]
+        x7 = x6 + 0.5 * rotated.shape[1]
+
+        y7_end = 0.5 * rotated.shape[0] - y6_end
+        y7 = 0.5 * rotated.shape[0] - y6
+
+        # x7 = x6 + 0.5 * rotated.shape[1]
+        # y7 = 0.5 * rotated.shape[0] - y6
+        
+        
+        # print("x6_end ",x6_end,r)
+        # print("x7  ",x7,r)
+        # print("x7 end ",x7_end,r)
+        # print("y6_end ",y6_end,r)
+        # print("y7 ",y7,r)
+        # print("y7 end ",y7_end,r)
+        # print("x3_end ",x3_end)
+        # print("x4_end ",x4_end)
+        # print("x33_end ",x33_end)
+        # print("x4_end ",x4_end)
+        # print("x5_end ",x5_end)
+        # # print("x44_end ",x44_end,r)
+        # print("x55_end ",x55_end,r)
+       
+
+        rot_pos.append((x7,y7)) #kumpulan titik hasil rotasi
+        rot_pos_end.append((x7_end,y7_end)) #kumpulan titik hasil rotasi
+        # rot_y.append(y7)
+
+
+# batas1_x =0
+
+import imutils
+center =   (width/2, height/2) #(0, 0)
+rot_pos = []
+rot_pos_end = []
+
+def search_area(point) : #(x,y) sebelum gambar diputar, untuk satu point saja
+
+
+    # titik_random = point  #misal area yg dipilih
+        #found batas1 ada di range mana dari list_space_angle_start
+    index_batas1 =-2 #untuk masing2 node
+    print("point ",point) #(241, 53) ############## sebelum diputar
+    x3p = (point[0] - center[0]) * np.cos(deg/180*np.pi)
+    
+    print(f"x3p= {point[0]} - {center[0]}) * {np.cos(deg/180*np.pi)}")
+       
+    x4p = -1*(point[1] - center[1])
+
+    x5p = x4p * np.sin(deg/180*np.pi)
+
+    x6p = x3p-x5p
+    x33p = (point[0] - center[0]) * np.sin(deg/180*np.pi)
+
+    print(f"x33p ={point[0]} - {center[0]}) * {np.sin(deg/180*np.pi)}")
+
+    x55p = -1*(point[1] - center[1]) * np.cos(deg/180*np.pi)
+    
+    # print("x55_end=list_space_angle_end[r][1] + center[1]) * np.cos(deg/180*np.pi)", list_space_angle_end[r][1] , center[1], np.sin(deg/180*np.pi))
+     # * np.sin(deg/180*np.pi)
+    y6p = x33p + x55p 
+
+    x7p = x6p + 0.5 * rotated.shape[1]
+    y7p = 0.5 * rotated.shape[0] - y6p
+
+    print(f"x7p , y7p, {x7p},{y7p}")
+    
+    
+    
+    
+    
+    
+    if x7p <=  rot_pos[0][0] :  #masuk area
+        for s in range(len(rot_pos)-1):   #241 < 332 and 241> 226
+            if  x7p <= rot_pos[s][0] and x7p > rot_pos[s+1][0]:
+                #update batas atas
+                # batas1_x = list_space_angle_start[s][0]
+                index_batas1 = s
+                print("index_batas1 ",index_batas1,rot_pos[s][0]) #34, 332
+                #update batas bawah
+                # batas2_x = list_space_angle_start[s+1][0]
+                # index_batas2 = s+1
+            # else....
+            # print("batas1_x ", batas1_x)
+    else : #belum terisi karena di luar coverage
+        #ada kasus dimana area random di luar coverage area gradient karena kemiringannya
+        #update batas bawah 
+        #batas1_x masih = 0 , untuk diputar nanti = putdraw-width
+        index_batas1= -1 #berarti di area pinggir ujung habis
+        # batas2_x = list_space_angle_start[0][0] nanti di penggambaran scribe
+    return index_batas1
+
+deg=-1
+search_list_area()
+print("list_space_angle_start ",list_space_angle_start)
+print("rot_pos ",rot_pos)
+
 for n in range(num_slic):
     if ( len(moments[n])>SLIC_SPACE ): # remove spurious superpixel with area less than 2 px 
         cx= int( np.mean( [array[0] for array in moments[n]] )) # centroid
         cy= int( np.mean( [array[1] for array in moments[n]] ))
         if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
-            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), hurf='', pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
+            
+            inde_bts = search_area((cx,cy))
+            print("search n,cx,cy, idx batas1_x ",n,cx,cy,inde_bts,rot_pos[inde_bts][0])    
+            #tiap node punya dari posisi cxcy punya indexbts menandakan dia di area mana
+            scribe.add_node(int(filled), indexbts = inde_bts, label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), hurf='', pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 
@@ -195,49 +429,84 @@ for key1, point1 in pos.items():
     min_distances.append(min_distance)
 mean_closest_distance = np.mean(min_distances) # this should closely resembles SLIC_SPACE
 
+indbts = nx.get_node_attributes(scribe,'indexbts')
+print("indbts ",indbts)
+
+for s in range(len(list_space_angle_start)):
+    print("list start ", list_space_angle_start[s],list_space_angle_end[s])
+    imageln = cv.line(image, (list_space_angle_start[s]), (list_space_angle_end[s]), (0, 0, 255), 1)
+
+if (len(list_space_angle_start)>0) :
+    dy = list_space_angle_end[0][0] - list_space_angle_start[0][0] 
+    dx = list_space_angle_end[0][1] - list_space_angle_start[0][1]
+    deg =-1 * int(np.rad2deg(  np.arctan((dy)/dx)) )
+
+print("deg ",deg)
+
+# Displaying the image 
+cv.imwrite("angle.jpg", imageln) 
+
+
 components=[]
 for n in range(scribe.number_of_nodes()):
     # fill
-    seed= pos[n]
-    ccv= cue.copy()
-    cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
-    _, ccv = cv.threshold(ccv, 100, STROKEVAL, cv.THRESH_BINARY)
-    mu= cv.moments(ccv)
-    if mu['m00'] > pow(SLIC_SPACE,2)*PHI: # minimum area for a connectedcomponent
-        mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
-        area = mu ['m00']
-        pd= pdistance(seed, mc)
+    # seed= pos[n]  #cari di area angle mana
+    print("nodes, pos n ",n,pos[n])
+    print("indbts, pos n ",n,indbts[n]) #cek dulu
+    # print("indbts, pos n0 ",n,indbts[n][0]) #cek dulu
+    
+    # ccv= cue.copy()
+    # cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
+    # _, ccv = cv.threshold(ccv, 100, STROKEVAL, cv.THRESH_BINARY)
+    # mu= cv.moments(ccv)
+    if True :
+    # if mu['m00'] > pow(SLIC_SPACE,2)*PHI: # minimum area for a connectedcomponent
+        # mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
+        # area = mu ['m00']
+        # pd= pdistance(seed, mc)
         node_start = n
-        box= cv.boundingRect(ccv)
+        # box= cv.boundingRect(ccv)  #sejauh mana ukuran bounding box ?
+        # x,y,w,h= cv.boundingRect(ccv)
+        # print("box x,y,w,h",x,y,w,h) #box doesnt match with angle histogram area
         # append keypoint if the component already exists
         found=0
         for i in range(len(components)):
-            if components[i].centroid==mc:
+            print("indbts[components[i].nodes[-1]] ",indbts[n], indbts[components[i].nodes[-1]])
+            print(f"i {i},nodes {components[i].nodes}  components[i].centroid {components[i].centroid} ")
+            # if components[i].centroid==mc and indbts[components[i].nodes[-1]] == indbts[n]:
+            if indbts[components[i].nodes[-1]] == indbts[n]:
+                
                 components[i].nodes.append(n)
                 # calculate the distance
-                tvane= freeman(seed[0]-mc[0], mc[1]-seed[1] )
+                # tvane= freeman(seed[0]-mc[0], mc[1]-seed[1] )
                 #if seed[0]>mc[0] and pd>components[i].distance_start and (tvane==2 or tvane==4): # potential node_start for long rasm
-                if seed[0]>mc[0] and pd>components[i].distance_start: # potential node_start
-                    components[i].distance_start= pd
-                    components[i].node_start= n
-                elif seed[0]<mc[0] and pd>components[i].distance_end: # potential node_end
-                    components[i].distance_end = pd
-                    components[i].node_end= n
+                # if seed[0]>mc[0] and pd>components[i].distance_start: # potential node_start
+                #     components[i].distance_start= pd
+                #     components[i].node_start= n
+                # elif seed[0]<mc[0] and pd>components[i].distance_end: # potential node_end
+                #     components[i].distance_end = pd
+                #     components[i].node_end= n
+                
                 found=1
                 # print(f'old node[{n}] with component[{i}] at {mc} from {components[i].centroid} distance: {pd})')
                 break
-        if (found==0):
-            components.append(ConnectedComponents(box, mc))
+            
+            
+        if (found==0): #if not found
+            box = pos[n][0],pos[n][1],SLIC_SPACE,SLIC_SPACE
+            components.append(ConnectedComponents(box, pos[n])) #component baru, belum ada node nya
+            print("box len(components)",len(components))
+           
             idx= len(components)-1
-            components[idx].nodes.append(n)
-            components[idx].mat = ccv.copy()
-            components[idx].area = int(mu['m00']/THREVAL)
-            if seed[0]>mc[0]:
-                components[idx].node_start= n
-                components[idx].distance_start= pd
-            else:
-                components[idx].node_end= n
-                components[idx].distance_end= pd
+            components[idx].nodes.append(n)   
+            # components[idx].mat = ccv.copy()
+            # components[idx].area = int(mu['m00']/THREVAL)
+            # if seed[0]>mc[0]:#kalau lebih kanan ?
+            #     components[idx].node_start= n
+            #     components[idx].distance_start= pd
+            # else:
+            #     components[idx].node_end= n
+            #     components[idx].distance_end= pd
             #print(f'new node[{n}] with component[{idx}] at {mc} from {components[idx].centroid} distance: {pd})')
 
 
@@ -467,21 +736,23 @@ def extract_subgraph2(G, start, end): # for a hurf inside a rasm, naive
 def extract_subgraph3(G, start, end): # for a hurf inside a rasm, handling branches
     visited = [start,end]
     queue = [start, end]
-
+    print("visited queue ",visited, queue)
     while queue:
         node = queue.pop(0)
         crossing_start= all(start in path for path in nx.all_simple_paths(G, node, end))
         crossing_end  = all(end in path for path in nx.all_simple_paths(G, node, start))
-        #print(f"{node} s{crossing_start} e{crossing_end}")
+        print(f"{node} s{crossing_start} e{crossing_end}")
         if (node not in visited) and (crossing_start==False) and (crossing_end==False) \
             or node==start  or node==end:
             visited.append(node)
-    
+            print(f"node {node} visited {visited}")
             for neighbor in G.neighbors(node):
                 if neighbor not in visited:
                     queue.append(neighbor)
+                    print(f"node {node} neighbor {neighbor} queue {queue}")
     
     subgraph = G.subgraph(visited).copy()
+    print("subgraph ",subgraph)
     return subgraph
 
     
@@ -568,39 +839,36 @@ for k in range(len(components)):
     # establish edges from the shortest distance between nodes, forward check
     # O(n^2) complexity
     for m in components[k].nodes:
+        print("km posm ",k,m,pos[m])
         scribe.nodes[m]['component_id']=k
         src= scribe.nodes[m]
         # three closest nodes
         ndist=[1e9, 1e9, 1e9]
         ndst= [-1, -1, -1]
-        nvane= [-1, -1, -1]
         for n in components[k].nodes:
+            print("kmn  ",k,m,n,pos[m],pos[n])
             dst= scribe.nodes[n]
-            cdist= pdistance(pos[m], pos[n])
+            cdist= math.sqrt( math.pow(dst['pos_bitmap'][0]-src['pos_bitmap'][0],2) + math.pow(dst['pos_bitmap'][1]-src['pos_bitmap'][1],2) )
             if (m!=n):
                 linepart= line_iterator(stroke, src['pos_bitmap'], dst['pos_bitmap'])
-                # print(f"{m} to {n}: {linepart}")
             # add the checking for line segment
             if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)*2 and linepart > pow(PHI, -PHI):
-                # print(f'ada yang cocok {m} {n}')
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
                     ndist[1]= ndist[2]
                     ndist[2]= cdist
-                    ndst[0] = ndst[1]
-                    ndst[1] = ndst[2]
-                    ndst[2] = n
-                    nvane[2]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
+                    ndst[0]= ndst[1]
+                    ndst[1]= ndst[2]
+                    ndst[2]= n
                 elif cdist>=ndist[2] and cdist<=ndist[1]:
                     ndist[0]= ndist[1]
                     ndist[1]= cdist
-                    ndst[0] = ndst[1]
-                    ndst[1] = n
-                    nvane[1]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
+                    ndst[0]= ndst[1]
+                    ndst[1]= n
                 elif cdist<ndist[0]:
                     ndist[0]= cdist
-                    ndst[0] = n
-                    nvane[0]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
+                    ndst[0]= n
+        #print(f'{m} to {ndst[0]}({ndist[0]:.2f}) {ndst[1]}({ndist[1]:.2f}) {ndst[2]}({ndist[2]:.2f})')
         filled=[False, False, False]
         for i in range(2, -1, -1):
             if ndist[i]!=1e9 and ndst[i]!=-1:
@@ -611,74 +879,15 @@ for k in range(len(components)):
                     filled[i]= True
                 # this is for 2+alpha
                 if (i==2) or \
-                   (i==1 and scribe.has_edge(ndst[2],ndst[1])==False) or \
+                   (i==1 and scribe.has_edge(ndst[2],ndst[1])==False ) or \
                    (i==0 and scribe.has_edge(ndst[2],ndst[0])==False and scribe.has_edge(ndst[1],ndst[0])==False):
                     scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane)
-                    # print(f'{m} to {ndst[i]}: {ndist[i]}')            
+                    #print(f'{m} to {ndst[i]}: {ndist[i]}')            
                 if filled[2]==False and filled[1]==False and i==(3-RASM_EDGE_MAXDEG):
                     break
-        #print(f'{m} to {ndst[0]}({ndist[0]:.2f}) {ndst[1]}({ndist[1]:.2f}) {ndst[2]}({ndist[2]:.2f})')
-        
-        
-        # remove second-closest edge if in line with first-closest
-        if scribe.has_edge(m, ndst[1]) and scribe.has_edge(ndst[2],ndst[1]) and \
-            nvane[2]==nvane[1]:
-            # print(f'hapus1 {m} to {ndst[1]}')            
-            scribe.remove_edge(m, ndst[1])
-        # remove third-closest node if in line with either the first or second
-        if scribe.has_edge(m, ndst[0]) and (\
-           (scribe.has_edge(ndst[2],ndst[0]) and nvane[2]==nvane[0]) or 
-           (scribe.has_edge(ndst[1],ndst[0]) and nvane[1]==nvane[0]) ):
-            # print(f'hapus2 {m} to {ndst[0]}')            
-            scribe.remove_edge(m, ndst[0])
-            
-#draw_graph_edgelabel(scribe, 'pos_render', 8, '2plusalpha.png', None)
+                    
+# draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/withedges.png', None)
 
-# # rescan for more purning, no
-# for k in range(len(components)):
-#     for m in components[k].nodes:
-#         #scribe.nodes[m]['component_id']=k
-#         src= scribe.nodes[m]
-#         ndist=[1e9, 1e9, 1e9]
-#         ndst= [-1, -1, -1]
-#         nvane= [-1, -1, -1]
-#         for n in components[k].nodes:
-#             dst= scribe.nodes[n]
-#             cdist= pdistance(pos[m], pos[n])
-#             if (m!=n):
-#                 linepart= line_iterator(stroke, src['pos_bitmap'], dst['pos_bitmap'])
-#                 # print(f"{m} to {n}: {linepart}")
-#             # add the checking for line segment
-#             if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)*2 and linepart > pow(PHI, -PHI):
-#                 # print(f'ada yang cocok {m} {n}')
-#                 if cdist<ndist[2]: # #1 shortest
-#                     ndist[0]= ndist[1]
-#                     ndist[1]= ndist[2]
-#                     ndist[2]= cdist
-#                     ndst[0]= ndst[1]
-#                     ndst[1]= ndst[2]
-#                     ndst[2]= n
-#                     nvane[2]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
-#                 elif cdist>=ndist[2] and cdist<=ndist[1]:
-#                     ndist[0]= ndist[1]
-#                     ndist[1]= cdist
-#                     ndst[0]= ndst[1]
-#                     ndst[1]= n
-#                     nvane[1]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
-#                 elif cdist<ndist[0]:
-#                     ndist[0]= cdist
-#                     ndst[0]= n
-#                     nvane[0]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
-    
-#         if scribe.has_edge(m, ndst[2]) and scribe.has_edge(m, ndst[1]) and scribe.has_edge(ndst[2],ndst[1]) and\
-#             nvane[2]==nvane[1] and nvane[1]==nvane[2]:
-#             # print(f'hapus2 {m} to {ndst[1]}')            
-#             scribe.remove_edge(m, ndst[1])
-#         # if scribe.has_edge(m, ndst[0]) and (scribe.has_edge(ndst[2],ndst[0]) or scribe.has_edge(ndst[1],ndst[0])):
-#         #     # print(f'hapus2 {m} to {ndst[0]}')            
-#         #     scribe.remove_edge(m, ndst[0])
-# draw_graph_edgelabel(scribe, 'pos_render', 8, 'F://afterprune.png', None)
-        
 def prune_edges(graph, hop):
     G= graph.copy()
     temp= G.copy()
@@ -695,10 +904,8 @@ def prune_edges(graph, hop):
                     G.remove_edge(u, v)
     return(G)
 
-# draw_graph_edgelabel(scribe, 'pos_render', 8, '/shm/scribe.png', None)
-# krus= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
-# prun3= prune_edges(scribe, 3)
-# scribe.number_of_nodes()
+#scribe= prune_edges(scribe, 3)
+#scribe= nx.minimum_spanning_tree(scribe, algorithm='kruskal')
 
 def hex_or(color1, color2):
     int1 = int(color1.lstrip('#'), 16)
@@ -713,7 +920,6 @@ def hex_and(color1, color2):
     return int1 & int2
 
 degree_rasm= scribe.degree()
-
 scribe_dia= scribe.copy()
 baseline_pos= np.mean(np.array([value[1] for value in pos.values()]))
 
@@ -728,7 +934,6 @@ for k in range(len(components)):
     # large size
     # more likely to be close to or intersecting the baseline
     if  intersect==True and \
-        len(components[k].nodes) >= 2 and \
         components[k].area>pow(SLIC_SPACE,2)*pow(PHI,4): \
         #or (abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,3) and components[k].area>pow(SLIC_SPACE,2)*pow(PHI,3)): 
         
@@ -745,8 +950,12 @@ for k in range(len(components)):
         # actually optimizing the starting node
         #scribe.nodes[components[k].node_start]['color']= '#FFA500' # reset to orange
         scribe_dia.nodes[components[k].node_start]['color']= '#FFA500'
-        graph= extract_subgraph(scribe, components[k].node_start)
-
+        graph= extract_subgraph(scribe, components[k].node_start) #ada hasil empty #empty error ?
+        print("Err4 graph k, nodestart ",k, components[k].node_start, graph)
+        for n in graph.nodes:
+            print(f"graph.nodes {n} , pos[n][0] {pos[n][0]} components[k].centroid[0] {components[k].centroid[0]} SLIC_SPACE {SLIC_SPACE} ")
+            if pos[n][0] > (components[k].centroid[0] - SLIC_SPACE) : print(">>",n)
+        print("Err3 components[k].rect[3]-[2] ",components[k].rect[3],components[k].rect[2])
         # Check if the component is tall
         if components[k].rect[3] / components[k].rect[2] > pow(PHI, 2):
             # If tall, prefer starting from the top
@@ -757,6 +966,7 @@ for k in range(len(components)):
             # if stumpy, prefers starting close to median more to the right, but far away from centroid
             rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)], \
                                      key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
+            print("Err2 rightmost_nodes ",rightmost_nodes)
             # Step 1: Get the rightmost nodes
             topmost_nodes = sorted([node for node in rightmost_nodes  if pos[node][1] < (baseline_pos + SLIC_SPACE)],\
                                    key=lambda node: pos[node][1])[:int(RASM_CANDIDATE*PHI)]
@@ -764,6 +974,9 @@ for k in range(len(components)):
             smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE)]
             rightmost_nodes = sorted([node for node in smallest_degree_nodes], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE / PHI)]
             #node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
+            print("Err rightmost_nodes ",rightmost_nodes)
+            print("Err smallest_degree_nodes ",smallest_degree_nodes)
+            print("Err topmost_nodes ",topmost_nodes)
             node_start = min(rightmost_nodes, key=lambda node: pos[node][1])
 			# @FadhilatulFitriyah
             # Step 2: Get the topmost nodes from the rightmost nodes
@@ -862,8 +1075,9 @@ degree_dia= scribe.degree()
 # substroke identification
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
-
+# baris 797-893  ############################START HISTOGRAM
 def find_histogram_min(img, ANGLE):
+    
     projection_hist= np.zeros(img.shape[1], np.uint8)
     for x in range(img.shape[1]-1,0,-1):
         x_start= x
@@ -889,7 +1103,8 @@ SLANT2= 3.1415 / pow(PHI,3)
 COLOR_TRANS1='#10F010'
 COLOR_TRANS2='#10A010'
 
-ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)
+
+ccv= cv.cvtColor(cue, cv.COLOR_GRAY2BGR)  #hasil = ccv
 for n in range(len(components)):
     if scribe_dia.nodes[components[n].nodes[0]]['rasm'] == True:
         seed= pos[components[n].nodes[0]]
@@ -918,69 +1133,62 @@ def find_closest_node(G, midx, midy):
     
 for x_start in valleys1:
     x_end= x_start- math.tan(SLANT1) * ccv.shape[0]
+    #bitmap position
+    print("valleys1 x_start,x_end",x_start,x_end)
     if (x_end>=0):
         active_stroke= False
         for y_pos in range(ccv.shape[0]):
             x_pos= int (x_start - math.tan(SLANT1)*y_pos)
             if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
-                ccv[y_pos][x_pos][2] = MEDVAL
                 if ccv[y_pos][x_pos][0] == STROKEVAL:
                     ccv[y_pos][x_pos][2] = FOCUSVAL
                     if active_stroke== False:
                         active_stroke= True
                         cut_start= (x_pos, y_pos)
+                        print("cut_start",cut_start)
+
                 else: 
                     if active_stroke== True:
                         active_stroke= False
                         cut_end= (x_pos, y_pos)
                         midpoint= ((cut_end[0]+cut_start[0])/2,
                                    (cut_end[1]+cut_start[1])/2)
+                        #bitmap pos
+                        print("midpoint",midpoint)
                         transition_node= find_closest_node(scribe_dia, midpoint[0], midpoint[1])
-                        if scribe_dia.nodes[transition_node]['rasm']==True and scribe_dia.nodes[transition_node]['color'] != '#F00000'\
-                            and len(list(scribe_dia.neighbors(transition_node)))>=2:
+                        print("transition_node",transition_node)
+                        if scribe_dia.nodes[transition_node]['rasm']==True:
                             scribe_dia.nodes[transition_node]['color']=COLOR_TRANS1
-                    
+print("SLANT 2 shape ", SLANT2,ccv.shape[0],ccv.shape[1])   #SLANT2= 3.1415 / pow(PHI,3)               
 for x_start in valleys2:
     x_end= x_start- math.tan(SLANT2) * ccv.shape[0]
+    print("valleys2 x_start,x_end",x_start,x_end)
+    
     if (x_end>=0):
         active_stroke= False
         for y_pos in range(ccv.shape[0]):
             x_pos= int (x_start - math.tan(SLANT2)*y_pos)
             if y_pos<ccv.shape[0] and x_pos<ccv.shape[1]:
-                ccv[y_pos][x_pos][1] = MEDVAL
                 if ccv[y_pos][x_pos][0] == STROKEVAL:
                     ccv[y_pos][x_pos][1] = FOCUSVAL
                     if active_stroke== False:
                         active_stroke= True
                         cut_start= (x_pos, y_pos)
+                        print("valleys2 cut_start",cut_start)
                 else: 
                     if active_stroke== True:
                         active_stroke= False
                         cut_end= (x_pos, y_pos)
                         midpoint= ((cut_end[0]+cut_start[0])/2,
                                    (cut_end[1]+cut_start[1])/2)
+                        print("valleys2 midpoint",midpoint)
                         transition_node= find_closest_node(scribe_dia, midpoint[0], midpoint[1])
-                        if scribe_dia.nodes[transition_node]['rasm']==True and scribe_dia.nodes[transition_node]['color'] != '#F00000'\
-                            and len(list(scribe_dia.neighbors(transition_node)))>=2:
+                        print("valleys2 transition_node",transition_node)
+                        if scribe_dia.nodes[transition_node]['rasm']==True:
                             scribe_dia.nodes[transition_node]['color']=COLOR_TRANS2
 
-#draw(ccv)
+draw(ccv)
 
-green_ccv = ccv[:, :, 1]
-green_only = np.where(green_ccv >= MEDVAL , THREVAL, 0).astype(np.uint8)
-ccv2= np.zeros(ccv.shape, dtype=np.uint8)
-ccv2[:, :, 1]= green_only
-shade= THREVAL
-midline= int(ccv2.shape[0]/2)
-for x in range(ccv2.shape[1]):
-    if ccv2[midline][x][1]== 0:
-        cv.floodFill(ccv2, None, (x,midline), (0,shade,0), loDiff=(5), upDiff=(5))    
-    if ccv2[midline][x][1]== THREVAL:
-        shade= THREVAL+ np.random.randint(12)*5
-ccv_hl= ccv.copy()
-ccv_hl[:, :, 1]= ccv2[:, :, 1]
-#draw(ccv_hl)   
- 
 ###### graph construction from line image ends here
 ###### ----------------------------------------------------
 ###### path finding routines starts here
@@ -1010,19 +1218,37 @@ def find_diacritics_edges(G, node):
                 return size
     return ''
 
+def path_cut(path,i): # path dari masing2 component i akan dipotong menjadi path_cut 
+        
+    path_cut=[]
+    for n in path:
+        # vane code
+        src= n[0]
+        dst= n[1]
+        print("n",n[0],n[1])
+        # misal ambil dari src, search di area berapa pada hist angle area
+        #jika ketemu area baru , bikin path_cut baru
+        #jika ketemu area yg sama, append path_cut yg lama
+        # hasilnya path_cut merupakan potongan
+
+
+
 def path_vane_edges(G, path): # if path is written is written as series of edges
     visited=[]    
     pathstring=''
     for n in path:
-        if G.has_edge(n[0], n[1]): # ideally not necessary
-            # vane code
-            src= n[0]
-            dst= n[1]
-            tvane= freeman(pos[dst][0]-pos[src][0], -(pos[dst][1]-pos[src][1]))
-            G.edges[n]['vane']=tvane
-            if (G.edges[n]['color']=='#00FF00'): # main stroke
-                pathstring+=str(tvane)
-            
+        # vane code
+        src= n[0]
+        dst= n[1]
+        print("n",n[0],n[1])
+        # freeman(dx, dy)  ada pos[dst][0]
+        tvane= freeman(pos[dst][0]-pos[src][0], -(pos[dst][1]-pos[src][1]))
+        print("tvane ",tvane)
+        print("pos",pos[dst][0],pos[src][0], pos[dst][1],pos[src][1])
+        G.edges[n]['vane']=tvane
+        if (G.edges[n]['color']=='#00FF00'): # main stroke
+            pathstring+=str(tvane)
+        
         mark= ''
         if src not in visited:
             mark= find_diacritics_edges(G, src)
@@ -1057,12 +1283,13 @@ def bfs_with_closest_priority(G, start_node):
                     heapq.heappush(priority_queue, (distance, neighbor))
                     edges.append((current_node, neighbor))
     
-    return visited, edges # if handling the edges
+    #return visited # if handling the nodes
+    return edges # if handling the edges
 
 # drawing the rasm graph
 from PIL import ImageFont, ImageDraw, Image
 FONTSIZE= 24
-
+print("len(components)):",len(components))
 for i in range(len(components)):
     rasm= ''
     if scribe_dia.nodes[components[i].node_start]['rasm']== True:
@@ -1071,10 +1298,15 @@ for i in range(len(components)):
 
         # path finding along rasm
         node_start= components[i].node_start
-        visited_nodes, path = list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start))
+        path = list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start))
+        #cut the path for each component
+        # info path 
+        
+        # bikin file csv untuk stiap component, untuk dipotong2 berdasarkan valley dan angle
         remainder_stroke= path_vane_edges(scribe_dia, path)
+        
         if len(remainder_stroke) >2:
-            print(remainder_stroke)
+            print("i rs ",i,remainder_stroke)
         
         # refer to rasm2hurf.py
         # rule-based minimum feasible pattern
@@ -1099,9 +1331,68 @@ for i in range(len(components)):
         # ccv= cv.cvtColor(ccv, cv.COLOR_RGB2BGR)
         # draw(ccv)
         # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
-    
+
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 8, graphfile, None)
+
+
+
+# ada path, ccv, cue, scribe
+# ada valley1, valley2
+
+
+
+# #ambil data hasil csv dari output angle-histogram.py
+# rot_pos = []
+# rot_pos_end = []
+# filename2 = 'out-rot_pos.csv' #out-timer-Larutan 200 (1) - Target.mp4.csv'
+# with open(filename2, newline='') as csvfile:
+#     spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
+#     for row in spamreader:
+#         print(row)
+#         area_x_start = (row[0])
+#         area_y_start = (row[1])
+#         area_x_end = (row[2])
+#         area_y_end = (row[3])
+#         print("area_x_start ",area_x_start) 
+#         print("area_y_start ",area_y_start) 
+#         print("area_x_end ",area_x_end)
+#         print("area_y_end ",area_y_end)
+#         #writerow((int(rot_pos[r][0]),int(rot_pos[r][1]),int(rot_pos_end[r][0]),int(rot_pos_end[r][1])))
+#         rot_pos.append((row[0],row[1])) #kumpulan titik hasil rotasi
+#         rot_pos_end.append((row[2],row[3]))
+
+
+
+# # import titik random dari csv?
+# import csv
+# #output rotpos as csv
+# with open('out-rot_pos'+''+'.csv', 'w', newline='') as csvfile:
+#     spamwriter = csv.writer(csvfile, delimiter=' ',quotechar='|', quoting=csv.QUOTE_MINIMAL)
+
+
+
+#lalu batas1_x dan batas2_x diaplikasikan pada rot_pos
+# input kumpulan nilai batas1_x dan batas2_x , lalu di gambar kotak2nya atau di crop
+
+# rot_pos adalah hasil putaran
+
+# yang ini :     
+# kumpulan nilai batas1_x dan batas2_x   ( ada banyak nilai, diambil dari csv)
+# ........
+#     if batas2_x == list_space_angle_start[r][0] and r>0 :  
+#         print("RECTA ",(rot_pos[r-1]),(rot_pos_end[r]))  #rectangle(img,(x1,y1),(x2,y2),color)
+#         putdraw = cv2.rectangle(putdraw,(int(rot_pos[r][0]),int(rot_pos[r-1][1])),(int(rot_pos_end[r-1][0]),int(rot_pos_end[r][1])) , (0,255,255))
+#     elif batas2_x == list_space_angle_start[r][0] and r==0 :  
+#     # if r  == 0 :
+#         # x2 = putdraw.shape[1] #width
+#         print("RECTA WIDTH")
+#         putdraw = cv2.rectangle(putdraw,(int(rot_pos[r][0]),int(rot_pos[r-1][1])),(putdraw.shape[1],int(rot_pos_end[r][1])) , (0,255,255))
+
+
+
+
+
 
 
 # # ##################################

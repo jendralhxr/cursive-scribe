@@ -642,7 +642,8 @@ for k in range(len(components)):
                 ndist[0]= cdist
                 ndst[0] = n
         for i in range(3):
-            nvane[i]= freeman( pos[ndst[i]][0]-pos[m][0], -(pos[ndst[i]][1]-pos[m][1]) )
+            if ndst[i] != -1:
+                nvane[i]= freeman( pos[ndst[i]][0]-pos[m][0], -(pos[ndst[i]][1]-pos[m][1]) )
         #print(f'{m} to {ndst[0]}({ndist[0]:.2f}) {ndst[1]}({ndist[1]:.2f}) {ndst[2]}({ndist[2]:.2f})')   
 
         # excessive fork, usually at the start/end of stroke

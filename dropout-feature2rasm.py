@@ -72,7 +72,7 @@ imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
 image= resz.copy()
-# image=  cv.bitwise_not(image)
+image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
 
@@ -1075,7 +1075,7 @@ degree_dia= scribe.degree()
 # substroke identification
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
-# baris 797-893  ############################START HISTOGRAM
+# baris 797-893  ############################START HISTOGRAM
 def find_histogram_min(img, ANGLE):
     
     projection_hist= np.zeros(img.shape[1], np.uint8)

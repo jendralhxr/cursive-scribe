@@ -623,7 +623,7 @@ for k in range(len(components)):
         ndist=[1e9, 1e9, 1e9]
         ndst= [-1, -1, -1]
         nvane= [-1, -1, -1]
-        print(m, list(scribe.neighbors(m)))
+        # print(m, list(scribe.neighbors(m)))
         for n in scribe.neighbors(m):
             cdist= pdistance(pos[m], pos[n])
             if cdist<ndist[2]: # #1 shortest
@@ -633,19 +633,18 @@ for k in range(len(components)):
                 ndst[0] = ndst[1]
                 ndst[1] = ndst[2]
                 ndst[2] = n
-                nvane[2]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
             elif cdist>=ndist[2] and cdist<=ndist[1]:
                 ndist[0]= ndist[1]
                 ndist[1]= cdist
                 ndst[0] = ndst[1]
                 ndst[1] = n
-                nvane[1]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
             elif cdist<ndist[0]:
                 ndist[0]= cdist
                 ndst[0] = n
-                nvane[0]= freeman(pos[n][0]-pos[m][0], -(pos[n][1]-pos[m][1]))
-        # print(f'{m} to {ndst[0]}({ndist[0]:.2f}) {ndst[1]}({ndist[1]:.2f}) {ndst[2]}({ndist[2]:.2f})')   
-        
+        for i in range(3):
+            nvane[i]= freeman( pos[ndst[i]][0]-pos[m][0], -(pos[ndst[i]][1]-pos[m][1]) )
+        #print(f'{m} to {ndst[0]}({ndist[0]:.2f}) {ndst[1]}({ndist[1]:.2f}) {ndst[2]}({ndist[2]:.2f})')   
+
         # excessive fork, usually at the start/end of stroke
         if scribe.has_edge(m, ndst[2]) and scribe.has_edge(m, ndst[1]) and scribe.has_edge(ndst[2],ndst[1]) and \
             nvane[2]==nvane[1]:

@@ -20,25 +20,31 @@ def draw(img): # draw the bitmap
 filename=sys.argv[1]
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
-#image=  cv.bitwise_not(image)
 height= image.shape[0]
 width= image.shape[1]
 
 image_gray= image[:,:,2]
+image_gray=  cv.bitwise_not(image_gray)
 _, image_binary = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 column_indices = np.arange(width)  
 row_indices = np.arange(height)
 
-histogram_x = np.sum(image_binary, axis=0)/THREVAL  # Sum along columns
-diff_abs = np.abs ( np.diff(histogram_x))
+from scipy.ndimage import gaussian_filter1d
 
-edges = np.where(diff_abs > height/pow(PHI,k+1))[0]
-# image_bgr= image.copy()
+histogram_x = np.sum(image_binary, axis=0)/THREVAL  # Sum along columns
+histogram_x_smoothed =gaussian_filter1d( histogram_x, pow(PHI,k))  # Sum along columns
+# plt.plot(histogram_x_smoothed)
+
+# diff_abs = np.abs ( np.diff(histogram_x))
+#edges = np.where(diff_abs > height/pow(PHI,k+2))[0]
+
+edges = np.where(histogram_x_smoothed < SLIC_SPACE*pow(PHI,k))[0]
+image_bgr= image.copy()
+for x in edges:
+    cv.line(image_bgr, (x, 0), (x, image_bgr.shape[0]), (0, 255, 0), 8)  # green line
+draw(image_bgr)
 # for x in valleys1[0]:
 #     cv.line(image_bgr, (x, 0), (x, image_bgr.shape[0]), (0, 0, 255), 8)  # Red line
-# for x in edges:
-#     cv.line(image_bgr, (x, 0), (x, image_bgr.shape[0]), (0, 255, 0), 8)  # green line
-# draw(image_bgr)
 
 threshold = pow(PHI,2)*SLIC_SPACE  # Adjust based on expected cluster proximity
 clusters = [[edges[0]]]
@@ -49,7 +55,6 @@ for value in edges[1:]:
     else:
         clusters.append([value])
 cluster_centers_x = [np.mean(cluster) for cluster in clusters]
-[np.mean(cluster) for cluster in clusters]
 
 for n in range(1, len(cluster_centers_x)):
     pagecrop= image_binary[:,int(cluster_centers_x[-(n+1)]):int(cluster_centers_x[-n])]
@@ -63,7 +68,10 @@ for n in range(1, len(cluster_centers_x)):
         else:
             clusters.append([value])
     cluster_centers_y = [np.mean(cluster) for cluster in clusters] # ideally only two values
-    pagecrop= image[int(cluster_centers_y[0]):int(cluster_centers_y[1]),\
+    
+    # print(f"{n} y:{int(cluster_centers_y[0])}-{int(cluster_centers_y[-1])} \
+    #       x:{int(cluster_centers_x[-(n+1)])}-{int(cluster_centers_x[-n]) }")
+    pagecrop= image[int(cluster_centers_y[0]):int(cluster_centers_y[-1]),\
                            int(cluster_centers_x[-(n+1)]):int(cluster_centers_x[-n])]
     
     cv.imwrite(imagename+'v'+str(n)+'.png', pagecrop)

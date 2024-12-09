@@ -1,3 +1,24 @@
 0000000
 64774
 3564666057067660066607066005600
+Traceback (most recent call last):
+  File "/opt/miniconda3/lib/python3.12/site-packages/networkx/drawing/nx_pylab.py", line 442, in draw_networkx_nodes
+    xy = np.asarray([pos[v] for v in nodelist])
+                     ~~~^^^
+KeyError: -1
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/me/cursive-scribe/perangjohor/lineimages/feature2rasm.py", line 1147, in <module>
+    draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
+  File "/me/cursive-scribe/perangjohor/lineimages/feature2rasm.py", line 372, in draw_graph_edgelabel
+    nx.draw(graph, 
+    ^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.12/site-packages/networkx/drawing/nx_pylab.py", line 123, in draw
+    draw_networkx(G, pos=pos, ax=ax, **kwds)
+  File "/opt/miniconda3/lib/python3.12/site-packages/networkx/drawing/nx_pylab.py", line 311, in draw_networkx
+    draw_networkx_nodes(G, pos, **node_kwds)
+  File "/opt/miniconda3/lib/python3.12/site-packages/networkx/drawing/nx_pylab.py", line 444, in draw_networkx_nodes
+    raise nx.NetworkXError(f"Node {err} has no position.") from err
+networkx.exception.NetworkXError: Node -1 has no position.

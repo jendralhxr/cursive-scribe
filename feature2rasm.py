@@ -65,7 +65,7 @@ def draw(img): # draw the bitmap
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
         
-#filename= sys.argv[1]
+filename= sys.argv[1]
 #filename= 'topanribut.png'
 #filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
@@ -98,7 +98,7 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #cv.imwrite('dilated_text.png', dilated_image)
 
 
-DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
+DILATION_Y= 3 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
 DILATION_X= 4  #some vertical lines are just too thin
 DILATION_I= 1        
 
@@ -1056,16 +1056,26 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
             if (G.edges[n]['color']=='#00FF00'): # main stroke
                 pathstring+=str(tvane)
             
+        
         mark= ''
         if src not in visited:
             mark= find_diacritics_edges(G, src)
             if mark != '':
                 pathstring += mark
+            if G.nodes[src]['color']==COLOR_TRANS1:
+                pathstring+='-'
+            elif G.nodes[src]['color']==COLOR_TRANS2:
+                pathstring+='+'
         visited.append(src)
+        
         if dst not in visited:
             mark= find_diacritics_edges(G, dst)
             if mark != '':
                 pathstring += mark
+            if G.nodes[dst]['color']==COLOR_TRANS1:
+                pathstring+='-'
+            elif G.nodes[dst]['color']==COLOR_TRANS2:
+                pathstring+='+'
         visited.append(dst)
         
     return pathstring
@@ -1106,7 +1116,7 @@ for i in range(len(components)):
         node_start= components[i].node_start
         visited_nodes, path = list(bfs_with_closest_priority(extract_subgraph(scribe, node_start), node_start))
         remainder_stroke= path_vane_edges(scribe_dia, path)
-        if len(remainder_stroke) >2:
+        if len(remainder_stroke) >=2:
             print(remainder_stroke)
         
         # refer to rasm2hurf.py

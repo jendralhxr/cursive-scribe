@@ -67,7 +67,7 @@ def draw(img): # draw the bitmap
         
 #filename= sys.argv[1]
 #filename= 'topanribut.png'
-filename='dengarkan.png'
+#filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -99,13 +99,15 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 
 
 DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
-DILATION_X= 3  #some vertical lines are just too thin
+DILATION_X= 4  #some vertical lines are just too thin
 DILATION_I= 1        
 
 #SLIC
 gray= cv.dilate(gray, np.ones((DILATION_Y,DILATION_X), np.uint8), iterations=DILATION_I) # turns out gray is actually already too thin to begin with 
 cue= gray.copy() 
-stroke= cv.dilate(cue, np.ones((int(SLIC_SPACE),int(SLIC_SPACE)), np.uint8), iterations=1) # this is for the connectedcomponent check
+stroke= cv.dilate(cue, np.ones((DILATION_Y,DILATION_X), np.uint8), iterations=DILATION_I) # this is for the connectedcomponent check
+#draw(stoke)
+
 slic = cv.ximgproc.createSuperpixelSLIC(cue,algorithm = cv.ximgproc.SLICO, region_size = SLIC_SPACE)
 slic.iterate()
 mask= slic.getLabelContourMask()
@@ -194,6 +196,18 @@ for key1, point1 in pos.items():
     min_distance = min(distances)
     min_distances.append(min_distance)
 mean_closest_distance = np.mean(min_distances) # this should closely resembles SLIC_SPACE
+
+def close_components(b, comps, length=4):
+    result = []
+    for i in range(length):
+        # Try to subtract i from b
+        if b - i >= 1 and b - i != b:  # Ensure the value stays within range and is not b
+            result.append(b - i)
+        # Try to add i+1 to b
+        if b + i + 1 < len(comps) and b + i + 1 != b:  # Ensure the value stays within range and is not b
+            result.append(b + i + 1)
+
+    return result
 
 components=[]
 for n in range(scribe.number_of_nodes()):
@@ -562,6 +576,9 @@ def line_iterator(img, P1, P2):
     # else:
     return nonzero/len(itbuffer)
    
+
+ 
+   
 scribe.remove_edges_from(scribe.edges) # start anew, just in case
 # we need to make edges between nodes within a connectedcomponent
 for k in range(len(components)):
@@ -581,7 +598,7 @@ for k in range(len(components)):
                 linepart= line_iterator(stroke, src['pos_bitmap'], dst['pos_bitmap'])
                 # print(f"{m} to {n}: {linepart}")
             # add the checking for line segment
-            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)*2 and linepart > pow(PHI, -PHI):
+            if (m!=n) and cdist<SLIC_SPACE*pow(PHI,2)*2 and linepart > pow(PHI, -1):
                 # print(f'ada yang cocok {m} {n}')
                 if cdist<ndist[2]: # #1 shortest
                     ndist[0]= ndist[1]
@@ -787,7 +804,7 @@ for k in range(len(components)):
         closest_dist= 1e9
         closest_node= -1
         closest_vane= -1
-        for l in range(len(components)):
+        for l in close_components(k, components):
             if (k!=l) and pdistance(components[k].centroid, components[l].centroid)<SLIC_SPACE*pow(PHI,5):
                 for m in components[k].nodes:
                     for n in components[l].nodes:
@@ -805,7 +822,7 @@ for k in range(len(components)):
             if closest_vane==6: # diacritics over
                 #scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#0000FF') 
                 scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#0000FF') # dark blue 
-            else: # diacritics below
+            else: # diacritics below # vane==2
                 #scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#000080')
                 scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#000080') # light blue
 
@@ -815,25 +832,29 @@ for k in range(len(components)):
             scribe_dia.nodes[j]['rasm']=True
         scribe_dia.nodes[components[k].node_start]['color']= '#F00000' # initialize with red
 
+
 # merging close diacritics
 for i in range(len(components)):
-    for j in range(i + 1, len(components)):
+    for j in close_components(i, components):
         dia_dist= pdistance(components[i].centroid, components[j].centroid)
-        if dia_dist < SLIC_SPACE*PHI:
+        if dia_dist < SLIC_SPACE*PHI and components[i].nodes[0]:
             components[i].area= components[i].area + components[j].area
-            components[i].nodes= components[i].nodes + components[j].nodes
+            components[i].nodes= np.unique( components[i].nodes + components[j].nodes ).tolist()
             for n in components[i].nodes:
                 if   components[i].area > pow(SLIC_SPACE,2)*pow(PHI,5):
                      scribe_dia.nodes[n]['dia_size']='C'
                 else:
                      scribe_dia.nodes[n]['dia_size']='B'# approx pow(SLIC_SPACE,2)*pow(PHI,4)
+            #  make it taller, stacked diacritics
             components[i].rect = (\
                                   components[i].rect[0],\
                                   components[i].rect[1],\
                                   components[i].rect[2] + components[j].rect[2],\
                                   components[i].rect[3] + components[j].rect[3])
-                                  
-            
+            components[i].nodes= components[i].nodes + components[j].nodes
+            for n in components[j].nodes:
+                scribe_dia.nodes[n]['component_id']= i
+
             components[j].centroid= (0,0) # components to be removed
             # print(f"gonna remove {j}")
 
@@ -844,7 +865,34 @@ while components[-1].centroid == (0,0):
         
 degree_dia= scribe.degree()
 
-# substroke identification
+# rechecking diacritics connections
+for i in range(len(components)):
+    components[i].nodes= np.unique(components[i].nodes).tolist()
+    if scribe_dia.nodes[ components[i].nodes[0] ]['rasm']==False:
+        attached_to_rasm= False
+        for m in components[i].nodes:
+            for n in scribe_dia.neighbors(m):
+                if scribe_dia.nodes[n]['rasm']== True:
+                    attached_to_rasm= True
+        if attached_to_rasm== False:
+            # find the closest rasm again
+            closest_dist= 1e9
+            for j in close_components(i, components):
+                if scribe_dia.nodes [ components[j].nodes[0] ]['rasm']== True:
+                    for m in components[i].nodes:
+                        for n in components[j].nodes:
+                            tdist= pdistance(pos[m], pos[n])
+                            tvane= freeman(pos[n][0]-pos[m][0], pos[n][1]-pos[m][1])
+                            if tdist<closest_dist and (tvane==2 or tvane==6):
+                                closest_comp= j
+                                src_node= m
+                                closest_node= n
+                                closest_vane= tvane
+                                closest_dist= tdist
+            scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane) # blue connecting edge
+
+
+# substroke identification for transition node between hurfs (Bu Dian)
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
 
@@ -852,7 +900,7 @@ def find_histogram_min(img, ANGLE):
     projection_hist= np.zeros(img.shape[1], np.uint8)
     for x in range(img.shape[1]-1,0,-1):
         x_start= x
-        x_end= x_start- math.tan(ANGLE) * img.shape[0] # can start beyond image width
+        #x_end= x_start- math.tan(ANGLE) * img.shape[0] # can start beyond image width
         for y_pos in range(img.shape[0]):
             x_pos= int (x_start - math.tan(ANGLE)*y_pos)
             if y_pos<img.shape[0] and x_pos<img.shape[1]:

@@ -1,8 +1,21 @@
-Traceback (most recent call last):
-  File "/me/cursive-scribe/perangjohor/lineimages/feature2rasm.py", line 971, in <module>
-    transition_node= find_closest_node(scribe_dia, midpoint[0], midpoint[1])
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/me/cursive-scribe/perangjohor/lineimages/feature2rasm.py", line 945, in find_closest_node
-    pos = G.nodes[n]['pos_bitmap']
-          ~~~~~~~~~~^^^^^^^^^^^^^^
-KeyError: 'pos_bitmap'
+66
+6A75464C7555-44c4+3
+67654354B75444-4+4364560544-3+4262222
+55A4-432
+0A765-50554+527
+55554+366260660
+5-55475-543
+5555A-56530356267-67a05
+55-56A6+665555454+44444444-44433+335554
+671
+4-655-5656064-604556+64-06-760-2B17754
+666
+5676555-443
+55554537
+66
+5B7-65566+7-00+00c
+645-7a-4B66404-44+3442314+2611166
+66-5404-4457654-43
+5555426751607575
+666555-444443
+0a00000

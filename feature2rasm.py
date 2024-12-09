@@ -98,7 +98,7 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #cv.imwrite('dilated_text.png', dilated_image)
 
 
-DILATION_Y= 3 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
+DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
 DILATION_X= 4  #some vertical lines are just too thin
 DILATION_I= 1        
 
@@ -891,6 +891,9 @@ for i in range(len(components)):
                                 closest_dist= tdist
             scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane) # blue connecting edge
 
+# rare spillover
+if -1 in scribe_dia.nodes():
+    scribe_dia.remove_node(-1)
 
 # substroke identification for transition node between hurfs (Bu Dian)
 from scipy.signal import find_peaks
@@ -941,9 +944,9 @@ hist2, valleys2= find_histogram_min(ccv, SLANT2) # green
 def find_closest_node(G, midx, midy):
     min_distance = float('inf')
     closest_node = None
-    for n in G.nodes:
-        pos = G.nodes[n]['pos_bitmap']
-        distance = np.sqrt((pos[0] - midx) ** 2 + (pos[1] - midy) ** 2)
+    for n in list(G.nodes):
+        #pos = G.nodes[n]['pos_bitmap']
+        distance = np.sqrt((pos[n][0] - midx) ** 2 + (pos[n][1] - midy) ** 2)
         if distance < min_distance:
             min_distance = distance
             closest_node = n

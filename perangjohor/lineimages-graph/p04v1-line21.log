@@ -1,5 +1,5 @@
-5747474035435445745454A74744574747404354570000000000700000
-0000000000000000
-45045454473736656407474753656070707007757734B547477403435600000000000
-77
-24645367535756056067050666000606067007550667500567074777557507070760000
+Traceback (most recent call last):
+  File "/me/cursive-scribe/perangjohor/lineimages/feature2rasm.py", line 769, in <module>
+    node_start = min(rightmost_nodes, key=lambda node: pos[node][1])
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: min() iterable argument is empty

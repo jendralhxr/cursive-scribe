@@ -89,7 +89,6 @@ def draw_histograms_on_image(thresholded_image, histogram_x, histogram_y):
 filename= sys.argv[1]
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename, cv.IMREAD_COLOR)
-image=  cv.bitwise_not(image)
 
 height= image.shape[0]
 width= image.shape[1]
@@ -97,7 +96,7 @@ center = (width/2, height/2)
 
 CHANNEL= 2 # red is 'brighter as closer to background"
 #image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-gray= image[:,:,CHANNEL]
+gray= cv.bitwise_not ( image[:,:,CHANNEL] ) 
 _, thresholded = cv.threshold(gray, 0, 1, cv.THRESH_OTSU) # less smear
 _, gray = cv.threshold(gray, 0, 80, cv.THRESH_OTSU) # less smear
 #_, gray = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
@@ -160,6 +159,7 @@ def find_optimal_Z(thresholded_image, Z_min=0, Z_max=10, Z_step=1):
 
 # smooth the histogram
 Z, interval= find_optimal_Z(thresholded)
+Z=6 
 histogram_x =gaussian_filter1d( np.sum(thresholded, axis=0), pow(PHI,Z))  # Sum along columns
 histogram_y =gaussian_filter1d( np.sum(thresholded, axis=1), pow(PHI,Z))  # Sum along rows
 draw_histograms_on_image(gray, histogram_x, histogram_y)
@@ -175,25 +175,24 @@ lastline= valleys[-1]+(valleys[-1]-valleys[-2])
 if lastline > gray.shape[0]:
     lastline = gray.shape[0]
 valleys = np.append(valleys, lastline)
+valleys = np.unique(valleys)
 
 def average_difference(lst):
     differences = [lst[i+1] - lst[i] for i in range(len(lst)-1)]
     avg_diff = sum(differences) / len(differences)
     return avg_diff
 
-
-image=  cv.bitwise_not(image)
-
-step= average_difference(valleys) * PHI # so as each crop is rather uniform
+step= average_difference(valleys) # * PHI # so as each crop is rather uniform
 
 # gonna crop-select each lines here
 m=0
 n=1
-while (valleys[m]<=max(valleys) and (m+n)<len(valleys)):
+while valleys[m]<=max(valleys) and (m+n)<len(valleys):
     top=valleys[m]
     bot=valleys[m+n]
-    if (bot-top)>step:
-        linecrop= gray[top:bot,:]
+    if (bot-top)>=step/PHI and (bot-top)<=step*PHI:
+        #draw1(gray[top:bot,:])
+        #linecrop= gray[top:bot,:]
         linecrop_img= image[top:bot,:]
         
         # # find the line orientation
@@ -213,7 +212,9 @@ while (valleys[m]<=max(valleys) and (m+n)<len(valleys)):
         # print(f"{imagename}: line {m}, angle {angle_min} ")                
         
         #cv.imwrite(imagename+'-line'+str(m)+'.png', linecrop)
-        cv.imwrite(imagename+'-lineimg'+str(m)+'.png', linecrop_img)
+        savefilname= imagename+'-line'+str(m)+'.png' 
+        print(f"saving {savefilname}")
+        cv.imwrite(savefilname, linecrop_img)
         
         m=m+n
         n=1 

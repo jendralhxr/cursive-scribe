@@ -65,9 +65,9 @@ def draw(img): # draw the bitmap
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
         
-#filename= sys.argv[1]
+filename= sys.argv[1]
 #filename= 'topanribut.png'
-filename='dengarkan.png'
+#filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)

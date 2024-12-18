@@ -1,19 +1,5 @@
-6+666
-66
-66+654+34555
-665157764a0405B44-444a433+36
-666
-7-655b4-443+225
-665a-4055543+2A
-755574a354A-54444+44+4444444-44444433+4+363353+3255-44+344+17+42006
-6Ba+
-5637+017655
-5-556+665+57571555-4+3314C1124-442+77
-6666
-655b5A7504-4433
-6767405A04b-4+35-2244
-5A444-443
-654a4-55553+4253+24243A15661166
-666-545444444-44444+3355
-66
-666
+Traceback (most recent call last):
+  File "/me/cursive-scribe/perangjohor/lineimages/feature2rasm.py", line 778, in <module>
+    stroke_baseline = sum(pos[node][1] for node in rightmost_nodes) / len(rightmost_nodes)
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~
+ZeroDivisionError: division by zero

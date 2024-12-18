@@ -1,3 +1,5 @@
-065743+4245170107
-46+700+7
-46354556075067065670506660765066000566007575750
+Traceback (most recent call last):
+  File "/me/cursive-scribe/perangjohor/lineimages/feature2rasm.py", line 778, in <module>
+    stroke_baseline = sum(pos[node][1] for node in rightmost_nodes) / len(rightmost_nodes)
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~
+ZeroDivisionError: division by zero

@@ -99,7 +99,7 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 
 
 DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
-DILATION_X= 4  #some vertical lines are just too thin
+DILATION_X= 3  #some vertical lines are just too thin
 DILATION_I= 1        
 
 #SLIC
@@ -167,6 +167,12 @@ def pdistance(point1, point2):
     x1, y1 = point1
     x2, y2 = point2
     distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+    return distance
+
+def pdistance_PHI(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    distance = math.sqrt((x2 - x1)**2 + PHI*(y2 - y1)**2)
     return distance
 
 # connected components
@@ -758,6 +764,7 @@ for k in range(len(components)):
             node_start = min(smallest_degree_nodes, key=lambda node: pos[node][1]) # cari yang paling atas (Fitri)
         else: 
             # if stumpy, prefers starting close to median more to the right, but far away from centroid
+            leftmost_node = min(graph.nodes, key=lambda node: pos[node][0])
             rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)], \
                                      key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
             # Step 1: Get the rightmost nodes
@@ -767,11 +774,12 @@ for k in range(len(components)):
             smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE)]
             rightmost_nodes = sorted([node for node in smallest_degree_nodes], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE / PHI)]
             #node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
-            stroke_baseline = max(pos[node][1] for node in rightmost_nodes)
+            #stroke_baseline = max(pos[node][1] for node in rightmost_nodes)
+            stroke_baseline = sum(pos[node][1] for node in rightmost_nodes) / len(rightmost_nodes)
             rightmost_nodes_filtered = [node for node in rightmost_nodes if abs(pos[node][1]-stroke_baseline ) < SLIC_SPACE*pow(PHI,2)]
             if len(rightmost_nodes_filtered)>=2:
                 # close to baseline
-                node_start = min(rightmost_nodes_filtered, key=lambda node: pos[node][1])
+                node_start = max(rightmost_nodes_filtered, key=lambda node: pdistance_PHI(pos[node], pos[leftmost_node]))
             else:
                 # can also be away from baseline
                 node_start = min(rightmost_nodes, key=lambda node: pos[node][1])

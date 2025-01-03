@@ -98,7 +98,7 @@ _, gray = cv.threshold(image_gray, 0, THREVAL, cv.THRESH_OTSU) # less smear
 #cv.imwrite('dilated_text.png', dilated_image)
 
 
-DILATION_Y= 2 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
+DILATION_Y= 3 # big enough to salvage thin lines, yet not accidentally connecting close diacritics
 DILATION_X= 3  #some vertical lines are just too thin
 DILATION_I= 1        
 

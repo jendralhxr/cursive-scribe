@@ -774,12 +774,17 @@ for k in range(len(components)):
         else: 
             stroke_baseline = sum(pos[node][1] for node in components[k].nodes) / len(components[k].nodes)
             # if stumpy, prefers starting close to median more to the right, but far away from centroid
-            leftmost_node = min(graph.nodes, key=lambda node: pos[node][0])
+            # leftmost_node = min(graph.nodes, key=lambda node: pos[node][0])
             rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)], \
                                      key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
-            # Step 1: Get the rightmost nodes
+            
+            # proper character written up from the baseline
             topmost_nodes = sorted([node for node in rightmost_nodes  if pos[node][1] < (baseline_pos + SLIC_SPACE)],\
                                    key=lambda node: pos[node][1])[:int(RASM_CANDIDATE*PHI)]
+            # leftover character
+            if len(topmost_nodes)==0:
+                topmost_nodes = rightmost_nodes
+                
             # Zulhaj @jendralhxr
             smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE)]
             rightmost_nodes = sorted([node for node in smallest_degree_nodes], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE / PHI)]

@@ -67,7 +67,7 @@ def draw(img): # draw the bitmap
         
 filename= sys.argv[1]
 #filename= 'topanribut.png'
-# filename='dengarkan.png'
+#filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -128,8 +128,9 @@ for j in range(height):
         else:
             moments_void[lbls[j,i]] = np.append(moments_void[lbls[j,i]], np.array([[i,j]]), axis=0)
 
+# some badly needed 'sanity' checks
 #moments[0][1] = [0,0] # random irregularities, not quite sure why
-# some badly needed 'sanity' check
+
 def remove_zeros(moments):
     temp=[]
     v= len(moments)
@@ -143,6 +144,10 @@ def remove_zeros(moments):
 
 for n in range(len(moments)):
     moments[n]= remove_zeros(moments[n])
+    if len(moments[n]) != 0:
+        if abs(moments[n][0][0]-moments[n][-1][0]) > SLIC_SPACE*pow(PHI,2) or\
+            abs(moments[n][0][1]-moments[n][-1][1]) > SLIC_SPACE*pow(PHI,2):
+            moments[n]= []
 
 #draw(render)
 
@@ -154,20 +159,27 @@ scribe= nx.Graph() # start anew, just in case
 # valid superpixel
 filled=0
 for n in range(num_slic):
-    if ( len(moments[n])>SLIC_SPACE ): # remove spurious superpixel with area less than 2 px 
+    if ( len(moments[n])>SLIC_SPACE ): # remove spurious superpixel with small area
         cx= int( np.mean( [array[0] for array in moments[n]] )) # centroid
         cy= int( np.mean( [array[1] for array in moments[n]] ))
         if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
-            scribe.add_node(int(filled), label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), hurf='', pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
+            scribe.add_node(filled, label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), hurf='', pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
+
+# Relabel nodes
+# mapping = {node: idx for idx, node in enumerate(scribe.nodes())}
+# scribe_relabel = nx.relabel_nodes(scribe, mapping)
 
 def pdistance(point1, point2):
     x1, y1 = point1
     x2, y2 = point2
     distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-    return distance
+    if distance < SLIC_SPACE/PHI:
+        return SLIC_SPACE/PHI
+    else:
+        return distance
 
 # connected components
 from dataclasses import dataclass, field
@@ -781,15 +793,15 @@ for k in range(len(components)):
             # proper character written up from the baseline
             topmost_nodes = sorted([node for node in rightmost_nodes  if pos[node][1] < (baseline_pos + SLIC_SPACE)],\
                                    key=lambda node: pos[node][1])[:int(RASM_CANDIDATE*PHI)]
-            # leftover character
+            # 'leftover' rasm beneath baseline
             if len(topmost_nodes)==0:
                 topmost_nodes = rightmost_nodes
                 
             # Zulhaj @jendralhxr
             smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE)]
             rightmost_nodes = sorted([node for node in smallest_degree_nodes], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE / PHI)]
-            #node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
-            #stroke_baseline = max(pos[node][1] for node in rightmost_nodes)
+            # node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
+            # stroke_baseline = max(pos[node][1] for node in rightmost_nodes)
             rightmost_nodes_filtered = [node for node in rightmost_nodes if abs(pos[node][1]-stroke_baseline ) < SLIC_SPACE*pow(PHI,2)]
             rightmost_nodes_filtered = sorted([node for node in rightmost_nodes_filtered], \
                                key=lambda node: pos[node][1])[:int(RASM_CANDIDATE/PHI)]
@@ -808,10 +820,9 @@ for k in range(len(components)):
                 else:
                     # can also be away from baseline, no branch at the beginning
                     node_start = min(rightmost_nodes_filtered, key=lambda node: pos[node][1])
-			# @FadhilatulFitriyah
-            # Step 2: Get the topmost nodes from the rightmost nodes
+			
+            # @FadhilatulFitriyah
             # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
-            # Step 3: Get the node with the node start from topmost nodes
             #node_start  = min(rightmost_nodes, key=lambda node: graph.degree(node))
         
         components[k].node_start= node_start

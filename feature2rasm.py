@@ -801,8 +801,8 @@ for k in range(len(components)):
             smallest_degree_nodes = sorted([node for node in topmost_nodes], key=lambda node: graph.degree(node))[:int(RASM_CANDIDATE)]
             rightmost_nodes = sorted([node for node in smallest_degree_nodes], key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE / PHI)]
             # node_start = max(smallest_degree_nodes, key=lambda node: pdistance(pos[node], components[k].centroid))
-            # stroke_baseline = max(pos[node][1] for node in rightmost_nodes)
-            rightmost_nodes_filtered = [node for node in rightmost_nodes if abs(pos[node][1]-stroke_baseline ) < SLIC_SPACE*pow(PHI,2)]
+            lead_baseline = max(pos[node][1] for node in rightmost_nodes)
+            rightmost_nodes_filtered = [node for node in rightmost_nodes if abs(pos[node][1]-lead_baseline ) < SLIC_SPACE*pow(PHI,3)]
             rightmost_nodes_filtered = sorted([node for node in rightmost_nodes_filtered], \
                                key=lambda node: pos[node][1])[:int(RASM_CANDIDATE/PHI)]
             if len(rightmost_nodes_filtered)==0:
@@ -815,7 +815,7 @@ for k in range(len(components)):
                 if max(adjdiff) > SLIC_SPACE*pow(PHI,2):
                     # close to baseline, cause there is branch at the beginning
                     node_start = min((node for node in rightmost_nodes_filtered \
-                                      if abs(pos[node][1] - baseline_pos) <= SLIC_SPACE * pow(PHI, 2)),\
+                                      if abs(pos[node][1] - lead_baseline) <= SLIC_SPACE * pow(PHI, 2)),\
                                       key=lambda node: pos[node][1] )
                 else:
                     # can also be away from baseline, no branch at the beginning

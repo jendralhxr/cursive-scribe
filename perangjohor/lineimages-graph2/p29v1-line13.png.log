@@ -1,5 +1,0 @@
-Traceback (most recent call last):
-  File "/me/cursive-scribe/perangjohor/lineimages/feature2rasm.py", line 649, in <module>
-    scribe.add_edge(m, ndst[i], color='#00FF00', weight=1e2/ndist[i]/SLIC_SPACE, vane=tvane)
-                                                        ~~~^~~~~~~~~
-ZeroDivisionError: float division by zero

@@ -214,12 +214,11 @@ def close_components(b, comps, length=4):
     # since the components are sorted by position, length index would suffice to iterate over them
     for i in range(length):
         # Try to subtract i from b
-        if b - i >= 1 and b - i != b:  # Ensure the value stays within range and is not b
-            result.append(b - i)
+        if (b-i) >= 0 and (b-i) != b:  # Ensure the value stays within range and is not b
+            result.append(b-i)
         # Try to add i+1 to b
-        if b + i + 1 < len(comps) and b + i + 1 != b:  # Ensure the value stays within range and is not b
-            result.append(b + i + 1)
-
+        if (b+i) < len(comps) and (b+i) != b:  # Ensure the value stays within range and is not b
+            result.append(b + i)
     return result
 
 components=[]
@@ -277,6 +276,7 @@ for i in stray:
 components = [c for c in components if c.area >= pow(SLIC_SPACE,2)+SLIC_SPACE*PHI or len(c.nodes) > 1]
 components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 
+# length of each node within a rasm
 # for n in len(components):
 #     for i in components[n].nodes:
 #         distance= pdistance(components[n].centroid, pos[i])
@@ -845,6 +845,7 @@ for k in range(len(components)):
         (components[k].rect[3]/components[k].rect[2] < pow(PHI,2) and components[k].rect[2]/components[k].rect[3] < pow(PHI,2)) and\
         ( components[k].area<pow(SLIC_SPACE,2)*pow(PHI,5) or (len(components[k].nodes)==1 and components[k].area > pow(SLIC_SPACE,2))): # small components (diacritics)
         
+        # diacritics size classification
         # A: 1 dots, B: 2 dots, C: 3 dots; D: (perhaps) hamza
         for j in components[k].nodes:
             scribe_dia.nodes[j]['rasm']=False
@@ -856,6 +857,7 @@ for k in range(len(components)):
             else:
                 scribe_dia.nodes[j]['dia_size']='A' # approx pow(SLIC_SPACE,2)*pow(PHI,3)
             
+        # find the rasm to attach to
         src_comp= k
         src_node= -1
         closest_comp= -1
@@ -868,13 +870,13 @@ for k in range(len(components)):
                     for n in components[l].nodes:
                         tdist= pdistance(pos[m], pos[n])
                         tvane= freeman(pos[n][0]-pos[m][0], pos[n][1]-pos[m][1])
-                        if tdist<closest_dist and (tvane==2 or tvane==6) and scribe.nodes[n]['rasm']==True:
+                        if tdist<closest_dist and (tvane==2 or tvane==6) and scribe_dia.nodes[n]['rasm']==True:
                             closest_comp= l
                             src_node= m
                             closest_node= n
                             closest_vane= tvane
                             closest_dist= tdist
-        #print(f'comp {k} to {closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
+        #print(f'diacritics{k} to rasm{closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
         if closest_dist<SLIC_SPACE*pow(PHI,4):
             scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane) # blue connecting edge
             if closest_vane==6: # diacritics over
@@ -884,28 +886,60 @@ for k in range(len(components)):
                 #scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#000080')
                 scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#000080') # light blue
 
-    # edge cases, treat as rasm
+    # edge cases
+    # treat small ones as diacritics
+    elif len(components[k].nodes) <= 2:
+        for j in components[k].nodes:
+            scribe_dia.nodes[j]['rasm']=False
+            scribe_dia.nodes[j]['color']='#008888'
+            if   components[k].area > pow(SLIC_SPACE,2)*pow(PHI,4):
+                 scribe_dia.nodes[j]['dia_size']='C'
+            elif components[k].area > pow(SLIC_SPACE,2)*pow(PHI,3):
+                 scribe_dia.nodes[j]['dia_size']='B'
+            else:
+                scribe_dia.nodes[j]['dia_size']='A' # approx pow(SLIC_SPACE,2)*pow(PHI,3)
+    # treat slightly larger ones as rasm
     else:
         for j in components[k].nodes:
             scribe_dia.nodes[j]['rasm']=True
         scribe_dia.nodes[components[k].node_start]['color']= '#F00000' # initialize with red
 
 
+#SINISINI
+
 # merging close diacritics
 for i in range(len(components)):
     for j in close_components(i, components):
         dia_dist= pdistance(components[i].centroid, components[j].centroid)
-        if dia_dist < SLIC_SPACE*PHI and \
+        min_distance = dia_dist
+        for p1 in components[i].nodes:
+            for p2 in components[j].nodes:
+                current_distance = pdistance(pos[p1], pos[p2])
+                if current_distance < min_distance:
+                    min_distance = current_distance
+        dia_dist= min(dia_dist, min_distance)
+
+        if dia_dist < SLIC_SPACE*pow(PHI,2) and \
             scribe_dia.nodes[components[i].nodes[0]]['rasm']==False and\
             scribe_dia.nodes[components[j].nodes[0]]['rasm']==False :
             components[i].area= components[i].area + components[j].area
             components[i].nodes= np.unique( components[i].nodes + components[j].nodes ).tolist()
             for n in components[i].nodes:
-                if   components[i].area > pow(SLIC_SPACE,2)*pow(PHI,5):
-                     scribe_dia.nodes[n]['dia_size']='C'
-                else:
-                     scribe_dia.nodes[n]['dia_size']='B'# approx pow(SLIC_SPACE,2)*pow(PHI,4)
-            #  make it taller, stacked diacritics
+                # diacritics over
+                if scribe_dia.nodes[components[i].nodes[0]]['dia_size'] in {'A', 'B', 'C'}:
+                    if   components[i].area > pow(SLIC_SPACE,2)*pow(PHI,4):
+                         scribe_dia.nodes[n]['dia_size']='C'
+                    else:
+                         scribe_dia.nodes[n]['dia_size']='B'# approx pow(SLIC_SPACE,2)*pow(PHI,3)
+                # diacritics under
+                elif scribe_dia.nodes[components[i].nodes[0]]['dia_size'] in {'a', 'b', 'c'}:
+                    if   components[i].area > pow(SLIC_SPACE,2)*pow(PHI,4):
+                         scribe_dia.nodes[n]['dia_size']='c'
+                    else:
+                         scribe_dia.nodes[n]['dia_size']='b'
+                         
+                #  make it taller, stacked diacritics
+            components[i].mat= cv.bitwise_or(components[i].mat, components[j].mat)
             components[i].rect = (\
                                   components[i].rect[0],\
                                   components[i].rect[1],\
@@ -1211,8 +1245,8 @@ graphfile= 'graph-'+imagename+ext
 draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
 
 
-# # ##################################
-# # ## ambil data dari hasil CNN
+##################################
+# ambil data dari hasil CNN
 # import cnn48syairperahu
 # import rasm2hurf
 

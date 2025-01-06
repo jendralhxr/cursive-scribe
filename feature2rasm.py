@@ -8,6 +8,7 @@ import networkx as nx
 import sys
 import math
 import heapq
+from itertools import combinations
 
 # freeman code going anti-clockwise like trigonometrics angle
 #    3   2   1
@@ -184,7 +185,7 @@ def pdistance(point1, point2):
 def pdistance_v(point1, point2):
     x1, y1 = point1
     x2, y2 = point2
-    distance = math.sqrt((x2 - x1)**2 + ((y2 - y1)**2/PHI))
+    distance = math.sqrt((x2 - x1)**2*PHI + ((y2 - y1)**2/PHI))
     if distance < SLIC_SPACE/PHI:
         return SLIC_SPACE/PHI
     else:
@@ -770,11 +771,21 @@ for k in range(len(components)):
         if abs(pos[components[k].nodes[n]][1]-baseline_pos) < SLIC_SPACE:
             intersect= True
 
+    max_distance = 0
+    min_distance = 1e9
+    for node1, node2 in combinations(components[k].nodes, 2):  # Generate all unique pairs of nodes
+        current_distance = pdistance(pos[node1], pos[node2])
+        if current_distance > max_distance:
+            max_distance = current_distance
+        if current_distance < min_distance:
+            min_distance = current_distance
+
     # valid rasm
     # large size
     # more likely to be close to or intersecting the baseline
     if  intersect==True and \
         len(components[k].nodes) >= 2 and \
+        max_distance > SLIC_SPACE*PHI + SLIC_SPACE/2 and\
         components[k].area>pow(SLIC_SPACE,2)*pow(PHI,4): \
         #or (abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,3) and components[k].area>pow(SLIC_SPACE,2)*pow(PHI,3)): 
         
@@ -850,6 +861,7 @@ for k in range(len(components)):
     # away from median, but still relatively close
     # rather stumpy
     if  intersect==False and \
+        max_distance < SLIC_SPACE*pow(PHI,2) and\
         abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,4) and \
         abs(components[k].centroid-baseline_pos)[1] > SLIC_SPACE and \
         (components[k].rect[3]/components[k].rect[2] < pow(PHI,2) and components[k].rect[2]/components[k].rect[3] < pow(PHI,2)) and\
@@ -897,8 +909,8 @@ for k in range(len(components)):
                 scribe_dia.nodes[closest_node]['color']= hex_or(scribe_dia.nodes[closest_node]['color'], '#000080') # light blue
 
     # edge cases
-    # treat small ones as diacritics
-    elif len(components[k].nodes) <= 2:
+    # treat small or 'crumpled' ones as diacritics 
+    elif len(components[k].nodes) <= 2 or max_distance < SLIC_SPACE*PHI + SLIC_SPACE/2:
         for j in components[k].nodes:
             scribe_dia.nodes[j]['rasm']=False
             scribe_dia.nodes[j]['color']='#008888'

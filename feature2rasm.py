@@ -211,6 +211,7 @@ mean_closest_distance = np.mean(min_distances) # this should closely resembles S
 
 def close_components(b, comps, length=4):
     result = []
+    # since the components are sorted by position, length index would suffice to iterate over them
     for i in range(length):
         # Try to subtract i from b
         if b - i >= 1 and b - i != b:  # Ensure the value stays within range and is not b
@@ -267,11 +268,14 @@ for n in range(scribe.number_of_nodes()):
             #print(f'new node[{n}] with component[{idx}] at {mc} from {components[idx].centroid} distance: {pd})')
 
 
-components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
+# small components/stroke can just be discarded
+# remove the associated nodes
 stray = [c for c in components if c.area < pow(SLIC_SPACE,2)+SLIC_SPACE*PHI and len(c.nodes) == 1]
 for i in stray:
     scribe.remove_node(i.nodes[0])
+# remove the component
 components = [c for c in components if c.area >= pow(SLIC_SPACE,2)+SLIC_SPACE*PHI or len(c.nodes) > 1]
+components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 
 # for n in len(components):
 #     for i in components[n].nodes:
@@ -747,6 +751,8 @@ degree_rasm= scribe.degree()
 scribe_dia= scribe.copy()
 baseline_pos= np.mean(np.array([value[1] for value in pos.values()]))
 
+# classifying stroke as rasm or diacritics
+# merging them if necessary
 for k in range(len(components)):
     components[k].node_start= components[k].nodes[0]
     intersect= False
@@ -889,7 +895,9 @@ for k in range(len(components)):
 for i in range(len(components)):
     for j in close_components(i, components):
         dia_dist= pdistance(components[i].centroid, components[j].centroid)
-        if dia_dist < SLIC_SPACE*PHI and components[i].nodes[0]:
+        if dia_dist < SLIC_SPACE*PHI and \
+            scribe_dia.nodes[components[i].nodes[0]]['rasm']==False and\
+            scribe_dia.nodes[components[j].nodes[0]]['rasm']==False :
             components[i].area= components[i].area + components[j].area
             components[i].nodes= np.unique( components[i].nodes + components[j].nodes ).tolist()
             for n in components[i].nodes:
@@ -907,17 +915,18 @@ for i in range(len(components)):
             for n in components[j].nodes:
                 scribe_dia.nodes[n]['component_id']= i
 
-            components[j].centroid= (0,0) # components to be removed
+            components[j].centroid= (-1,-1) # components to be removed
             # print(f"gonna remove {j}")
 
 # removing merged diacritics components
 components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
-while components[-1].centroid == (0,0):
+while components[-1].centroid == (-1,-1):
     del components[-1]
+
         
+# refine diacritics connections
 degree_dia= scribe.degree()
 
-# rechecking diacritics connections
 for i in range(len(components)):
     components[i].nodes= np.unique(components[i].nodes).tolist()
     if scribe_dia.nodes[ components[i].nodes[0] ]['rasm']==False:
@@ -1163,7 +1172,7 @@ FONTSIZE= 24
 
 for i in range(len(components)):
     rasm= ''
-    if scribe_dia.nodes[components[i].node_start]['rasm']== True:
+    if components[i].node_start != -1 and scribe_dia.nodes[components[i].node_start]['rasm']== True:
         rasm=''
         remainder_stroke=''
 
@@ -1173,7 +1182,7 @@ for i in range(len(components)):
         remainder_stroke= path_vane_edges(scribe_dia, path)
         if len(remainder_stroke) >=2:
             print(remainder_stroke)
-        
+    
         # refer to rasm2hurf.py
         # rule-based minimum feasible pattern
         # rasm= stringtorasm_LEV(remainder_stroke)

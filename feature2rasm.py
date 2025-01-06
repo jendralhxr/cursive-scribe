@@ -181,6 +181,16 @@ def pdistance(point1, point2):
     else:
         return distance
 
+def pdistance_v(point1, point2):
+    x1, y1 = point1
+    x2, y2 = point2
+    distance = math.sqrt((x2 - x1)**2 + ((y2 - y1)**2/PHI))
+    if distance < SLIC_SPACE/PHI:
+        return SLIC_SPACE/PHI
+    else:
+        return distance
+
+
 # connected components
 from dataclasses import dataclass, field
 from typing import List
@@ -914,12 +924,12 @@ for i in range(len(components)):
         min_distance = dia_dist
         for p1 in components[i].nodes:
             for p2 in components[j].nodes:
-                current_distance = pdistance(pos[p1], pos[p2])
+                current_distance = pdistance_v(pos[p1], pos[p2])
                 if current_distance < min_distance:
                     min_distance = current_distance
         dia_dist= min(dia_dist, min_distance)
 
-        if dia_dist < SLIC_SPACE*pow(PHI,2) and \
+        if dia_dist < SLIC_SPACE*PHI and \
             scribe_dia.nodes[components[i].nodes[0]]['rasm']==False and\
             scribe_dia.nodes[components[j].nodes[0]]['rasm']==False :
             components[i].area= components[i].area + components[j].area

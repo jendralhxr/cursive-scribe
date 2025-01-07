@@ -62,6 +62,7 @@ np.random.seed(42)
 LENGTH_MIN= 2
 LENGTH_MAX = 16  # Max length of the strings
 NUM_CLASSES = 40  # Number of classes
+SUBSTROKE_MIN_LENGTH= 4
 
 # data
 source = pd.read_csv('syairperahu.csv')
@@ -118,7 +119,6 @@ def update_rasm_score(hurf_class, rasm_seq):
 
 # TODO-later: pemotongan dengan proyeksi histogram untuk potong substroke
 def parse_chaincode(input_string):
-    SUBSTROKE_MIN_LENGTH= 4
     result = []
     current_group = input_string[0]  # Start with the first character
     stroke_prev= True
@@ -418,11 +418,16 @@ VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 remainder_stroke= '66676543535364667075444' # terlaLU with pruning
 remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
-
+import re
+delimiters = r'[+\-abcABC]'
 
 def stringtorasm_MC_jagokandang(chaincode):
     remainder_stroke= chaincode
     rasm=''
+    
+    tokens = re.split(f'({delimiters})', remainder_stroke)
+    
+    # parse between the marks rather than incrementally increases the index
     
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         hurf_best=''
@@ -451,6 +456,7 @@ def stringtorasm_MC_jagokandang(chaincode):
                 
                     if len(top_fcs[ str(mc_class) ]) != 0:
                         # similarity evaluation
+                        # TODO: use tokens here rather than reaminder stroke
                         score_tee1= myjaro( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         score_tee2= myjaro( reverseFreeman(remainder_stroke[0:len_mc]), fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         if len_mc <= int (LENGTH_MIN * pow(PHI,2)):
@@ -601,10 +607,13 @@ def stringtorasm_MC_jagokandang(chaincode):
         rasm+= hurf_best
 
         # terminus hurfs            
-        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='ۏ':
-            # or hurf_best=='و ' 
-            # wawu (و) are often connected to ه or ة
-            remainder_stroke=''
+        if (hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ز' or hurf_best=='ۏ')\
+            and len(remainder_stroke)-len_best < SUBSTROKE_MIN_LENGTH*PHI:
+           # hurf_best=='ا' or hurf_best=='و ' 
+           # wawu (و) are often connected to ه or ة, alif is merged along with ل
+           remainder_stroke=''
+        elif (hurf_best=='ا' or hurf_best=='و' or hurf_best=='ر' ) and len(remainder_stroke)-len_best > SUBSTROKE_MIN_LENGTH:
+            rasm += ' ' # inter-rasm space
         else:
             remainder_stroke= remainder_stroke[len_best:]
         

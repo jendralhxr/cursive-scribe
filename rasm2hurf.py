@@ -601,7 +601,9 @@ def stringtorasm_MC_jagokandang(chaincode):
         rasm+= hurf_best
 
         # terminus hurfs            
-        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='و ' or hurf_best=='ۏ':
+        if hurf_best=='ا' or hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ر' or hurf_best=='ز' or hurf_best=='ۏ':
+            # or hurf_best=='و ' 
+            # wawu (و) are often connected to ه or ة
             remainder_stroke=''
         else:
             remainder_stroke= remainder_stroke[len_best:]

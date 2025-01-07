@@ -540,6 +540,7 @@ def stringtorasm_MC_jagokandang(chaincode):
                 hurf_best= 'ب'
             elif 'b' in tee_best or 'c' in tee_best:
                 hurf_best= 'ي'
+                # rule for ending-ya (ي) could be lacking for more elaborate rayhani style
         if hurf_best=='ج' or hurf_best=='چ' or hurf_best=='ح' or hurf_best=='خ':
             if 'A' in tee_best:
                 hurf_best= 'خ'

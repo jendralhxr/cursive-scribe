@@ -767,13 +767,22 @@ baseline_pos= np.mean(np.array([value[1] for value in pos.values()]))
 for k in range(len(components)):
     components[k].node_start= components[k].nodes[0]
     intersect= False
+    intersect_top= False
+    intersect_bot= False
     for n in range(len(components[k].nodes)):
-        if abs(pos[components[k].nodes[n]][1]-baseline_pos) < SLIC_SPACE:
-            intersect= True
-
+        dist_from_baseline= pos[components[k].nodes[n]][1]-baseline_pos 
+        if abs(dist_from_baseline) < SLIC_SPACE:
+            #intersect= True
+            if dist_from_baseline < 0:
+                intersect_top = True
+            elif dist_from_baseline > 0:
+                intersect_bot = True
+    intersect =  intersect_top and intersect_bot
+        
+    # distances between nodes within a component    
     max_distance = 0
     min_distance = 1e9
-    for node1, node2 in combinations(components[k].nodes, 2):  # Generate all unique pairs of nodes
+    for node1, node2 in combinations(components[k].nodes, 2):
         current_distance = pdistance(pos[node1], pos[node2])
         if current_distance > max_distance:
             max_distance = current_distance
@@ -785,8 +794,8 @@ for k in range(len(components)):
     # more likely to be close to or intersecting the baseline
     if  intersect==True and \
         len(components[k].nodes) >= 2 and \
-        max_distance > SLIC_SPACE*PHI + SLIC_SPACE/2 and\
-        components[k].area>pow(SLIC_SPACE,2)*pow(PHI,4): \
+        (max_distance > SLIC_SPACE*PHI or len(components[k].nodes) >= 3 ) and\
+        components[k].area>pow(SLIC_SPACE,2)*pow(PHI,3): # some valid single-letter rasm can be quite small
         #or (abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,3) and components[k].area>pow(SLIC_SPACE,2)*pow(PHI,3)): 
         
         for j in components[k].nodes:
@@ -860,7 +869,7 @@ for k in range(len(components)):
     # small size, but not too small (dirt)
     # away from median, but still relatively close
     # rather stumpy
-    if  intersect==False and \
+    elif  intersect==False and \
         max_distance < SLIC_SPACE*pow(PHI,2) and\
         abs(components[k].centroid-baseline_pos)[1] < SLIC_SPACE*pow(PHI,4) and \
         abs(components[k].centroid-baseline_pos)[1] > SLIC_SPACE and \

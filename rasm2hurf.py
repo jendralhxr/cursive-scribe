@@ -53,6 +53,17 @@ hurf[34]= 'ء'
 hurf[35]= 'ي'
 hurf[36]= 'ی'
 hurf[37]= 'ڽ'
+hurf[38]= 'ؤ'
+hurf[39]= 'أ'
+
+def map_huruf_to_val(huruf):
+    try:
+        return hurf.index(huruf)
+    except ValueError:
+        return None  # Return None for unmapped values
+
+def is_single_char(value):
+    return isinstance(value, str) and len(value) == 1
 
 
 # Generate random data
@@ -64,18 +75,24 @@ LENGTH_MAX = 16  # Max length of the strings
 NUM_CLASSES = 40  # Number of classes
 SUBSTROKE_MIN_LENGTH= 4
 
-# data
+# annotated chaincodes and hurfs
 source = pd.read_csv('/shm/coba.csv')
 source = source.reset_index(drop=True)
+# some basic checks
+source = source[source['chaincode'].notna() & (source['chaincode'] != "")]
+source['val'] = source['huruf'].apply(map_huruf_to_val)
+#source['is_valid'] = source['huruf'].apply(is_single_char)
+# source['chaincode'].str.len().mean()
+# source['chaincode'].str.len().min()
+# source['chaincode'].str.len().max()
 
 #random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
 #random_labels=pd.concat([source['label'], source['label']])
-random_strings=pd.concat([source['chaincode']])
-random_hurf=pd.concat([source['val']])
-random_labels=pd.concat([source['val']])
-#source['rasm'].str.len().mean()
-#source['rasm'].str.len().min()
-#source['rasm'].str.len().max()
+#random_strings=pd.concat([source['chaincode']])
+#random_hurf=pd.concat([source['val']])
+#random_labels=pd.concat([source['val']])
+
+
 
 plt.rcParams.update({
     'figure.dpi': 300,
@@ -88,7 +105,7 @@ plt.rcParams.update({
 })
 
 # First plot - Histogram of character lengths
-char_lengths = source['rasm'].apply(len)
+char_lengths = source['chaincode'].apply(len)
 plt.figure()  # Create a new figure
 plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths) + 1), edgecolor='black')
 plt.xlabel('chaincode length')

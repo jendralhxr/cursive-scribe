@@ -65,12 +65,13 @@ NUM_CLASSES = 40  # Number of classes
 SUBSTROKE_MIN_LENGTH= 4
 
 # data
-source = pd.read_csv('syairperahu.csv')
+source = pd.read_csv('/shm/coba.csv')
 source = source.reset_index(drop=True)
 
 #random_strings=pd.concat([source['2bfs'], source['2alpha-bfsdfs']])
 #random_labels=pd.concat([source['label'], source['label']])
-random_strings=pd.concat([source['rasm']])
+random_strings=pd.concat([source['chaincode']])
+random_hurf=pd.concat([source['val']])
 random_labels=pd.concat([source['val']])
 #source['rasm'].str.len().mean()
 #source['rasm'].str.len().min()

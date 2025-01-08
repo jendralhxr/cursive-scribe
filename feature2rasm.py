@@ -1225,7 +1225,7 @@ def bfs_with_closest_priority(G, start_node):
             # Explore neighbors
             for neighbor in G.neighbors(current_node):
                 if neighbor not in visited:
-                    distance = pdistance(pos[neighbor], pos[neighbor])
+                    distance = pdistance(pos[current_node], pos[neighbor])
                     heapq.heappush(priority_queue, (distance, neighbor))
                     edges.append((current_node, neighbor))
     

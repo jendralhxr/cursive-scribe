@@ -61,13 +61,13 @@ from scipy.signal import find_peaks
 
 def draw_histograms_on_image(thresholded_image, histogram_x, histogram_y):
     # Normalize histograms to fit within the image dimensions for visualisation
-    histogram_x_norm = (histogram_x / histogram_x.max()) * thresholded_image.shape[0] / PHI
-    histogram_y_norm = (histogram_y / histogram_y.max()) * thresholded_image.shape[1] / PHI
+    histogram_x_norm = (histogram_x / histogram_x.max()) * thresholded_image.shape[0]#  / PHI
+    histogram_y_norm = (histogram_y / histogram_y.max()) * thresholded_image.shape[1]# / PHI
     
     plt.imshow(thresholded_image, cmap='gray')
     # Overlay histogram_y as green scatter points (along the left, vertically)
     y_points = np.arange(len(histogram_y_norm))
-    x_points = histogram_y_norm  # Align to start from the left of the image
+    x_points = histogram_y_norm    # Align to start from the left of the image
     plt.plot(x_points, y_points, color='green', linewidth=1)  # Connect points with a line
     # Overlay histogram_x as red scatter points (along the top, horizontally)
     # x_points = np.arange(len(histogram_x_norm))
@@ -84,7 +84,8 @@ def draw_histograms_on_image(thresholded_image, histogram_x, histogram_y):
     # Draw blue horizontal lines at each valley of histogram_y
     for valley in valleys:
         plt.axhline(y=valley, color='blue', linestyle='--', linewidth=0.5, xmin=0.1, xmax=0.9)
-
+    plt.savefig("/shm/hist"+filename, dpi=300, bbox_inches='tight')
+    
 
 filename= sys.argv[1]
 imagename, ext= os.path.splitext(filename)

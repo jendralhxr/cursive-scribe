@@ -13,9 +13,9 @@ from matplotlib.ticker import MultipleLocator, FuncFormatter
 # or perhaps a leaf node is a set of path with +/-1 variation
 
 PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
-
+NUM_HURF= 42
 # the hurf lookup
-hurf= [''] * 40
+hurf= [''] * NUM_HURF
 hurf[1]= 'ا'
 hurf[2]= 'ب'
 hurf[3]= 'ت'
@@ -55,6 +55,8 @@ hurf[36]= 'ی'
 hurf[37]= 'ڽ'
 hurf[38]= 'ؤ'
 hurf[39]= 'أ'
+hurf[40]= 'ك'
+hurf[41]= 'ى'
 
 def map_huruf_to_val(huruf):
     try:
@@ -69,18 +71,17 @@ def is_single_char(value):
 # Generate random data
 np.random.seed(42)
 
-# Parameters
-LENGTH_MIN= 2
-LENGTH_MAX = 16  # Max length of the strings
-NUM_CLASSES = 40  # Number of classes
-SUBSTROKE_MIN_LENGTH= 4
+fieldstring= 'chaincode'
+fieldhurf= 'huruf'
+fieldval= 'val'
 
 # annotated chaincodes and hurfs
 source = pd.read_csv('/shm/coba.csv')
 source = source.reset_index(drop=True)
+source = source[(source[fieldstring] != "") & (source[fieldhurf] != "")]
 # some basic checks
-source = source[source['chaincode'].notna() & (source['chaincode'] != "")]
-source['val'] = source['huruf'].apply(map_huruf_to_val)
+source = source[source[fieldstring].notna() & source[fieldhurf].notna()]
+source[fieldval] = source[fieldhurf].apply(map_huruf_to_val)
 #source['is_valid'] = source['huruf'].apply(is_single_char)
 # source['chaincode'].str.len().mean()
 # source['chaincode'].str.len().min()
@@ -91,8 +92,6 @@ source['val'] = source['huruf'].apply(map_huruf_to_val)
 #random_strings=pd.concat([source['chaincode']])
 #random_hurf=pd.concat([source['val']])
 #random_labels=pd.concat([source['val']])
-
-
 
 plt.rcParams.update({
     'figure.dpi': 300,
@@ -105,7 +104,7 @@ plt.rcParams.update({
 })
 
 # First plot - Histogram of character lengths
-char_lengths = source['chaincode'].apply(len)
+char_lengths = source[fieldstring].apply(len)
 plt.figure()  # Create a new figure
 plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths) + 1), edgecolor='black')
 plt.xlabel('chaincode length')
@@ -116,6 +115,12 @@ plt.grid(True)
 
 quartiles = char_lengths.quantile([0.25, 0.5, 0.75])
 
+# Parameters
+LENGTH_MIN= 2
+LENGTH_MAX = 16  # Max length of the strings
+NUM_CLASSES = NUM_HURF  # Number of classes
+SUBSTROKE_MIN_LENGTH= 4
+
 #### FCS stands for frequent common substring/subsequence/substroke
 # since there is preference for longest ones, it is now FLCS/LFCS
 
@@ -123,7 +128,7 @@ FCS_MAX_NUM= 18
 FCS_APPEARANCE_MIN= 2
 
 tokens = {f'{i}': [] for i in range(0, NUM_CLASSES)}
-appearance = np.zeros(40, dtype=float) # hurf appearance
+appearance = np.zeros(NUM_CLASSES, dtype=float) # hurf appearance
 
 def update_rasm_score(hurf_class, rasm_seq):
     if hurf_class in tokens:
@@ -135,7 +140,11 @@ def update_rasm_score(hurf_class, rasm_seq):
         # add new seq if not already present
         tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN)})
 
-# TODO-later: pemotongan dengan proyeksi histogram untuk potong substroke
+# TODO-later: pemotongan dengan proyeksi histogram dan hubungan diakritik untuk potong substroke
+# TODO !!
+# TODO !!!
+
+
 def parse_chaincode(input_string):
     result = []
     current_group = input_string[0]  # Start with the first character
@@ -191,9 +200,8 @@ def fcs_tabulate(val, string):
     #             unique_substrings.add(substring)  
                 
 
+#  SINISINI
 
-fieldstring= 'rasm'
-fieldval= 'val'
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
     fcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(" ", "").replace("+", "").replace("-", ""))
@@ -251,7 +259,7 @@ sns.set_theme(rc={
 #sns.heatmap(lfcs, cmap='nipy_spectral', annot=True, cbar=True, fmt='g', annot_kws={"size": 4})
 #sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"ticks": np.arange(0, 1.01, 0.05), "format": "%.2f"})
 sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"format": "%.2f"})
-plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
+plt.yticks(ticks=range(NUM_CLASSES), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=0)
 plt.title("FCS score: PHI^(len(subsequence)/2) / hurf-apperance")
 #plt.savefig("/shm/heatmapLCS.png")
@@ -383,7 +391,7 @@ def draw_heatmap(data, xlabel, ylabel, title):
         'ytick.labelsize': 6
     })
     ax= sns.heatmap(data, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
-    plt.yticks(ticks=range(40), labels=hurf, rotation=0, fontsize=6)
+    plt.yticks(ticks=range(NUM_CLASSES), labels=hurf, rotation=0, fontsize=6)
     plt.xticks(fontsize=6)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)

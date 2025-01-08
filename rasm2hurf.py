@@ -7,8 +7,9 @@ from scipy.signal import find_peaks
 import seaborn as sns
 from collections import defaultdict
 from matplotlib.ticker import MultipleLocator, FuncFormatter
+import re
 
-# TODO-later
+# TODO later
 # AND-OR graph network (based on tabulated fcs?)
 # or perhaps a leaf node is a set of path with +/-1 variation
 
@@ -140,46 +141,63 @@ def update_rasm_score(hurf_class, rasm_seq):
         # add new seq if not already present
         tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN)})
 
-# TODO-later: pemotongan dengan proyeksi histogram dan hubungan diakritik untuk potong substroke
-# TODO !!
-# TODO !!!
+
 
 
 def parse_chaincode(input_string):
     result = []
+    
+    # assuming no transition points
     current_group = input_string[0]  # Start with the first character
     stroke_prev= True
-    
-    for i in range(1, len(input_string)):
-        diff= abs ( ord(input_string[i]) - ord(input_string[i-1]) )
+    input_string_nohist= input_string.translate(str.maketrans('', '', '-+abcABC'))
+    for i in range(1, len(input_string_nohist)):
+        diff= abs ( ord(input_string_nohist[i]) - ord(input_string_nohist[i-1]) )
         if diff==0 or diff==1 or diff==7:  # smooth stroke Freeman code
             straight_stroke= True 
         else:  # Different digit
             straight_stroke= False
         
         if stroke_prev==straight_stroke:
-            current_group += input_string[i]
+            current_group += input_string_nohist[i]
         elif stroke_prev!=straight_stroke:
             if len(current_group) >= SUBSTROKE_MIN_LENGTH:  # Ensure group has at least 4 chars
                 result.append(current_group)
-                current_group = input_string[i]
+                current_group = input_string_nohist[i]
                 if straight_stroke== True:
-                    current_group = input_string[i-1]+current_group
+                    current_group = input_string_nohist[i-1]+current_group
             else:  # new substroke
-                current_group += input_string[i]
+                current_group += input_string_nohist[i]
         stroke_prev= straight_stroke
-    
     if len(current_group) >= SUBSTROKE_MIN_LENGTH:
         result.append(current_group)
     elif result:  # merge remaining characters
         result[-(SUBSTROKE_MIN_LENGTH-1):] += current_group
 
+    # parse the chaincode based on transition nodes    
+    tokens = re.split(r'([+\-abcABC])', input_string)
+    tokens = [token for token in tokens \
+              if token not in ['-', '+', 'a', 'b', 'c', 'A', 'B', 'C'] \
+                  and len(token)>=1]
+    # 1-character token is to be appended to previous token also prepended to the next token
+    tokens_res= []
+    for i in range(len(tokens)):
+        if len(tokens[i]) == 1:  
+            if tokens_res:  # Append to the previous string if result is not empty
+                tokens_res[-1] += tokens[i]
+            if i + 1 < len(tokens):  # Prepend to the next string if there is a next token
+                tokens[i + 1] = tokens[i] + tokens[i + 1]
+            # 1-character token (is not added do not add it to the result)
+        else:
+            tokens_res.append(tokens[i])
+    result += tokens_res
+    
     return result
+
 
 def fcs_tabulate(val, string):
     #print(f"class{val} {string}")
     appearance[val] += 1
-    length = len(string)
     
     substrokes= parse_chaincode(string)
     #print(f" class{val} {substrokes}") 
@@ -205,6 +223,10 @@ def fcs_tabulate(val, string):
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
     fcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(" ", "").replace("+", "").replace("-", ""))
+
+plt.plot(appearance)
+plt.xticks(ticks=range(len(hurf)), labels=hurf)
+plt.savefig("/shm/hurfappearance.png", dpi=300)
 
 FCS_APPEARANCE_MIN= 0
 top_fcs = {}
@@ -262,7 +284,7 @@ sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws
 plt.yticks(ticks=range(NUM_CLASSES), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=0)
 plt.title("FCS score: PHI^(len(subsequence)/2) / hurf-apperance")
-#plt.savefig("/shm/heatmapLCS.png")
+plt.savefig("/shm/heatmapLCS.png")
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 #ax = plt.gca()
 #for tick in ax.get_yticklabels():
@@ -446,6 +468,7 @@ remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
 import re
 delimiters = r'[+\-abcABC]'
+tokens = re.split(f'({delimiters})', remainder_stroke)
 
 def stringtorasm_MC_jagokandang(chaincode):
     remainder_stroke= chaincode

@@ -77,7 +77,7 @@ fieldhurf= 'huruf'
 fieldval= 'val'
 
 # annotated chaincodes and hurfs
-source = pd.read_csv('/shm/coba.csv')
+source = pd.read_csv('perangjohorp1v1.csv')
 source = source.reset_index(drop=True)
 source = source[(source[fieldstring] != "") & (source[fieldhurf] != "")]
 # some basic checks
@@ -128,7 +128,7 @@ SUBSTROKE_MIN_LENGTH= 4
 FCS_MAX_NUM= 18
 FCS_APPEARANCE_MIN= 2
 
-tokens = {f'{i}': [] for i in range(0, NUM_CLASSES)}
+tokens = {f'{i}': [] for i in range(0, NUM_CLASSES)} # substring/substroke/subchain/subsequence
 appearance = np.zeros(NUM_CLASSES, dtype=float) # hurf appearance
 
 def update_rasm_score(hurf_class, rasm_seq):
@@ -140,8 +140,6 @@ def update_rasm_score(hurf_class, rasm_seq):
                 return True  # early exit if already present
         # add new seq if not already present
         tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN)})
-
-
 
 
 def parse_chaincode(input_string):
@@ -175,22 +173,22 @@ def parse_chaincode(input_string):
         result[-(SUBSTROKE_MIN_LENGTH-1):] += current_group
 
     # parse the chaincode based on transition nodes    
-    tokens = re.split(r'([+\-abcABC])', input_string)
-    tokens = [token for token in tokens \
-              if token not in ['-', '+', 'a', 'b', 'c', 'A', 'B', 'C'] \
-                  and len(token)>=1]
-    # 1-character token is to be appended to previous token also prepended to the next token
-    tokens_res= []
-    for i in range(len(tokens)):
-        if len(tokens[i]) == 1:  
-            if tokens_res:  # Append to the previous string if result is not empty
-                tokens_res[-1] += tokens[i]
-            if i + 1 < len(tokens):  # Prepend to the next string if there is a next token
-                tokens[i + 1] = tokens[i] + tokens[i + 1]
-            # 1-character token (is not added do not add it to the result)
+    substrs = re.split(r'([+\-abcABC])', input_string)
+    substrs = [substr for substr in substrs \
+              if substr not in ['-', '+', 'a', 'b', 'c', 'A', 'B', 'C'] \
+                  and len(substr)>=1]
+    # 1-character substr is to be appended to previous substr also prepended to the next substr
+    substrs_res= []
+    for i in range(len(substrs)):
+        if len(substrs[i]) == 1:  
+            if substrs_res:  # Append to the previous string if result is not empty
+                substrs_res[-1] += substrs[i]
+            if i + 1 < len(substrs):  # Prepend to the next string if there is a next substr
+                substrs[i + 1] = substrs[i] + substrs[i + 1]
+            # 1-character substr (is not added do not add it to the result)
         else:
-            tokens_res.append(tokens[i])
-    result += tokens_res
+            substrs_res.append(substrs[i])
+    result += substrs_res
     
     return result
 
@@ -210,15 +208,13 @@ def fcs_tabulate(val, string):
             unique_substrings.add(substring)
             update_rasm_score(str(val), substring)
             
-    # sliding substing sampler, the old
+    # sliding substring sampler, the old
     # for i in range(length):
     #     for j in range(i + 1, length + 1):
     #         substring = string[i:j]
     #         if len(substring) > 2 and substring not in unique_substrings:  # agar tidak overlap
     #             unique_substrings.add(substring)  
                 
-
-#  SINISINI
 
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
@@ -250,10 +246,10 @@ for hurf_class, entries in top_fcs.items():
 
 FCS_THINNING= char_lengths.mode()[0] # the mode of strings length, still feels inappropriate
 
-lfcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM))
-ffcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM))
-sfcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM))
-afcs = [["" for i in range(FCS_MAX_NUM)] for j in range(NUM_CLASSES)]
+lfcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM)) # chaincode length
+ffcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM)) # frequency
+sfcs = np.zeros((NUM_CLASSES, FCS_MAX_NUM)) # overall score
+afcs = [["" for i in range(FCS_MAX_NUM)] for j in range(NUM_CLASSES)] # the substring 
 
 for j in range(0, NUM_CLASSES): # the hurf
     if top_fcs[str(j)] is not None:
@@ -474,10 +470,7 @@ def stringtorasm_MC_jagokandang(chaincode):
     remainder_stroke= chaincode
     rasm=''
     
-    tokens = re.split(f'({delimiters})', remainder_stroke)
-    
-    # parse between the marks rather than incrementally increases the index
-    
+    # MC search search
     while len(remainder_stroke)>=2 and remainder_stroke!='':
         hurf_best=''
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
@@ -489,6 +482,7 @@ def stringtorasm_MC_jagokandang(chaincode):
         
         mc_retry= 0
         while(mc_retry < MC_RETRY_MAX):
+            print(f"ret: {mc_retry}")
             fcs_lookup=''
             mc_class= random.randint(1, len(top_fcs)-1)  # may also compare to the whole string
             if len(remainder_stroke)>LENGTH_MIN*pow(PHI,LENGTH_MIN) and\
@@ -525,16 +519,16 @@ def stringtorasm_MC_jagokandang(chaincode):
                             #score_mc[int(mc_class)][len_mc] = score_tee
                             score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
                             
-                mc_retry += 1 # can also be nested one down
+            mc_retry += 1 # can also be nested one down
         
-        score_mc_mul[score_mc_mul == 1.0] = 0.0
         # plot the stop selection criteria
         # draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
         #               +'\n'+remainder_stroke)
         draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                       +'\n'+remainder_stroke)
-        # draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-        #               +'\n'+remainder_stroke)
+        score_mc_mul[score_mc_mul == 1.0] = 0.0
+        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                      +'\n'+remainder_stroke)
         
         # optimum class selection
         row_sums = np.sum(score_mc_acc, axis=1)
@@ -668,6 +662,8 @@ def stringtorasm_MC_jagokandang(chaincode):
         
         if remainder_stroke=='' or len(remainder_stroke)<2:
             break
+        
+    # full rasm (part of word) from a chaincode
     return(rasm)
 
 import sys

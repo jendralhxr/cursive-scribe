@@ -130,15 +130,29 @@ FCS_APPEARANCE_MIN= 2
 tokens = {f'{i}': [] for i in range(0, NUM_CLASSES)} # substring/substroke/subchain/subsequence
 appearance = np.zeros(NUM_CLASSES, dtype=float) # hurf appearance
 
-def update_rasm_score(hurf_class, rasm_seq):
+from itertools import product
+
+def generate_permutations(s):
+    options = [[str( (int(char) + delta) % 8)  for delta in (-1, 0, 1)] for char in s]
+    permutations = [''.join(p) for p in product(*options)]
+    return permutations
+
+def update_rasm_score(hurf_class, rasm_seq, exact):
     if hurf_class in tokens:
         for subsequence in tokens[hurf_class]:
-            if subsequence['seq'] == rasm_seq:
+            # found exactly matching
+            if subsequence['seq'] == rasm_seq and exact == True:
                 subsequence['score'] += pow(PHI,len(rasm_seq)/LENGTH_MIN/PHI)
                 subsequence['freq'] += 1
                 return True  # early exit if already present
+            elif subsequence['seq'] == rasm_seq and exact == False:
+                subsequence['score'] += pow(PHI,len(rasm_seq)/LENGTH_MIN/pow(PHI,2))
+                subsequence['freq'] += 1/PHI
+                return False
+            
         # add new seq if not already present
-        tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN/PHI)})
+        if exact==True:
+            tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN/PHI)})
 
 
 def parse_chaincode(input_string):
@@ -205,7 +219,14 @@ def fcs_tabulate(val, string):
         if len(substring) > LENGTH_MIN and substring not in unique_substrings:
             #print(f"adding {substring} to {val}")
             unique_substrings.add(substring)
-            update_rasm_score(str(val), substring)
+            
+            # the read [original] substring
+            update_rasm_score(str(val), substring, True)
+            
+            # permutated-modified substring
+            permutated_string= generate_permutations(substring)
+            for perm in permutated_string:
+                update_rasm_score(str(val), perm, False)
             
     # sliding substring sampler, the old
     # for i in range(length):

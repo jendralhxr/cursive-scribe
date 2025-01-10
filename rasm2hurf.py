@@ -113,7 +113,6 @@ plt.ylabel('appearance')
 plt.title("Character Length Distribution")
 plt.grid(True)
 
-
 quartiles = char_lengths.quantile([0.25, 0.5, 0.75])
 
 # Parameters
@@ -398,7 +397,7 @@ def myjaro(s1,s2):
     
     return weight
 
-MC_RETRY_MAX= 1e4
+MC_RETRY_MAX= 1e5
 
 def draw_heatmap(data, xlabel, ylabel, title):
     plt.figure(dpi=300)
@@ -462,32 +461,29 @@ VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 remainder_stroke= '66676543535364667075444' # terlaLU with pruning
 remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
-import re
-delimiters = r'[+\-abcABC]'
-tokens = re.split(f'({delimiters})', remainder_stroke)
-
-def stringtorasm_MC_jagokandang(chaincode):
+# MC_jagokandang
+def string2rasm(chaincode):
     remainder_stroke= chaincode
     rasm=''
     
     # MC search search
     while len(remainder_stroke)>=2 and remainder_stroke!='':
-        hurf_best=''
         len_mc_max= min(len(remainder_stroke), LENGTH_MAX)
+        hurf_best=''
         len_mc_search= LENGTH_MIN+len_mc_max+1
-        score_mc = np.zeros((NUM_CLASSES, len_mc_search), dtype=float)
         score_mc_acc = np.zeros((NUM_CLASSES, len_mc_search), dtype=float)
         score_mc_mul = np.ones((NUM_CLASSES, len_mc_search), dtype=float)
-        string_mc = np.full((NUM_CLASSES, len_mc_search), "", dtype='<U20')
+        score_mc_met = np.zeros((NUM_CLASSES, len_mc_search), dtype=float)
+        string_mc_met = np.full((NUM_CLASSES, len_mc_search), "", dtype='<U20')
         
-        mc_retry= 0
-        while(mc_retry < MC_RETRY_MAX):
-            print(f"ret: {mc_retry}")
+        for mc_retry in range(int(MC_RETRY_MAX)):
+            #print(f"ret: {mc_retry}")
             fcs_lookup=''
             mc_class= random.randint(1, len(top_fcs)-1)  # may also compare to the whole string
-            if len(remainder_stroke)>LENGTH_MIN*pow(PHI,LENGTH_MIN) and\
-                (hurf[mc_class]=='ا' or hurf[mc_class]=='د' or hurf[mc_class]=='ذ' or hurf[mc_class]=='ر' or hurf[mc_class]=='ز' or hurf[mc_class]=='و')  :
-                continue
+            # skipping terminus hurf is chaincode is still long, but و could indeed be quite long
+            # if len(remainder_stroke)>LENGTH_MIN*pow(PHI,LENGTH_MIN) and\
+            #     (hurf[mc_class]=='ا' or hurf[mc_class]=='د' or hurf[mc_class]=='ذ' or hurf[mc_class]=='ر' or hurf[mc_class]=='ز' or hurf[mc_class]=='و')  :
+            #     continue
             if len(top_fcs[str(mc_class)]) != 0:
                 fcs_prob= 1
                 
@@ -514,12 +510,10 @@ def stringtorasm_MC_jagokandang(chaincode):
                         score_mc_mul[int(mc_class)][len_mc] *= score_tee*PHI
                         
                         # metropolis
-                        if score_tee > score_mc[int(mc_class)][len_mc]:
-                            string_mc[int(mc_class)][len_mc]= fcs_lookup
+                        if score_tee > score_mc_met[int(mc_class)][len_mc]:
+                            string_mc_met[int(mc_class)][len_mc]= fcs_lookup
                             #score_mc[int(mc_class)][len_mc] = score_tee
-                            score_mc[int(mc_class)][len_mc]= (score_tee + score_mc[int(mc_class)][len_mc]) /2
-                            
-            mc_retry += 1 # can also be nested one down
+                            score_mc_met[int(mc_class)][len_mc]= (score_tee + score_mc_met[int(mc_class)][len_mc]) /2
         
         # plot the stop selection criteria
         # draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
@@ -532,13 +526,15 @@ def stringtorasm_MC_jagokandang(chaincode):
         
         # optimum class selection
         row_sums = np.sum(score_mc_acc, axis=1)
-        row_sums_nonzero = [x for x in row_sums if x != 0]
-        peaks= find_peaks(row_sums, threshold=np.mean(row_sums_nonzero)/len_mc_max)[0]
-        lookupCS = [[ lookup for lookup in string_mc[peak]] for peak in peaks]
+        peaks= find_peaks(row_sums)[0]
+        # row_sums_nonzero = [x for x in row_sums if x != 0]
+        # peaks= find_peaks(row_sums, threshold=np.mean(row_sums_nonzero)/len_mc_max)[0] # I dunno why the threshold works not quite right atm
+        lookupCS = [[ lookup for lookup in string_mc_met[peak]] for peak in peaks]
         tophurf = [[ max(myjaro(remainder_stroke, lookup), myjaro(reverseFreeman(remainder_stroke), lookup)) \
-        for lookup in string_mc[peak]] for peak in peaks]
+        for lookup in string_mc_met[peak]] for peak in peaks]
         row_sums = np.sum(tophurf, axis=1)
         class_best= peaks[np.argmax(row_sums)];
+        
         max_row = tophurf[np.argmax(row_sums)]
         hurf_best= hurf[class_best]
         len_best= np.argmax(max_row); # minimum tentative estimate for hurf length
@@ -549,7 +545,7 @@ def stringtorasm_MC_jagokandang(chaincode):
         else:
             asymptote = np.mean(max_row[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do row value?
             divergence_val = np.where(np.abs(max_row - asymptote) > asymptote/pow(PHI,4))[0][-1]
-            column_variances = np.var(score_mc, axis=0)
+            column_variances = np.var(score_mc_met, axis=0)
             column_variances /= np.max(column_variances) # scale max to 1
             asymptote_var = np.mean(column_variances[-int((len_mc_max-LENGTH_MIN)/PHI):]) # shall we do variance?
             divergence_var= np.where(np.abs(column_variances - asymptote_var) > asymptote_var/(len_mc_max-LENGTH_MIN)/PHI )[0][-1]
@@ -578,6 +574,11 @@ def stringtorasm_MC_jagokandang(chaincode):
         
         
         # diacritics selection
+        if hurf_best=='ا' or hurf_best=='أ':
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
+                hurf_best= 'أ'
+            else:
+                hurf_best= 'ا'
         if hurf_best=='ب' or hurf_best=='ت' or hurf_best=='ث' or hurf_best=='ن' or hurf_best=='ي' or hurf_best=='ڽ' or hurf_best=='ی':
             if 'A' in tee_best:
                 hurf_best= 'ن'
@@ -589,6 +590,8 @@ def stringtorasm_MC_jagokandang(chaincode):
                 hurf_best= 'ب'
             elif 'b' in tee_best or 'c' in tee_best:
                 hurf_best= 'ي'
+            else:
+                hurf_best= 'ی'
                 # rule for ending-ya (ي) could be lacking for more elaborate rayhani style
         if hurf_best=='ج' or hurf_best=='چ' or hurf_best=='ح' or hurf_best=='خ':
             if 'A' in tee_best:
@@ -638,7 +641,7 @@ def stringtorasm_MC_jagokandang(chaincode):
         if hurf_best=='ک' or hurf_best=='ݢ' or hurf_best=='ك' or hurf_best=='ل':
             if 'B' in tee_best or 'C' in tee_best:
                 hurf_best= 'ك'
-            if 'A' in tee_best or 'a' in tee_best: # some styles write the dot either on top or bottom
+            if 'A' in tee_best or 'a' in tee_best or 'b' in tee_best: # some styles write the dot either on top or bottom
                 hurf_best= 'ݢ'
         if hurf_best=='و' or hurf_best=='ۏ':
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
@@ -673,4 +676,4 @@ with open(file_path, 'r') as file:
     # Iterate over each line in the file
     for line in file:
         #print(line, end='')  # The 'end' argument avoids adding extra newlines
-        print(f"{stringtorasm_MC_jagokandang(line)} ")
+        print(f"{string2rasm(line)} ")

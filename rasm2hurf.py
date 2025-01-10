@@ -114,7 +114,10 @@ plt.title("Character Length Distribution")
 plt.grid(True)
 
 quartiles = char_lengths.quantile([0.25, 0.5, 0.75])
-
+hist_charlen_val, hist_charlen_bin = np.histogram(char_lengths, \
+    bins = np.arange(min(char_lengths), max(char_lengths)))
+most_common_length= hist_charlen_bin[np.argmax(hist_charlen_val)]
+    
 # Parameters
 LENGTH_MIN= 2
 LENGTH_MAX = 16  # Max length of the strings
@@ -224,9 +227,10 @@ def fcs_tabulate(val, string):
             update_rasm_score(str(val), substring, True)
             
             # permutated-modified substring
-            permutated_string= generate_permutations(substring)
-            for perm in permutated_string:
-                update_rasm_score(str(val), perm, False)
+            if len(substring) <= most_common_length: 
+                permutated_strings= generate_permutations(substring)
+                for perm in permutated_strings:
+                    update_rasm_score(str(val), perm, False)
             
     # sliding substring sampler, the old
     # for i in range(length):
@@ -238,7 +242,8 @@ def fcs_tabulate(val, string):
 
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
-    fcs_tabulate(int(source.iloc[i][fieldval]), str(source.iloc[i][fieldstring]).replace(" ", "").replace("+", "").replace("-", ""))
+    fcs_tabulate(int(source.iloc[i][fieldval]), \
+                 re.sub(f"[{re.escape('-+abcABC')}]", '', source.iloc[i][fieldstring]))
 
 plt.plot(appearance)
 plt.xticks(ticks=range(len(hurf)), labels=hurf)

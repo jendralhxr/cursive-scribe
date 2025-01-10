@@ -227,7 +227,7 @@ def fcs_tabulate(val, string):
             update_rasm_score(str(val), substring, True)
             
             # permutated-modified substring
-            if len(substring) <= most_common_length: 
+            if len(substring) <= most_common_length * PHI: 
                 permutated_strings= generate_permutations(substring)
                 for perm in permutated_strings:
                     update_rasm_score(str(val), perm, False)
@@ -253,7 +253,8 @@ FCS_APPEARANCE_MIN= 2
 top_fcs = {}
 for hurf_class, rasm_seq in tokens.items():
     top_fcs[hurf_class] = sorted(\
-        [x for x in rasm_seq if x['freq'] > FCS_APPEARANCE_MIN],
+        [x for x in rasm_seq if (x['freq'] != 1 and x['score'] > FCS_APPEARANCE_MIN*pow(PHI,2) ) ],
+        # [x for x in rasm_seq if (x['freq'] > FCS_APPEARANCE_MIN or x['score'] > FCS_APPEARANCE_MIN*pow(PHI,2) ) ],
         key=lambda x: x['score'],
         reverse=True)
 

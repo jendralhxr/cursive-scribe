@@ -134,11 +134,11 @@ def update_rasm_score(hurf_class, rasm_seq):
     if hurf_class in tokens:
         for subsequence in tokens[hurf_class]:
             if subsequence['seq'] == rasm_seq:
-                subsequence['score'] += pow(PHI,len(rasm_seq)/LENGTH_MIN)
+                subsequence['score'] += pow(PHI,len(rasm_seq)/LENGTH_MIN/PHI)
                 subsequence['freq'] += 1
                 return True  # early exit if already present
         # add new seq if not already present
-        tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN)})
+        tokens[hurf_class].append({'seq': rasm_seq, 'freq':1, 'score': pow(PHI,len(rasm_seq)/LENGTH_MIN/PHI)})
 
 
 def parse_chaincode(input_string):
@@ -147,7 +147,7 @@ def parse_chaincode(input_string):
     # assuming no transition points
     current_group = input_string[0]  # Start with the first character
     stroke_prev= True
-    input_string_nohist= input_string.translate(str.maketrans('', '', '-+abcABC'))
+    input_string_nohist= re.sub(f"[{re.escape('-+abcABC')}]", '', input_string)
     for i in range(1, len(input_string_nohist)):
         diff= abs ( ord(input_string_nohist[i]) - ord(input_string_nohist[i-1]) )
         if diff==0 or diff==1 or diff==7:  # smooth stroke Freeman code
@@ -223,7 +223,7 @@ plt.plot(appearance)
 plt.xticks(ticks=range(len(hurf)), labels=hurf)
 plt.savefig("/shm/hurfappearance.png", dpi=300)
 
-FCS_APPEARANCE_MIN= 0
+FCS_APPEARANCE_MIN= 2
 top_fcs = {}
 for hurf_class, rasm_seq in tokens.items():
     top_fcs[hurf_class] = sorted(\

@@ -517,13 +517,17 @@ def string2rasm(chaincode):
         hurf_best=''
         # append substroke(s) to create tee 
         tee= substrokes[idx_best]
+        tee_fin=''
         score_mc_mul = np.ones((NUM_CLASSES, LENGTH_MIN), dtype=float)
         score_mc_acc = np.zeros((NUM_CLASSES, LENGTH_MIN), dtype=float)
         score_mc_met = np.zeros((NUM_CLASSES, LENGTH_MIN), dtype=float)
         string_mc_met = np.full((NUM_CLASSES, LENGTH_MIN), "", dtype='<U20')
         
+        
+        # MC search for valid sequence of substrokes
         while (check_substroke(tee)):
             print(tee)
+            tee_fin=tee
             tee_clean=re.sub(f"[{re.escape('-+abcABC')}]", '', tee)
             mc_length_min= int( max(LENGTH_MIN, len(tee_clean)/PHI))
             
@@ -558,8 +562,8 @@ def string2rasm(chaincode):
                     # compare tee against FCS string with length from len(tee)/PHI until len(tee)/PHI
                     for mc_length in range(mc_length_min, int(len(tee_clean)*PHI)):
                         # just adjust FACTOR_LENGTH if prefer for longer substrokes
-                        score_tee1= myjaro( tee_clean, fcs_lookup) * pow(FACTOR_LENGTH, mc_length)
-                        score_tee2= myjaro( reverseFreeman(tee_clean), fcs_lookup) * pow(FACTOR_LENGTH, mc_length)
+                        score_tee1= myjaro( tee_clean, fcs_lookup[:mc_length]) * pow(FACTOR_LENGTH, mc_length)
+                        score_tee2= myjaro( reverseFreeman(tee_clean), fcs_lookup[:mc_length]) * pow(FACTOR_LENGTH, mc_length)
                         score_tee= max(score_tee1, score_tee2) # some strokes can be written back to front due to branching
                         
                         # cumulative addition
@@ -576,7 +580,20 @@ def string2rasm(chaincode):
         
             # include more element to the substroke to be evaluated
             idx_cur += 1
-            tee += substrokes[idx_cur]
+            if idx_cur>=len(substrokes):
+                break
+            else:
+                tee += substrokes[idx_cur]
+        
+        # draw MC search results
+        draw_heatmap(score_mc_met, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                      +'\n'+tee_fin)
+        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                      +'\n'+tee_fin)
+        score_mc_mul[score_mc_mul == 1.0] = 0.0
+        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                      +'\n'+tee_fin)
+        
         
         # identify best substroke, class, and length
         # TODO TODO TODO: evaluate best class and idx_best
@@ -675,7 +692,7 @@ def string2rasm(chaincode):
         rasm+= hurf_best
         
         # remove searched substrokes
-        substrokes= substrokes[idx_best:-1]
+        substrokes= substrokes[idx_best:]
         
         # terminus hurfs but intersecting with the next rasm
         if (hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ز' or hurf_best=='ر' or \
@@ -740,7 +757,7 @@ def string2rasm_old(chaincode):
                             score_mc_met[int(mc_class)][len_mc]= (score_tee + score_mc_met[int(mc_class)][len_mc]) /2
         
         # plot the stop selection criteria
-        # draw_heatmap(score_mc, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        # draw_heatmap(score_mc_met, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
         #               +'\n'+remainder_stroke)
         draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                       +'\n'+remainder_stroke)

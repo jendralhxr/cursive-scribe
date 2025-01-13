@@ -488,22 +488,112 @@ VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 remainder_stroke= '66676543535364667075444' # terlaLU with pruning
 remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
+def check_substroke(s):
+    num_dia=0
+    num_hist=0
+    num_slant=0
+    for c in s:
+        if c=='-':
+            num_hist += 1
+        elif c=='+':
+            num_slant += 1
+        elif c in 'aAbBcC':
+            num_dia += 1
+        if num_hist==2 or num_slant==2 or num_dia==2:
+            return False
+    return True
+            
 
 def string2rasm(chaincode):
-    pattern = r'[^-+abcABC]+[-+abcABC]?'
     rasm=''
-    
-    substrokes= re.findall(pattern, chaincode)
+    substrokes= re.findall(r'[^-+abcABC]+[-+abcABC]?', chaincode)
+    substrokes= ['570a', '5-', '153534655-', '444'] # جو
     substroke_idx= 0
     
-    # TODO: cari dengan MC 
+    # the MC search
     while len(substrokes)>0 or (len(substrokes)==1 and len(substrokes[0]<LENGTH_MIN)):
-        # append substroke(s) to create tee 
-        tee_best= ''
-        tee= substrokes[0]
-        
-        # MC search
+        idx_best=0
+        idx_cur= 0
         hurf_best=''
+        # append substroke(s) to create tee 
+        tee= substrokes[idx_best]
+        score_mc_mul = np.ones((NUM_CLASSES, LENGTH_MIN), dtype=float)
+        score_mc_acc = np.zeros((NUM_CLASSES, LENGTH_MIN), dtype=float)
+        score_mc_met = np.zeros((NUM_CLASSES, LENGTH_MIN), dtype=float)
+        string_mc_met = np.full((NUM_CLASSES, LENGTH_MIN), "", dtype='<U20')
+        
+        while (check_substroke(tee)):
+            print(tee)
+            tee_clean=re.sub(f"[{re.escape('-+abcABC')}]", '', tee)
+            mc_length_min= int( max(LENGTH_MIN, len(tee_clean)/PHI))
+            
+            # resize the result buffers
+            temp= score_mc_mul
+            score_mc_mul = np.ones((NUM_CLASSES, int(len(tee_clean)*PHI)), dtype=float)
+            score_mc_mul[:, 0:temp.shape[1]] = temp
+            temp= score_mc_acc
+            score_mc_acc = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI)), dtype=float)
+            score_mc_acc[:, 0:temp.shape[1]] = temp
+            temp= score_mc_met
+            score_mc_met = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI)), dtype=float)
+            score_mc_met[:, 0:temp.shape[1]] = temp
+            temp= string_mc_met
+            string_mc_met = np.full((NUM_CLASSES, int(len(tee_clean)*PHI)), "", dtype='<U20')
+            string_mc_met[:, 0:temp.shape[1]] = temp
+            
+            for mc_retry in range(int(MC_RETRY_MAX)):
+                mc_retry += 1
+                mc_class= random.randint(1, len(top_fcs)-1)  # randomize the class
+                fcs_lookup=''
+                fcs_prob=1.00
+                # check if top_fcs for the class is present, i.e. the hurf appears in the annotated dataset
+                if len(top_fcs[str(mc_class)]) != 0:
+                    mc_retry += 1
+                    # generate lookup pattern to be long enough
+                    while len(fcs_lookup)< len(tee)*PHI:
+                        mc_index= random.randint(0, len(afcs[mc_class])-1) 
+                        fcs_lookup += afcs[mc_class][mc_index]
+                        fcs_prob *= sfcs[mc_class][mc_index]
+                    
+                    # compare tee against FCS string with length from len(tee)/PHI until len(tee)/PHI
+                    for mc_length in range(mc_length_min, int(len(tee_clean)*PHI)):
+                        # just adjust FACTOR_LENGTH if prefer for longer substrokes
+                        score_tee1= myjaro( tee_clean, fcs_lookup) * pow(FACTOR_LENGTH, mc_length)
+                        score_tee2= myjaro( reverseFreeman(tee_clean), fcs_lookup) * pow(FACTOR_LENGTH, mc_length)
+                        score_tee= max(score_tee1, score_tee2) # some strokes can be written back to front due to branching
+                        
+                        # cumulative addition
+                        score_mc_acc[int(mc_class)][mc_length] += score_tee
+                        
+                        # cumulative product
+                        score_mc_mul[int(mc_class)][mc_length] *= score_tee*PHI
+                        
+                        # metropolis
+                        if score_tee > score_mc_met[int(mc_class)][mc_length]:
+                            string_mc_met[int(mc_class)][mc_length]= fcs_lookup
+                            #score_mc[int(mc_class)][mc_length] = score_tee # absolute metropolis
+                            score_mc_met[int(mc_class)][mc_length]= (score_tee + score_mc_met[int(mc_class)][mc_length]) /2 # incremental metropolis
+        
+            # include more element to the substroke to be evaluated
+            idx_cur += 1
+            tee += substrokes[idx_cur]
+        
+        # identify best substroke, class, and length
+        # TODO TODO TODO: evaluate best class and idx_best
+        tee_best= ''
+        for i in range(idx_best):
+            tee_best += substrokes[i]
+        # the old one
+        # # optimum class selection
+        # row_sums = np.sum(score_mc_acc, axis=1)
+        # peaks= find_peaks(row_sums)[0]
+        # # row_sums_nonzero = [x for x in row_sums if x != 0]
+        # # peaks= find_peaks(row_sums, threshold=np.mean(row_sums_nonzero)/len_mc_max)[0] # I dunno why the threshold works not quite right atm
+        # lookupCS = [[ lookup for lookup in string_mc_met[peak]] for peak in peaks]
+        # tophurf = [[ max(myjaro(remainder_stroke, lookup), myjaro(reverseFreeman(remainder_stroke), lookup)) \
+        # for lookup in string_mc_met[peak]] for peak in peaks]
+        # row_sums = np.sum(tophurf, axis=1)
+        # class_best= peaks[np.argmax(row_sums)];
         
         # diacritics handling
         if hurf_best=='ا' or hurf_best=='أ':
@@ -584,9 +674,16 @@ def string2rasm(chaincode):
         # append to rasm        
         rasm+= hurf_best
         
-        rasm+='' # add with best-found hurf
-        substroke= substrokes[substroke_idx:-1]
-
+        # remove searched substrokes
+        substrokes= substrokes[idx_best:-1]
+        
+        # terminus hurfs but intersecting with the next rasm
+        if (hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ز' or hurf_best=='ر' or \
+            hurf_best=='ۏ' or hurf_best=='و' or hurf_best=='ا' or hurf_best=='أ' or hurf_best=='ی' )\
+            and len(substrokes) > LENGTH_MIN:
+            rasm += ' ' # inter-rasm space
+        
+    return rasm
 
 # MC_jagokandang
 def string2rasm_old(chaincode):

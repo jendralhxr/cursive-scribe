@@ -777,7 +777,7 @@ for k in range(len(components)):
                 intersect_top = True
             elif dist_from_baseline > 0:
                 intersect_bot = True
-    intersect =  intersect_top and intersect_bot
+    intersect =  intersect_top or intersect_bot
         
     # distances between nodes within a component    
     max_distance = 0

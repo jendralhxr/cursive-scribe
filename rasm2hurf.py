@@ -488,8 +488,108 @@ VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 remainder_stroke= '66676543535364667075444' # terlaLU with pruning
 remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
-# MC_jagokandang
+
 def string2rasm(chaincode):
+    pattern = r'[^-+abcABC]+[-+abcABC]?'
+    rasm=''
+    
+    substrokes= re.findall(pattern, chaincode)
+    substroke_idx= 0
+    
+    # TODO: cari dengan MC 
+    while len(substrokes)>0 or (len(substrokes)==1 and len(substrokes[0]<LENGTH_MIN)):
+        # append substroke(s) to create tee 
+        tee_best= ''
+        tee= substrokes[0]
+        
+        # MC search
+        hurf_best=''
+        
+        # diacritics handling
+        if hurf_best=='ا' or hurf_best=='أ':
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
+                hurf_best= 'أ'
+            else:
+                hurf_best= 'ا'
+        if hurf_best=='ب' or hurf_best=='ت' or hurf_best=='ث' or hurf_best=='ن' or hurf_best=='ي' or hurf_best=='ڽ' or hurf_best=='ی':
+            if 'A' in tee_best:
+                hurf_best= 'ن'
+            elif 'B' in tee_best:
+                hurf_best= 'ت'
+            elif 'C' in tee_best:
+                hurf_best= 'ث'
+            elif 'a' in tee_best:
+                hurf_best= 'ب'
+            elif 'b' in tee_best or 'c' in tee_best:
+                hurf_best= 'ي'
+            else:
+                hurf_best= 'ی'
+                # rule for ending-ya (ي) could be lacking for more elaborate rayhani style
+        if hurf_best=='ج' or hurf_best=='چ' or hurf_best=='ح' or hurf_best=='خ':
+            if 'A' in tee_best:
+                hurf_best= 'خ'
+            elif 'a' in tee_best:
+                hurf_best= 'ج'
+            elif 'b' in tee_best or 'c' in tee_best:
+                hurf_best= 'چ'
+            else:
+                hurf_best= 'ح'
+        if hurf_best=='د' or hurf_best=='ذ' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ذ'
+            else:
+                hurf_best= 'د'
+        if hurf_best=='ر' or hurf_best=='ز' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ز'
+            else:
+                hurf_best= 'ر'
+        if hurf_best=='س' or hurf_best=='ش' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ش'
+            else:
+                hurf_best= 'س'
+        if hurf_best=='ص' or hurf_best=='ض' :
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ض'
+            else:
+                hurf_best= 'ص'
+        if hurf_best=='ع' or hurf_best=='غ' or hurf_best=='ڠ':
+            if 'A' in tee_best :
+                hurf_best= 'غ'
+            elif 'B' in tee_best or 'C' in tee_best  :
+                hurf_best= 'ڠ'
+            else:
+                hurf_best= 'ع'
+        if hurf_best=='ف' or hurf_best=='ڤ' or hurf_best=='ق':
+            if 'A' in tee_best:
+                hurf_best= 'ف'
+            elif 'B' in tee_best:
+                hurf_best= 'ق'
+            elif 'C' in tee_best :
+                hurf_best= 'ڤ'
+            else:
+                hurf_best= 'ف'
+        if hurf_best=='ک' or hurf_best=='ݢ' or hurf_best=='ك' or hurf_best=='ل':
+            if 'B' in tee_best or 'C' in tee_best:
+                hurf_best= 'ك'
+            if 'A' in tee_best or 'a' in tee_best or 'b' in tee_best: # some styles write the dot either on top or bottom
+                hurf_best= 'ݢ'
+        if hurf_best=='و' or hurf_best=='ۏ':
+            if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
+                hurf_best= 'ۏ'
+            else:
+                hurf_best= 'و'
+
+        # append to rasm        
+        rasm+= hurf_best
+        
+        rasm+='' # add with best-found hurf
+        substroke= substrokes[substroke_idx:-1]
+
+
+# MC_jagokandang
+def string2rasm_old(chaincode):
     remainder_stroke= chaincode
     rasm=''
     

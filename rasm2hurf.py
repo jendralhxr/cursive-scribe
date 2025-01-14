@@ -305,8 +305,8 @@ sns.set_theme(rc={
 sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws={"size": 4}, cbar_kws={"format": "%.2f"})
 plt.yticks(ticks=range(NUM_CLASSES), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=0)
-plt.title("FCS score: PHI^(len(subsequence)/2) / hurf-apperance")
-plt.savefig("/shm/heatmapLCS.png")
+#plt.title("FCS score: PHI^(len(subsequence)/2) / hurf-apperance")
+plt.savefig("/shm/heatmapLCS.png", dpi=300)
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 #ax = plt.gca()
 #for tick in ax.get_yticklabels():
@@ -506,8 +506,9 @@ def check_substroke(s):
 
 def string2rasm(chaincode):
     rasm=''
+    chaincode='46774b105-44353545-7444464'
     substrokes= re.findall(r'[^-+abcABC]+[-+abcABC]?', chaincode)
-    substrokes= ['570a', '5-', '153534655-', '444'] # جو
+    #substrokes= ['570a', '5-', '153534655-', '444'] # جو
     substroke_idx= 0
     
     # the MC search
@@ -516,7 +517,7 @@ def string2rasm(chaincode):
         idx_cur= 0
         hurf_best=''
         # append substroke(s) to create tee 
-        tee= substrokes[idx_best]
+        tee= substrokes[0]
         tee_fin=''
         score_mc_mul = np.ones((NUM_CLASSES, LENGTH_MIN), dtype=float)
         score_mc_acc = np.zeros((NUM_CLASSES, LENGTH_MIN), dtype=float)

@@ -169,6 +169,14 @@ for n in range(num_slic):
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 
+num = scribe.number_of_nodes()
+if num > image.shape[1]*image.shape[0]/pow(SLIC_SPACE,2)/PHI:
+    print("too dense of nodes")
+    exit(1)
+elif num < image.shape[1]/SLIC_SPACE/pow(PHI,2):
+    print("too sparse of nodes")
+    exit(2)
+
 # Relabel nodes
 # mapping = {node: idx for idx, node in enumerate(scribe.nodes())}
 # scribe_relabel = nx.relabel_nodes(scribe, mapping)

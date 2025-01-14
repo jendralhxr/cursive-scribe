@@ -488,6 +488,7 @@ VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 remainder_stroke= '66676543535364667075444' # terlaLU with pruning
 remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
+# same transition of diacritics connection can exist up to 2 count
 def check_substroke(s):
     num_dia=0
     num_hist=0
@@ -499,11 +500,10 @@ def check_substroke(s):
             num_slant += 1
         elif c in 'aAbBcC':
             num_dia += 1
-        if num_hist==2 or num_slant==2 or num_dia==2:
+        if num_hist==3 or num_slant==3 or num_dia==3:
             return False
     return True
             
-
 def string2rasm(chaincode):
     rasm=''
     chaincode='46774b105-44353545-7444464'

@@ -165,7 +165,8 @@ for n in range(num_slic):
         cy= int( np.mean( [array[1] for array in moments[n]] ))
         if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
-            scribe.add_node(filled, label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), hurf='', pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
+            if filled != 293:
+                scribe.add_node(filled, label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), hurf='', pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 
@@ -176,6 +177,7 @@ if num > image.shape[1]*image.shape[0]/pow(SLIC_SPACE,2)/PHI:
 elif num < image.shape[1]/SLIC_SPACE/pow(PHI,2):
     print("too sparse of nodes")
     exit(2)
+
 
 # Relabel nodes
 # mapping = {node: idx for idx, node in enumerate(scribe.nodes())}
@@ -243,47 +245,48 @@ def close_components(b, comps, length=4):
 components=[]
 for n in range(scribe.number_of_nodes()):
     # fill
-    seed= pos[n]
-    ccv= cue.copy()
-    cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
-    _, ccv = cv.threshold(ccv, 100, STROKEVAL, cv.THRESH_BINARY)
-    mu= cv.moments(ccv)
-    if mu['m00'] > pow(SLIC_SPACE,2)*PHI: # minimum area for a connectedcomponent
-        mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
-        area = mu ['m00']
-        pd= pdistance(seed, mc)
-        node_start = n
-        box= cv.boundingRect(ccv)
-        # append keypoint if the component already exists
-        found=0
-        for i in range(len(components)):
-            if components[i].centroid==mc:
-                components[i].nodes.append(n)
-                # calculate the distance
-                tvane= freeman(seed[0]-mc[0], mc[1]-seed[1] )
-                #if seed[0]>mc[0] and pd>components[i].distance_start and (tvane==2 or tvane==4): # potential node_start for long rasm
-                if seed[0]>mc[0] and pd>components[i].distance_start: # potential node_start
-                    components[i].distance_start= pd
-                    components[i].node_start= n
-                elif seed[0]<mc[0] and pd>components[i].distance_end: # potential node_end
-                    components[i].distance_end = pd
-                    components[i].node_end= n
-                found=1
-                # print(f'old node[{n}] with component[{i}] at {mc} from {components[i].centroid} distance: {pd})')
-                break
-        if (found==0):
-            components.append(ConnectedComponents(box, mc))
-            idx= len(components)-1
-            components[idx].nodes.append(n)
-            components[idx].mat = ccv.copy()
-            components[idx].area = int(mu['m00']/THREVAL)
-            if seed[0]>mc[0]:
-                components[idx].node_start= n
-                components[idx].distance_start= pd
-            else:
-                components[idx].node_end= n
-                components[idx].distance_end= pd
-            #print(f'new node[{n}] with component[{idx}] at {mc} from {components[idx].centroid} distance: {pd})')
+    if scribe.has_node(n):
+        seed= pos[n]
+        ccv= cue.copy()
+        cv.floodFill(ccv, None, seed, STROKEVAL, loDiff=(5), upDiff=(5))
+        _, ccv = cv.threshold(ccv, 100, STROKEVAL, cv.THRESH_BINARY)
+        mu= cv.moments(ccv)
+        if mu['m00'] > pow(SLIC_SPACE,2)*PHI: # minimum area for a connectedcomponent
+            mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
+            area = mu ['m00']
+            pd= pdistance(seed, mc)
+            node_start = n
+            box= cv.boundingRect(ccv)
+            # append keypoint if the component already exists
+            found=0
+            for i in range(len(components)):
+                if components[i].centroid==mc:
+                    components[i].nodes.append(n)
+                    # calculate the distance
+                    tvane= freeman(seed[0]-mc[0], mc[1]-seed[1] )
+                    #if seed[0]>mc[0] and pd>components[i].distance_start and (tvane==2 or tvane==4): # potential node_start for long rasm
+                    if seed[0]>mc[0] and pd>components[i].distance_start: # potential node_start
+                        components[i].distance_start= pd
+                        components[i].node_start= n
+                    elif seed[0]<mc[0] and pd>components[i].distance_end: # potential node_end
+                        components[i].distance_end = pd
+                        components[i].node_end= n
+                    found=1
+                    # print(f'old node[{n}] with component[{i}] at {mc} from {components[i].centroid} distance: {pd})')
+                    break
+            if (found==0):
+                components.append(ConnectedComponents(box, mc))
+                idx= len(components)-1
+                components[idx].nodes.append(n)
+                components[idx].mat = ccv.copy()
+                components[idx].area = int(mu['m00']/THREVAL)
+                if seed[0]>mc[0]:
+                    components[idx].node_start= n
+                    components[idx].distance_start= pd
+                else:
+                    components[idx].node_end= n
+                    components[idx].distance_end= pd
+                #print(f'new node[{n}] with component[{idx}] at {mc} from {components[idx].centroid} distance: {pd})')
 
 
 # small components/stroke can just be discarded

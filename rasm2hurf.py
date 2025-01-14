@@ -500,15 +500,13 @@ def check_substroke(s):
             num_slant += 1
         elif c in 'aAbBcC':
             num_dia += 1
-        if num_hist==3 or num_slant==3 or num_dia==3:
+        if num_hist==3 or num_slant==3 or num_dia==2:
             return False
     return True
             
 def string2rasm(chaincode):
     rasm=''
-    chaincode='46774b105-44353545-7444464'
     substrokes= re.findall(r'[^-+abcABC]+[-+abcABC]?', chaincode)
-    #substrokes= ['570a', '5-', '153534655-', '444'] # جو
     substroke_idx= 0
     
     # the MC search
@@ -599,6 +597,7 @@ def string2rasm(chaincode):
         # identify best substroke, class, and length
         # TODO TODO TODO: evaluate best class and idx_best
         tee_best= ''
+        idx_best= idx_cur
         for i in range(idx_best):
             tee_best += substrokes[i]
         # the old one

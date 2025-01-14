@@ -165,8 +165,7 @@ for n in range(num_slic):
         cy= int( np.mean( [array[1] for array in moments[n]] ))
         if (cue[cy,cx]!=0):
             render[cy,cx,1] = 255 
-            if filled != 293:
-                scribe.add_node(filled, label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), hurf='', pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
+            scribe.add_node(filled, label=int(lbls[cy,cx]), area=(len(moments[n])-1)/pow(SLIC_SPACE,2), hurf='', pos_bitmap=(cx,cy), pos_render=(cx,-cy), color='#FFA500', rasm=True)
             #print(f'point{n} at ({cx},{cy})')
             filled=filled+1
 

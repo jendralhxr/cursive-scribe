@@ -66,9 +66,8 @@ def draw(img): # draw the bitmap
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
         
-# filename= sys.argv[1]
-#filename= 'topanribut.png'
-filename='dengarkan.png'
+filename= sys.argv[1]
+# filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -1186,19 +1185,53 @@ def find_diacritics_edges(G, node):
                 return size
     return ''
 
+def bfs_with_closest_priority(G, start_node):
+    visited = set()  #  visited nodes
+    edges = [] # traversed edges
+    priority_queue = []  # yet to be visited branch
+    heapq.heappush(priority_queue, (0, start_node))  # start node as the first branch
+    while priority_queue:
+        # pop the node with the smallest distance first
+        _, current_node = heapq.heappop(priority_queue)
+        
+        if current_node not in visited:
+            visited.add(current_node)
+            
+            # Explore neighbors
+            for neighbor in G.neighbors(current_node):
+                if neighbor not in visited:
+                    #distance = SLIC_SPACE*PHI\
+                    distance = pdistance(pos[current_node], pos[neighbor])/PHI \
+                        - (pos[neighbor][0]-pos[current_node][0]) # prioritize right-er nodes
+                    if distance < 0:
+                        distance= 0
+                    heapq.heappush(priority_queue, (distance, neighbor))
+                    edges.append((current_node, neighbor))
+    
+    return visited, edges
+
 def path_vane_edges(G, path): # if path is written is written as series of edges
     visited=[]    
     pathstring=''
+    
+    dst_prev= -1
+    src_prev= -1
+    
     for n in path:
         if G.has_edge(n[0], n[1]): # ideally not necessary
             # vane code
             src= n[0]
             dst= n[1]
+            # checking for branch traverse
+            if src_prev!=-1 and dst_prev!=-1 \
+                and G.has_edge(src_prev, src)==False and G.has_edge(dst_prev, dst)==False\
+                and G.has_edge(dst_prev, src)==False and G.has_edge(src_prev, dst)==False:
+                pathstring+='x'
+            
             tvane= freeman(pos[dst][0]-pos[src][0], -(pos[dst][1]-pos[src][1]))
             G.edges[n]['vane']=tvane
             if (G.edges[n]['color']=='#00FF00'): # main stroke
                 pathstring+=str(tvane)
-            
         
         mark= ''
         if src not in visited:
@@ -1210,7 +1243,6 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
             elif G.nodes[src]['color']==COLOR_TRANS2:
                 pathstring+='+'
         visited.append(src)
-        
         if dst not in visited:
             mark= find_diacritics_edges(G, dst)
             if mark != '':
@@ -1220,30 +1252,13 @@ def path_vane_edges(G, path): # if path is written is written as series of edges
             elif G.nodes[dst]['color']==COLOR_TRANS2:
                 pathstring+='+'
         visited.append(dst)
-        
+
+        dst_prev= dst
+        src_prev= src
+
     return pathstring
 
-def bfs_with_closest_priority(G, start_node):
-    visited = set()  # track visited nodes
-    edges = [] # traversed edges
-    priority_queue = []  # Use heapq for priority queue
-    heapq.heappush(priority_queue, (0, start_node))  # Push the start node with priority 0
-    while priority_queue:
-        # Get the node with the highest priority (smallest distance)
-        _, current_node = heapq.heappop(priority_queue)
-        
-        if current_node not in visited:
-            visited.add(current_node)
-            #print(f"Visited {current_node}")  # Do something with the node
-            
-            # Explore neighbors
-            for neighbor in G.neighbors(current_node):
-                if neighbor not in visited:
-                    distance = pdistance(pos[current_node], pos[neighbor])
-                    heapq.heappush(priority_queue, (distance, neighbor))
-                    edges.append((current_node, neighbor))
-    
-    return visited, edges # if handling the edges
+
 
 # drawing the rasm graph
 from PIL import ImageFont, ImageDraw, Image

@@ -836,6 +836,11 @@ for k in range(len(components)):
             stroke_baseline = sum(pos[node][1] for node in components[k].nodes) / len(components[k].nodes)
             # if stumpy, prefers starting close to median more to the right, but far away from centroid
             # leftmost_node = min(graph.nodes, key=lambda node: pos[node][0])
+            
+            components[k].rightmost= pos[components[k].nodes[0]]
+            for n in graph.nodes:
+                if pos[n][0] > components[k].rightmost[0]:
+                    components[k].rightmost= pos[n]
             rightmost_nodes = sorted([node for node in graph.nodes if pos[node][0] > (components[k].centroid[0] - SLIC_SPACE)], \
                                      key=lambda node: pos[node][0], reverse=True)[:int(RASM_CANDIDATE * PHI)]
             
@@ -869,7 +874,9 @@ for k in range(len(components)):
                                       key=lambda node: pos[node][1] )
                 else:
                     # can also be away from baseline, no branch at the beginning
-                    node_start = min(rightmost_nodes_filtered, key=lambda node: pdistance(components[k].rightmost, pos[node]))
+                    node_start = min(rightmost_nodes_filtered, key=lambda node: \
+                                     pdistance(components[k].rightmost, pos[node])*PHI +(pos[node][1]-lead_baseline) )
+                        
 			
             # @FadhilatulFitriyah
             # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]

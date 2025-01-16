@@ -66,9 +66,9 @@ def draw(img): # draw the bitmap
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
         
         
-filename= sys.argv[1]
+# filename= sys.argv[1]
 #filename= 'topanribut.png'
-# filename='dengarkan.png'
+filename='dengarkan.png'
 imagename, ext= os.path.splitext(filename)
 image = cv.imread(filename)
 resz = cv.resize(image, (RESIZE_FACTOR*image.shape[1], RESIZE_FACTOR*image.shape[0]), interpolation=cv.INTER_LINEAR)
@@ -210,6 +210,7 @@ from typing import Optional
 class ConnectedComponents:
     rect: (int,int,int,int) # from bounding rectangle
     centroid: (int,int) # centroid moment
+    rightmost: (int,int) # rightmost node
     area: Optional[int] = field(default=0)
     nodes: List[int] = field(default_factory=list)
     mat: Optional[np.ndarray] = field(default=None, repr=False)
@@ -217,6 +218,7 @@ class ConnectedComponents:
     distance_start: Optional[int] = field(default=0) # right-up
     node_end: Optional[int] = field(default=-1)      # left-down
     distance_end: Optional[int] = field(default=0)   # left-down
+    
 
 pos = nx.get_node_attributes(scribe,'pos_bitmap')
 def euclidean_distance(p1, p2):
@@ -251,7 +253,7 @@ for n in range(scribe.number_of_nodes()):
         _, ccv = cv.threshold(ccv, 100, STROKEVAL, cv.THRESH_BINARY)
         mu= cv.moments(ccv)
         if mu['m00'] > pow(SLIC_SPACE,2)*PHI: # minimum area for a connectedcomponent
-            mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00'])))
+            mc= (int(mu['m10'] / (mu['m00'])), int(mu['m01'] / (mu['m00']))) # centroid of the flood fill
             area = mu ['m00']
             pd= pdistance(seed, mc)
             node_start = n
@@ -261,6 +263,8 @@ for n in range(scribe.number_of_nodes()):
             for i in range(len(components)):
                 if components[i].centroid==mc:
                     components[i].nodes.append(n)
+                    if pos[n][0]> components[i].rightmost[0]:
+                        components[i].rightmost= pos[n]
                     # calculate the distance
                     tvane= freeman(seed[0]-mc[0], mc[1]-seed[1] )
                     #if seed[0]>mc[0] and pd>components[i].distance_start and (tvane==2 or tvane==4): # potential node_start for long rasm
@@ -274,8 +278,8 @@ for n in range(scribe.number_of_nodes()):
                     # print(f'old node[{n}] with component[{i}] at {mc} from {components[i].centroid} distance: {pd})')
                     break
             if (found==0):
-                components.append(ConnectedComponents(box, mc))
-                idx= len(components)-1
+                components.append(ConnectedComponents(box, mc, mc))
+                idx= len(components)-1 # the new component
                 components[idx].nodes.append(n)
                 components[idx].mat = ccv.copy()
                 components[idx].area = int(mu['m00']/THREVAL)
@@ -946,8 +950,6 @@ for k in range(len(components)):
         scribe_dia.nodes[components[k].node_start]['color']= '#F00000' # initialize with red
 
 
-#SINISINI
-
 # merging close diacritics
 for i in range(len(components)):
     for j in close_components(i, components):
@@ -997,11 +999,9 @@ for i in range(len(components)):
 components = sorted(components, key=lambda x: x.centroid[0], reverse=True)
 while components[-1].centroid == (-1,-1):
     del components[-1]
-
         
 # refine diacritics connections
 degree_dia= scribe.degree()
-
 for i in range(len(components)):
     components[i].nodes= np.unique(components[i].nodes).tolist()
     if scribe_dia.nodes[ components[i].nodes[0] ]['rasm']==False:
@@ -1030,6 +1030,10 @@ for i in range(len(components)):
 # rare spillover
 if -1 in scribe_dia.nodes():
     scribe_dia.remove_node(-1)
+
+# re-sort the components 
+# usually narrow hurfs are drawn over long-trail hurfs thus appear in wrong order
+components = sorted(components, key=lambda n: n.rightmost[0], reverse=True)
 
 # substroke identification for transition node between hurfs (Bu Dian)
 from scipy.signal import find_peaks

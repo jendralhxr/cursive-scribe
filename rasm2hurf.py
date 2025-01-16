@@ -120,9 +120,9 @@ most_common_length= hist_charlen_bin[np.argmax(hist_charlen_val)]
     
 # Parameters
 LENGTH_MIN= 2
-LENGTH_MAX = 16  # Max length of the strings
+LENGTH_MAX = int(LENGTH_MIN*pow(PHI,5))  # Max length of the strings
 NUM_CLASSES = NUM_HURF  # Number of classes
-SUBSTROKE_MIN_LENGTH= 4
+SUBSTROKE_MIN_LENGTH= int(LENGTH_MIN*PHI)
 
 #### FCS stands for frequent common substring/subsequence/substroke
 # since there is preference for longest ones, it is now FLCS/LFCS
@@ -172,9 +172,11 @@ def parse_chaincode(input_string):
         else:  # Different digit
             straight_stroke= False
         
+        # contiguous smooth stroke
         if stroke_prev==straight_stroke:
             current_group += input_string_nohist[i]
-        elif stroke_prev!=straight_stroke:
+        # changing radical
+        elif stroke_prev!=straight_stroke: 
             if len(current_group) >= SUBSTROKE_MIN_LENGTH:  # Ensure group has at least 4 chars
                 result.append(current_group)
                 current_group = input_string_nohist[i]

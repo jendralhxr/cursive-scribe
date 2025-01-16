@@ -818,7 +818,7 @@ for k in range(len(components)):
         for n in components[k].nodes:
             if pos[n][0] > pos[components[k].node_start][0]: # rightmost node as starting node if it is still missing
                 components[k].node_start= n
-        scribe_dia.nodes[components[k].node_start]['color']= '#F00000' # initialize with red
+        scribe_dia.nodes[components[k].node_start]['color']= '#F00000' # initialize with red, just in case we fail to find one
         #scribe.nodes[components[k].node_start]['color']= '#FFA500' 
         
         # actually optimizing the starting node
@@ -859,6 +859,7 @@ for k in range(len(components)):
             elif len(rightmost_nodes_filtered)==1:
                 node_start = rightmost_nodes_filtered[0]
             else:     
+                # distance from stroke initial point: rayhani
                 adjdiff= [ abs(pos[rightmost_nodes_filtered[i + 1]][1] - pos[rightmost_nodes_filtered[i]][1])\
                           for i in range(len(rightmost_nodes_filtered) - 1)]
                 if max(adjdiff) > SLIC_SPACE*pow(PHI,2):
@@ -868,7 +869,7 @@ for k in range(len(components)):
                                       key=lambda node: pos[node][1] )
                 else:
                     # can also be away from baseline, no branch at the beginning
-                    node_start = min(rightmost_nodes_filtered, key=lambda node: pos[node][1])
+                    node_start = min(rightmost_nodes_filtered, key=lambda node: pdistance(components[k].rightmost, pos[node]))
 			
             # @FadhilatulFitriyah
             # topmost_nodes = sorted(rightmost_nodes, key=lambda node: pos[node][1])[:int(RASM_CANDIDATE)]
@@ -1302,7 +1303,7 @@ for i in range(len(components)):
         # cv.imwrite(imagename+'highlight'+str(i).zfill(2)+'.png', ccv)
     
 graphfile= 'graph-'+imagename+ext
-draw_graph_edgelabel(scribe_dia, 'pos_render', 8, '/shm/'+graphfile, None)
+draw_graph_edgelabel(scribe_dia, 'pos_render', 10, '/shm/'+graphfile, None)
 
 
 ##################################

@@ -164,7 +164,7 @@ def parse_chaincode(input_string):
     # assuming no transition points
     current_group = input_string[0]  # Start with the first character
     stroke_prev= True
-    input_string_nohist= re.sub(f"[{re.escape('-+abcABC')}]", '', input_string)
+    input_string_nohist= re.sub(f"[{re.escape('-+abcABCx')}]", '', input_string)
     for i in range(1, len(input_string_nohist)):
         diff= abs ( ord(input_string_nohist[i]) - ord(input_string_nohist[i-1]) )
         if diff==0 or diff==1 or diff==7:  # smooth stroke Freeman code
@@ -191,9 +191,9 @@ def parse_chaincode(input_string):
         result[-(SUBSTROKE_MIN_LENGTH-1):] += current_group
 
     # parse the chaincode based on transition nodes    
-    substrs = re.split(r'([+\-abcABC])', input_string)
+    substrs = re.split(r'([+\-abcABCx])', input_string)
     substrs = [substr for substr in substrs \
-              if substr not in ['-', '+', 'a', 'b', 'c', 'A', 'B', 'C'] \
+              if substr not in ['-', '+', 'a', 'b', 'c', 'A', 'B', 'C', 'x'] \
                   and len(substr)>=1]
     # 1-character substr is to be appended to previous substr also prepended to the next substr
     substrs_res= []
@@ -504,11 +504,13 @@ def check_substroke(s):
             num_dia += 1
         if num_hist==3 or num_slant==3 or num_dia==2:
             return False
+        if c=='x': # jumping branch
+            return False
     return True
             
 def string2rasm(chaincode):
     rasm=''
-    substrokes= re.findall(r'[^-+abcABC]+[-+abcABC]?', chaincode)
+    substrokes= re.findall(r'[^-+abcABCx]+[-+abcABCx]?', chaincode)
     substroke_idx= 0
     
     # the MC search
@@ -529,7 +531,7 @@ def string2rasm(chaincode):
         while (check_substroke(tee)):
             print(tee)
             tee_fin=tee
-            tee_clean=re.sub(f"[{re.escape('-+abcABC')}]", '', tee)
+            tee_clean=re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
             mc_length_min= int( max(LENGTH_MIN, len(tee_clean)/PHI))
             
             # resize the result buffers

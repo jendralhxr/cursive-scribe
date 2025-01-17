@@ -1,5 +1,5 @@
-00000B00
-75404444354-444444+3-4-453445a-6444+34+3535-3-453543544444444444-4+434444-4+44-4+4444+444+44+4454344534+4-444-445-344-4+44444-4+44+4-44+4444444-4+44+44-4+444-4+4444+444444-44444+4444-4-444+44444+4-44444-44+4
-0000
-555555
-5575+74011x3545
+Traceback (most recent call last):
+  File "/me/cursive-scribe/perangjohor/lineimages/feature2rasm.py", line 1035, in <module>
+    scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane) # blue connecting edge
+                        ^^^^^^^^
+NameError: name 'src_node' is not defined. Did you mean: 'src_mid'?

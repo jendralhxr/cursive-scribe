@@ -1040,8 +1040,14 @@ if -1 in scribe_dia.nodes():
 
 # re-sort the components 
 # usually narrow hurfs are drawn over long-trail hurfs thus appear in wrong order
-components = sorted(components, key=lambda n: n.rightmost[0], reverse=True)
-components = sorted(components, key=lambda n: n.centroid[0], reverse=True)
+# components = sorted(components, key=lambda n: n.rightmost[0], reverse=True)
+# components = sorted(components, key=lambda n: n.centroid[0], reverse=True)
+components = sorted(
+    components,
+    key=lambda n: n.rightmost[0] if n.rect[2] <  SLIC_SPACE*pow(PHI,3)\
+            else (n.rightmost[0] + n.centroid[0]) / 2,
+    reverse=True
+)
 
 
 # substroke identification for transition node between hurfs (Bu Dian)

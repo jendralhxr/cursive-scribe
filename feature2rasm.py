@@ -929,7 +929,7 @@ for k in range(len(components)):
                             closest_vane= tvane
                             closest_dist= tdist
         #print(f'diacritics{k} to rasm{closest_comp} \t node {m} to {n}\t: {closest_dist} {closest_vane}')            
-        if closest_dist<SLIC_SPACE*pow(PHI,4):
+        if closest_dist<SLIC_SPACE*pow(PHI,3):
             scribe_dia.add_edge(src_node, closest_node, color='#0000FF', weight=1e2/closest_dist/SLIC_SPACE, vane=closest_vane) # blue connecting edge
             if closest_vane==6: # diacritics over
                 #scribe.nodes[closest_node]['color']= hex_or(scribe.nodes[closest_node]['color'], '#0000FF') 
@@ -1026,7 +1026,7 @@ for i in range(len(components)):
                         for n in components[j].nodes:
                             tdist= pdistance(pos[m], pos[n])
                             tvane= freeman(pos[n][0]-pos[m][0], pos[n][1]-pos[m][1])
-                            if tdist<closest_dist and (tvane==2 or tvane==6):
+                            if tdist<closest_dist and tdist < SLIC_SPACE*pow(PHI,3) and (tvane==2 or tvane==6):
                                 closest_comp= j
                                 src_node= m
                                 closest_node= n
@@ -1041,6 +1041,8 @@ if -1 in scribe_dia.nodes():
 # re-sort the components 
 # usually narrow hurfs are drawn over long-trail hurfs thus appear in wrong order
 components = sorted(components, key=lambda n: n.rightmost[0], reverse=True)
+components = sorted(components, key=lambda n: n.centroid[0], reverse=True)
+
 
 # substroke identification for transition node between hurfs (Bu Dian)
 from scipy.signal import find_peaks
@@ -1080,6 +1082,7 @@ for n in range(len(components)):
 
 hist1, valleys1= find_histogram_min(ccv, SLANT1) # red
 hist2, valleys2= find_histogram_min(ccv, SLANT2) # green
+# TODO: perhaps also need to add the peaks for rasm like  نني 
 
 # plt.plot(hist1, color='red', label="projection angle "+f"{SLANT1:.4f}"+" rad")  
 # plt.plot(hist2, color='green', label="projection angle "+f"{SLANT2:.4f}"+" rad")  

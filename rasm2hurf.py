@@ -72,17 +72,28 @@ def is_single_char(value):
 # Generate random data
 np.random.seed(42)
 
-fieldstring= 'chaincode'
+
+fieldstring_merged= 'chaincode'
+fieldstring= 'chaincode331'
+fieldstring2= 'chaincode331b'
+
 fieldhurf= 'huruf'
 fieldval= 'val'
 
 # annotated chaincodes and hurfs
-source = pd.read_csv('perangjohorp1v1.csv')
+source = pd.read_csv('perangjohorp1.csv')
 source = source.reset_index(drop=True)
-source = source[(source[fieldstring] != "") & (source[fieldhurf] != "")]
-# some basic checks
-source = source[source[fieldstring].notna() & source[fieldhurf].notna()]
+source = source[(source[fieldhurf] != "") & ((source[fieldstring] != "") | (source[fieldstring2] != ""))]
+# some basic checks 
+source = source[source[fieldhurf].notna() & (source[fieldstring].notna() | (source[fieldstring2].notna()))]
 source[fieldval] = source[fieldhurf].apply(map_huruf_to_val)
+
+# merging multiple chaincode columns
+source_merged= pd.melt(source, id_vars=['huruf', 'val'], value_vars=[fieldstring, fieldstring2], 
+                      var_name='chaincode_id', value_name=fieldstring_merged)
+source_merged = source_merged.drop(columns=['chaincode_id'])
+source= source_merged[source_merged[fieldstring_merged].notna()]
+
 #source['is_valid'] = source['huruf'].apply(is_single_char)
 # source['chaincode'].str.len().mean()
 # source['chaincode'].str.len().min()
@@ -105,7 +116,7 @@ plt.rcParams.update({
 })
 
 # First plot - Histogram of character lengths
-char_lengths = source[fieldstring].apply(len)
+char_lengths = source[fieldstring_merged].apply(len)
 plt.figure()  # Create a new figure
 plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths) + 1), edgecolor='black')
 plt.xlabel('chaincode length')

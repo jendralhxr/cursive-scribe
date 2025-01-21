@@ -57,7 +57,25 @@ hurf[37]= 'ڽ'
 hurf[38]= 'ؤ'
 hurf[39]= 'أ'
 hurf[40]= 'ك'
-hurf[41]= 'ى'
+
+clusters = [[] for _ in range(16)]
+clusters[0] = [1, 39, 36]
+clusters[1] = [2, 3, 5, 30, 35, 37]
+clusters[2] = [6, 7, 8, 9]
+clusters[3] = [10, 11]
+clusters[4] = [12, 13]
+clusters[5] = [14, 15]
+clusters[6] = [16, 17]
+clusters[7] = [18, 19]
+clusters[8] = [20, 21, 22]
+clusters[9] = [23, 24, 25]
+clusters[10] = [26, 27, 40]
+clusters[11] = [28]
+clusters[12] = [29]
+clusters[13] = [31, 32, 38]
+clusters[14] = [33, 4]
+clusters[15] = [34]
+
 
 def map_huruf_to_val(huruf):
     try:
@@ -92,7 +110,7 @@ source[fieldval] = source[fieldhurf].apply(map_huruf_to_val)
 source_merged= pd.melt(source, id_vars=['huruf', 'val'], value_vars=[fieldstring, fieldstring2], 
                       var_name='chaincode_id', value_name=fieldstring_merged)
 source_merged = source_merged.drop(columns=['chaincode_id'])
-source= source_merged[source_merged[fieldstring_merged].notna()]
+source= source_merged[source_merged[fieldstring_merged].notna() & source_merged[fieldval].notna() ]
 
 #source['is_valid'] = source['huruf'].apply(is_single_char)
 # source['chaincode'].str.len().mean()
@@ -118,10 +136,11 @@ plt.rcParams.update({
 # First plot - Histogram of character lengths
 char_lengths = source[fieldstring_merged].apply(len)
 plt.figure()  # Create a new figure
-plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths) + 1), edgecolor='black')
-plt.xlabel('chaincode length')
-plt.ylabel('appearance')
+plt.hist(char_lengths, bins=range(min(char_lengths), max(char_lengths) + 1, 1), edgecolor='black')
+plt.xlabel('Chaincode length')
+plt.ylabel('Appearance')
 plt.title("Character Length Distribution")
+plt.xticks(range(0, max(char_lengths) + 1, 5))
 plt.grid(True)
 
 quartiles = char_lengths.quantile([0.25, 0.5, 0.75])
@@ -256,8 +275,9 @@ def fcs_tabulate(val, string):
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
     fcs_tabulate(int(source.iloc[i][fieldval]), \
-                 re.sub(f"[{re.escape('-+abcABC')}]", '', source.iloc[i][fieldstring]))
+                 re.sub(f"[{re.escape('-+abcABCx')}]", '', source.iloc[i][fieldstring_merged]))
 
+# some hurfs are not in Dejavu (U+1890, U+1743)
 plt.plot(appearance)
 plt.xticks(ticks=range(len(hurf)), labels=hurf)
 plt.savefig("/shm/hurfappearance.png", dpi=300)
@@ -266,7 +286,7 @@ FCS_APPEARANCE_MIN= 2
 top_fcs = {}
 for hurf_class, rasm_seq in tokens.items():
     top_fcs[hurf_class] = sorted(\
-        [x for x in rasm_seq if (x['freq'] != 1 and x['score'] > FCS_APPEARANCE_MIN*pow(PHI,2) ) ],
+        [x for x in rasm_seq if (x['freq'] > 1 and x['score'] > FCS_APPEARANCE_MIN*pow(PHI,2) ) ],
         # [x for x in rasm_seq if (x['freq'] > FCS_APPEARANCE_MIN or x['score'] > FCS_APPEARANCE_MIN*pow(PHI,2) ) ],
         key=lambda x: x['score'],
         reverse=True)
@@ -327,7 +347,9 @@ plt.savefig("/shm/heatmapLCS.png", dpi=300)
 #plt.show()
 
 # FCS probability within a hurf
-counts, bins = np.histogram(sfcs.flatten(), bins=FCS_MAX_NUM)
+bin_edges = np.arange(sfcs.min(), sfcs.max() + 2)  # +2 to include the max value as a bin edge
+counts, bins = np.histogram(sfcs.flatten(), bins=bin_edges)
+#counts, bins = np.histogram(sfcs.flatten(), bins=FCS_MAX_NUM)
 adjusted_counts = counts / np.count_nonzero(sfcs)
 plt.figure(dpi=300)
 plt.bar(bins[:-1], adjusted_counts, width=np.diff(bins), edgecolor='black', align='edge')
@@ -343,9 +365,10 @@ plt.grid(True)  # Enable grid
 #              xytext=(distribution_threshold + 0.05, 0.3),
 #              fontsize=12, color='black')
 
+# minimum length of token to be identified
+LENGTH_MIN= np.min(lfcs[lfcs != 0])
 
 def myjaro(s1,s2):
-    prefix_weight: float = 0.1
     s1_len = len(s1)
     s2_len = len(s2)
 
@@ -355,7 +378,6 @@ def myjaro(s1,s2):
     if s1==s2:
         return 1.0
 
-    min_len = min(s1_len, s2_len)
     search_range = max(s1_len, s2_len)
     search_range = (search_range // 2) - 1
     if search_range < 0:
@@ -414,8 +436,11 @@ def myjaro(s1,s2):
     #     return weight
 
     # winkler modification
-    # adjust for up to first 6 chars in common
-    # j = min(min_len, 5)
+    # adjust for up to first 'winkler_window' chars in common
+    # winkler_window= 6
+    # prefix_weight: float = 0.1
+    # min_len = min(s1_len, s2_len)
+    # j = min(min_len, winkler_window)
     # i = 0
     # while i < j and s1[i] == s2[i]:
     #     i += 1
@@ -432,9 +457,8 @@ def myjaro(s1,s2):
     # tmp = (common_chars - i - 1) / (s1_len + s2_len - i * 2 + 2)
     # weight += (1.0 - weight) * tmp
     
-    # TODO: discard low score, apply some threshold
-    
-    
+    if weight<0.375001: # between '222' and '666'
+        weight= 0.0
     return weight
 
 MC_RETRY_MAX= 1e5
@@ -495,11 +519,12 @@ def reverseFreeman(s):
 # if numpy 2
 # from numpy.dtypes import StringDType
 
+# from syair perahu
+# remainder_stroke= '66676543535364667075444' # terlaLU with pruning
+# remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
+
 FACTOR_LENGTH= 1.00
 VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
-
-remainder_stroke= '66676543535364667075444' # terlaLU with pruning
-remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
 # same transition of diacritics connection can exist up to 2 count
 def check_substroke(s):
@@ -522,11 +547,9 @@ def check_substroke(s):
 def string2rasm(chaincode):
     rasm=''
     substrokes= re.findall(r'[^-+abcABCx]+[-+abcABCx]?', chaincode)
-    substroke_idx= 0
     
     # the MC search
-    while len(substrokes)>0 or (len(substrokes)==1 and len(substrokes[0]<LENGTH_MIN)):
-        idx_best=0
+    while len(substrokes)>1 or (len(substrokes)==1 and len(substrokes[0]>=LENGTH_MIN)):
         idx_cur= 0
         hurf_best=''
         # append substroke(s) to create tee 
@@ -608,6 +631,8 @@ def string2rasm(chaincode):
         draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                       +'\n'+tee_fin)
         
+        # TODO: clusters
+            
         
         # identify best substroke, class, and length
         # TODO TODO TODO: evaluate best class and idx_best
@@ -751,7 +776,6 @@ def string2rasm_old(chaincode):
                 
                     if len(top_fcs[ str(mc_class) ]) != 0:
                         # similarity evaluation
-                        # TODO: use tokens here rather than reaminder stroke
                         score_tee1= myjaro( remainder_stroke[0:len_mc], fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         score_tee2= myjaro( reverseFreeman(remainder_stroke[0:len_mc]), fcs_lookup) * pow(FACTOR_LENGTH,len_mc) # (optionally)
                         if len_mc <= int (LENGTH_MIN * pow(PHI,2)):

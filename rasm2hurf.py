@@ -481,6 +481,34 @@ def draw_heatmap(data, xlabel, ylabel, title):
     for label in ax.get_yticklabels():
         label.set_verticalalignment('top')  # 'bottom' moves the labels slightly down
 
+def draw_heatmap_slice(data, xlabel, ylabel, title):
+    plt.figure(dpi=300)
+    sns.set_theme(rc={
+        'font.family': ['Noto Naskh Arabic', 'Noto Sans', 'DejaVu Sans'],
+        'font.size': 6,  # Adjust font size if necessary
+        'xtick.labelsize': 6,
+        'ytick.labelsize': 6
+    })
+    # Slice data to skip columns 0 and 1
+    data_to_plot = data[:, 2:]  # Skips the first two columns
+
+    # Create the heatmap
+    ax = sns.heatmap(data_to_plot, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
+    ax.set_yticks(range(NUM_CLASSES))
+    ax.set_yticklabels(hurf, rotation=0, fontsize=6)
+    ax.set_xticks(range(data_to_plot.shape[1]))
+    ax.set_xticklabels(range(2, data.shape[1]), ha='center', fontsize=6)  # Explicitly center-align x-ticks
+
+    # Adjust axis labels and title
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+
+    # Adjust vertical alignment for y-tick labels
+    for label in ax.get_yticklabels():
+        label.set_verticalalignment('top')  # 'bottom' moves the labels slightly down
+
+        
 def draw_3d_surface(data, xlabel, ylabel, zlabel, title, elev=30, azim=45):
     fig = plt.figure(dpi=300)
     ax = fig.add_subplot(111, projection='3d')

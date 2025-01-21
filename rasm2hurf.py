@@ -564,7 +564,7 @@ def string2rasm(chaincode):
         
         # MC search for valid sequence of substrokes
         while (check_substroke(tee)):
-            print(tee)
+            # print(tee)
             tee_fin=tee
             tee_clean=re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
             mc_length_min= int( max(LENGTH_MIN, len(tee_clean)/PHI))
@@ -639,24 +639,28 @@ def string2rasm(chaincode):
                 score_mc_acc_cluster[n][m]= np.max(score_mc_acc[clusters[n], m])
         sns.heatmap(score_mc_acc_cluster, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
         
-        # identify best substroke, class, and length
-        # TODO TODO TODO: evaluate best class and idx_best
-        tee_best= ''
-        idx_best= idx_cur
-        for i in range(idx_best):
-            tee_best += substrokes[i]
-        # the old one
-        # # optimum class selection
-        # row_sums = np.sum(score_mc_acc, axis=1)
-        # peaks= find_peaks(row_sums)[0]
-        # # row_sums_nonzero = [x for x in row_sums if x != 0]
-        # # peaks= find_peaks(row_sums, threshold=np.mean(row_sums_nonzero)/len_mc_max)[0] # I dunno why the threshold works not quite right atm
-        # lookupCS = [[ lookup for lookup in string_mc_met[peak]] for peak in peaks]
-        # tophurf = [[ max(myjaro(remainder_stroke, lookup), myjaro(reverseFreeman(remainder_stroke), lookup)) \
-        # for lookup in string_mc_met[peak]] for peak in peaks]
-        # row_sums = np.sum(tophurf, axis=1)
-        # class_best= peaks[np.argmax(row_sums)];
+        # identify best substrokes, hurf/class (cluster), and length
+        cluster_best= np.argmax(np.sum(score_mc_acc_cluster, axis=1))
         
+        row_sums = [score_mc_acc[row, :].sum() for row in clusters[cluster_best]]
+        class_best = clusters[cluster_best][np.argmax(row_sums)]
+        hurf_best= hurf[class_best]
+
+        len_best = np.argmax(np.max(score_mc_acc[clusters[cluster_best], :], axis=0))
+        len_best = max(len_best, len(tee_clean))
+        # tee_best= ''
+        
+        idx_best= 0
+        tee= substrokes[idx_best]
+        tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
+        while idx_best<len(substrokes) and len(tee_clean)<len_best:
+            idx_best += 1
+            tee += substrokes[i]
+            tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
+        idx_best # number of included substrokes
+        tee_best= tee_clean[:len(tee_clean) \
+                            -len(re.sub(f"[{re.escape('-+abcABCx')}]", '', substrokes[idx_best-1]))] 
+                            
         # diacritics handling
         if hurf_best=='ا' or hurf_best=='أ':
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:

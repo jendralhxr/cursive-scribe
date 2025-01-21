@@ -58,23 +58,24 @@ hurf[38]= 'ؤ'
 hurf[39]= 'أ'
 hurf[40]= 'ك'
 
-clusters = [[] for _ in range(16)]
-clusters[0] = [1, 39, 36]
-clusters[1] = [2, 3, 5, 30, 35, 37]
-clusters[2] = [6, 7, 8, 9]
-clusters[3] = [10, 11]
-clusters[4] = [12, 13]
-clusters[5] = [14, 15]
-clusters[6] = [16, 17]
-clusters[7] = [18, 19]
-clusters[8] = [20, 21, 22]
-clusters[9] = [23, 24, 25]
-clusters[10] = [26, 27, 40]
-clusters[11] = [28]
-clusters[12] = [29]
-clusters[13] = [31, 32, 38]
-clusters[14] = [33, 4]
-clusters[15] = [34]
+NUM_CLUSTER= 16
+clusters = [[] for _ in range(NUM_CLUSTER)]
+clusters[0] = [1, 39, 36]          # ا, أ, ی
+clusters[1] = [2, 3, 5, 30, 35, 37]  # ب, ت, ث, ن, ي, ڽ
+clusters[2] = [6, 7, 8, 9]         # ج, چ, ح, خ
+clusters[3] = [10, 11]             # د, ذ
+clusters[4] = [12, 13]             # ر, ز
+clusters[5] = [14, 15]             # س, ش
+clusters[6] = [16, 17]             # ص, ض
+clusters[7] = [18, 19]             # ط, ظ
+clusters[8] = [20, 21, 22]         # ع, غ, ڠ
+clusters[9] = [23, 24, 25]         # ف, ڤ, ق
+clusters[10] = [26, 27, 40]        # ک, ݢ, ك
+clusters[11] = [28]                # ل
+clusters[12] = [29]                # م
+clusters[13] = [31, 32, 38]        # و, ۏ, ؤ
+clusters[14] = [33, 4]             # ه, ة
+clusters[15] = [34]                # ء
 
 
 def map_huruf_to_val(huruf):
@@ -549,17 +550,17 @@ def string2rasm(chaincode):
     substrokes= re.findall(r'[^-+abcABCx]+[-+abcABCx]?', chaincode)
     
     # the MC search
-    while len(substrokes)>1 or (len(substrokes)==1 and len(substrokes[0]>=LENGTH_MIN)):
+    while len(substrokes)>1 or (len(substrokes)==1 and len(substrokes[0])>=LENGTH_MIN):
         idx_cur= 0
         hurf_best=''
         # append substroke(s) to create tee 
         tee= substrokes[0]
         tee_fin=''
-        score_mc_mul = np.ones((NUM_CLASSES, LENGTH_MIN), dtype=float)
-        score_mc_acc = np.zeros((NUM_CLASSES, LENGTH_MIN), dtype=float)
-        score_mc_met = np.zeros((NUM_CLASSES, LENGTH_MIN), dtype=float)
-        string_mc_met = np.full((NUM_CLASSES, LENGTH_MIN), "", dtype='<U20')
-        
+        # mininmum length of tokens to be searched
+        score_mc_mul = np.ones((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
+        score_mc_acc = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
+        score_mc_met = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
+        string_mc_met = np.full((NUM_CLASSES, int(LENGTH_MIN*PHI)), "", dtype='<U20')
         
         # MC search for valid sequence of substrokes
         while (check_substroke(tee)):
@@ -570,16 +571,16 @@ def string2rasm(chaincode):
             
             # resize the result buffers
             temp= score_mc_mul
-            score_mc_mul = np.ones((NUM_CLASSES, int(len(tee_clean)*PHI)), dtype=float)
+            score_mc_mul = np.ones((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
             score_mc_mul[:, 0:temp.shape[1]] = temp
             temp= score_mc_acc
-            score_mc_acc = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI)), dtype=float)
+            score_mc_acc = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
             score_mc_acc[:, 0:temp.shape[1]] = temp
             temp= score_mc_met
-            score_mc_met = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI)), dtype=float)
+            score_mc_met = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
             score_mc_met[:, 0:temp.shape[1]] = temp
             temp= string_mc_met
-            string_mc_met = np.full((NUM_CLASSES, int(len(tee_clean)*PHI)), "", dtype='<U20')
+            string_mc_met = np.full((NUM_CLASSES, int(len(tee_clean)*PHI+1)), "", dtype='<U20')
             string_mc_met[:, 0:temp.shape[1]] = temp
             
             for mc_retry in range(int(MC_RETRY_MAX)):
@@ -597,7 +598,7 @@ def string2rasm(chaincode):
                         fcs_prob *= sfcs[mc_class][mc_index]
                     
                     # compare tee against FCS string with length from len(tee)/PHI until len(tee)/PHI
-                    for mc_length in range(mc_length_min, int(len(tee_clean)*PHI)):
+                    for mc_length in range(mc_length_min, int(len(tee_clean)*PHI+1)):
                         # just adjust FACTOR_LENGTH if prefer for longer substrokes
                         score_tee1= myjaro( tee_clean, fcs_lookup[:mc_length]) * pow(FACTOR_LENGTH, mc_length)
                         score_tee2= myjaro( reverseFreeman(tee_clean), fcs_lookup[:mc_length]) * pow(FACTOR_LENGTH, mc_length)
@@ -607,7 +608,7 @@ def string2rasm(chaincode):
                         score_mc_acc[int(mc_class)][mc_length] += score_tee
                         
                         # cumulative product
-                        score_mc_mul[int(mc_class)][mc_length] *= score_tee*PHI
+                        score_mc_mul[int(mc_class)][mc_length] *= score_tee*PHI  
                         
                         # metropolis
                         if score_tee > score_mc_met[int(mc_class)][mc_length]:
@@ -623,16 +624,20 @@ def string2rasm(chaincode):
                 tee += substrokes[idx_cur]
         
         # draw MC search results
-        draw_heatmap(score_mc_met, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                      +'\n'+tee_fin)
+        # draw_heatmap(score_mc_met, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        #               +'\n'+tee_fin)
         draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                       +'\n'+tee_fin)
         score_mc_mul[score_mc_mul == 1.0] = 0.0
         draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                       +'\n'+tee_fin)
         
-        # TODO: clusters
-            
+        score_mc_acc_cluster = np.zeros((NUM_CLUSTER, score_mc_acc.shape[1]), dtype=float)
+        # pick the maximum for each length length in each hurf into the cluster
+        for m in range(score_mc_acc.shape[1]):
+            for n in range(NUM_CLUSTER):
+                score_mc_acc_cluster[n][m]= np.max(score_mc_acc[clusters[n], m])
+        sns.heatmap(score_mc_acc_cluster, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
         
         # identify best substroke, class, and length
         # TODO TODO TODO: evaluate best class and idx_best

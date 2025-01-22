@@ -565,6 +565,7 @@ def check_substroke(s):
     num_hist=0
     num_slant=0
     num_branch=0
+    before_branch=0
     for c in s:
         if c=='-':
             num_hist += 1
@@ -575,7 +576,10 @@ def check_substroke(s):
         elif c in 'ABC':
             num_dia_top += 1
         elif c=='x': # jumping branch
-            num_branch += 1
+            if before_branch>=LENGTH_MIN:    
+                num_branch += 1
+                before_branch=0
+        before_branch +=1
     if num_hist+num_slant==3 or num_dia_top==2 or num_dia_bot==2 or num_branch==2:
         return False
     else:

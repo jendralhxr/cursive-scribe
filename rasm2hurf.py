@@ -696,26 +696,26 @@ def string2rasm(chaincode):
             else:
                 hurf_best= 'ا'
         if hurf_best=='ب' or hurf_best=='ت' or hurf_best=='ث' or hurf_best=='ن' or hurf_best=='ي' or hurf_best=='ڽ' or hurf_best=='ی':
-            if 'A' in tee_best:
-                hurf_best= 'ن'
-            elif 'B' in tee_best:
-                hurf_best= 'ت'
-            elif 'C' in tee_best:
+            if 'C' in tee_best:
                 hurf_best= 'ث'
-            elif 'a' in tee_best:
-                hurf_best= 'ب'
             elif 'b' in tee_best or 'c' in tee_best:
                 hurf_best= 'ي'
+            elif 'B' in tee_best:
+                hurf_best= 'ت'
+            elif 'A' in tee_best:
+                hurf_best= 'ن'
+            elif 'a' in tee_best:
+                hurf_best= 'ب'
             else:
                 hurf_best= 'ی'
                 # rule for ending-ya (ي) could be lacking for more elaborate rayhani style
         if hurf_best=='ج' or hurf_best=='چ' or hurf_best=='ح' or hurf_best=='خ':
-            if 'A' in tee_best:
+            if 'b' in tee_best or 'c' in tee_best:
+                hurf_best= 'چ'
+            elif 'A' in tee_best:
                 hurf_best= 'خ'
             elif 'a' in tee_best:
                 hurf_best= 'ج'
-            elif 'b' in tee_best or 'c' in tee_best:
-                hurf_best= 'چ'
             else:
                 hurf_best= 'ح'
         if hurf_best=='د' or hurf_best=='ذ' :
@@ -739,19 +739,19 @@ def string2rasm(chaincode):
             else:
                 hurf_best= 'ص'
         if hurf_best=='ع' or hurf_best=='غ' or hurf_best=='ڠ':
-            if 'A' in tee_best :
-                hurf_best= 'غ'
-            elif 'B' in tee_best or 'C' in tee_best  :
+            if 'B' in tee_best or 'C' in tee_best  :
                 hurf_best= 'ڠ'
+            elif 'A' in tee_best :
+                hurf_best= 'غ'
             else:
                 hurf_best= 'ع'
         if hurf_best=='ف' or hurf_best=='ڤ' or hurf_best=='ق':
-            if 'A' in tee_best:
-                hurf_best= 'ف'
+            if 'C' in tee_best :
+                hurf_best= 'ڤ'
             elif 'B' in tee_best:
                 hurf_best= 'ق'
-            elif 'C' in tee_best :
-                hurf_best= 'ڤ'
+            elif 'A' in tee_best:
+                hurf_best= 'ف'
             else:
                 hurf_best= 'ف'
         if hurf_best=='ک' or hurf_best=='ݢ' or hurf_best=='ك' or hurf_best=='ل':

@@ -548,41 +548,54 @@ def reverseFreeman(s):
 # if numpy 2
 # from numpy.dtypes import StringDType
 
-# from syair perahu
-# remainder_stroke= '66676543535364667075444' # terlaLU with pruning
-# remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
+
 
 FACTOR_LENGTH= 1.00
 VARIANCE_THRESHOLD= 5 # 1/5 of variance asymptote value
 
 # same transition of diacritics connection can exist up to 2 count
 def check_substroke(s):
-    num_dia=0
+    num_dia_top=0
+    num_dia_bot=0
     num_hist=0
     num_slant=0
+    num_branch=0
     for c in s:
         if c=='-':
             num_hist += 1
         elif c=='+':
             num_slant += 1
-        elif c in 'aAbBcC':
-            num_dia += 1
-        if num_hist==3 or num_slant==3 or num_dia==2:
-            return False
-        if c=='x': # jumping branch
-            return False
-    return True
+        elif c in 'abc':
+            num_dia_bot += 1
+        elif c in 'ABC':
+            num_dia_top += 1
+        elif c=='x': # jumping branch
+            num_branch += 1
+    if num_hist==3 or num_slant==3 or num_dia_top==2 or num_dia_bot==2 or num_branch==2:
+        return False
+    else:
+        return True
             
+# chaincode
+# chaincode= '455555-5544+43436645x5x5-554-44+321A03' # سوة
+# chaincode= '66' # ا
+
 def string2rasm(chaincode):
     rasm=''
     substrokes= re.findall(r'[^-+abcABCx]+[-+abcABCx]?', chaincode)
     
     # the MC search
     while len(substrokes)>1 or (len(substrokes)==1 and len(substrokes[0])>=LENGTH_MIN):
-        idx_cur= 0
-        hurf_best=''
         # append substroke(s) to create tee 
-        tee= substrokes[0]
+        hurf_best=''
+        idx_cur= 0
+        tee_clean= ''
+        tee= ''
+        while len(tee_clean) <LENGTH_MIN:
+            tee += substrokes[idx_cur]
+            idx_cur += 1
+            tee_clean = re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
+        
         tee_fin=''
         # mininmum length of tokens to be searched
         score_mc_mul = np.ones((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
@@ -592,7 +605,7 @@ def string2rasm(chaincode):
         
         # MC search for valid sequence of substrokes
         while (check_substroke(tee)):
-            # print(tee)
+            print(tee)
             tee_fin=tee
             tee_clean=re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
             mc_length_min= int( max(LENGTH_MIN, len(tee_clean)/PHI))
@@ -636,7 +649,7 @@ def string2rasm(chaincode):
                         score_mc_acc[int(mc_class)][mc_length] += score_tee
                         
                         # cumulative product
-                        score_mc_mul[int(mc_class)][mc_length] *= score_tee*PHI  
+                        score_mc_mul[int(mc_class)][mc_length] *= score_tee
                         
                         # metropolis
                         if score_tee > score_mc_met[int(mc_class)][mc_length]:
@@ -645,11 +658,12 @@ def string2rasm(chaincode):
                             score_mc_met[int(mc_class)][mc_length]= (score_tee + score_mc_met[int(mc_class)][mc_length]) /2 # incremental metropolis
         
             # include more element to the substroke to be evaluated
-            idx_cur += 1
             if idx_cur>=len(substrokes):
                 break
             else:
                 tee += substrokes[idx_cur]
+            idx_cur += 1
+                
         
         # draw MC search results
         # draw_heatmap(score_mc_met, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
@@ -665,25 +679,36 @@ def string2rasm(chaincode):
         for m in range(score_mc_acc.shape[1]):
             for n in range(NUM_CLUSTER):
                 score_mc_acc_cluster[n][m]= np.max(score_mc_acc[clusters[n], m])
+        # plot the cluster
         sns.heatmap(score_mc_acc_cluster, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
         
         # identify best substrokes, hurf/class (cluster), and length
         cluster_best= np.argmax(np.sum(score_mc_acc_cluster, axis=1))
-        
         row_sums = [score_mc_acc[row, :].sum() for row in clusters[cluster_best]]
         class_best = clusters[cluster_best][np.argmax(row_sums)]
         hurf_best= hurf[class_best]
+        
+        # plt.plot(score_mc_acc[clusters[cluster_best][0]], label=f"cluster", color="orange")  # Solid line
+        # plt.plot(score_mc_acc[clusters[cluster_best][1]], label=f"س", color="green")  # Solid line
+        # plt.plot(score_mc_acc_cluster[cluster_best], label="ش", color="blue", linestyle="dashdot")  # Dashed line
+        # plt.legend()
 
+        score= score_mc_acc_cluster[cluster_best]
+        peak_index = np.argmax(score)
+        valley_index = None
+        for i in range(peak_index + 1, len(score) - 1):
+            if score[i] < score[i - 1] and score[i] < score[i + 1]:
+                valley_index = i
+                break
         len_best = np.argmax(np.max(score_mc_acc[clusters[cluster_best], :], axis=0))
-        len_best = max(len_best, len(tee_clean))
-        # tee_best= ''
+        len_best = min(valley_index, max(len_best, valley_index), len(tee_clean))
         
         idx_best= 0
         tee= substrokes[idx_best]
         tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
-        while idx_best<len(substrokes) and len(tee_clean)<len_best:
+        while idx_best<len(substrokes) and len(tee_clean)<=len_best:
             idx_best += 1
-            tee += substrokes[i]
+            tee += substrokes[idx_best]
             tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
         idx_best # number of included substrokes
         tee_best= tee_clean[:len(tee_clean) \
@@ -778,6 +803,11 @@ def string2rasm(chaincode):
             rasm += ' ' # inter-rasm space
         
     return rasm
+
+
+# from syair perahu
+# remainder_stroke= '66676543535364667075444' # terlaLU with pruning
+# remainder_stroke= '66670766454734453556707155535440' # terlaLU without pruning
 
 # MC_jagokandang
 def string2rasm_old(chaincode):

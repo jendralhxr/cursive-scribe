@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import random    
 from scipy.signal import find_peaks
 import seaborn as sns
@@ -73,10 +74,14 @@ clusters[9] = [23, 24, 25]         # ف, ڤ, ق
 clusters[10] = [26, 27, 40]        # ک, ݢ, ك
 clusters[11] = [28]                # ل
 clusters[12] = [29]                # م
-clusters[13] = [31, 32, 38]        # و, ۏ, ؤ
+clusters[13] = [31, 32, 38, 39]    # و, ۏ, ؤ, أ
 clusters[14] = [33, 4]             # ه, ة
 clusters[15] = [34]                # ء
 
+
+def random_color():
+    colormap = cm.get_cmap('nipy_spectral')  
+    return colormap(random.random())
 
 def map_huruf_to_val(huruf):
     try:
@@ -571,7 +576,7 @@ def check_substroke(s):
             num_dia_top += 1
         elif c=='x': # jumping branch
             num_branch += 1
-    if num_hist==3 or num_slant==3 or num_dia_top==2 or num_dia_bot==2 or num_branch==2:
+    if num_hist+num_slant==3 or num_dia_top==2 or num_dia_bot==2 or num_branch==2:
         return False
     else:
         return True
@@ -603,8 +608,8 @@ def string2rasm(chaincode):
         score_mc_met = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
         string_mc_met = np.full((NUM_CLASSES, int(LENGTH_MIN*PHI)), "", dtype='<U20')
         
-        # MC search for valid sequence of substrokes
-        while (check_substroke(tee)):
+        # MC search for valid sequence of substrokes, as long check_substroke() is still valid
+        while True: 
             print(tee)
             tee_fin=tee
             tee_clean=re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
@@ -648,31 +653,34 @@ def string2rasm(chaincode):
                         # cumulative addition
                         score_mc_acc[int(mc_class)][mc_length] += score_tee
                         
-                        # cumulative product
-                        score_mc_mul[int(mc_class)][mc_length] *= score_tee
+                        # # cumulative product
+                        # score_mc_mul[int(mc_class)][mc_length] *= score_tee
                         
-                        # metropolis
-                        if score_tee > score_mc_met[int(mc_class)][mc_length]:
-                            string_mc_met[int(mc_class)][mc_length]= fcs_lookup
-                            #score_mc[int(mc_class)][mc_length] = score_tee # absolute metropolis
-                            score_mc_met[int(mc_class)][mc_length]= (score_tee + score_mc_met[int(mc_class)][mc_length]) /2 # incremental metropolis
+                        # # metropolis
+                        # if score_tee > score_mc_met[int(mc_class)][mc_length]:
+                        #     string_mc_met[int(mc_class)][mc_length]= fcs_lookup
+                        #     #score_mc[int(mc_class)][mc_length] = score_tee # absolute metropolis
+                        #     score_mc_met[int(mc_class)][mc_length]= (score_tee + score_mc_met[int(mc_class)][mc_length]) /2 # incremental metropolis
         
-            # include more element to the substroke to be evaluated
+            # include more substrokes to be evaluated
             if idx_cur>=len(substrokes):
                 break
             else:
                 tee += substrokes[idx_cur]
-            idx_cur += 1
-                
+            
+            if check_substroke(tee):
+                idx_cur += 1
+            else:
+                break
         
         # draw MC search results
         # draw_heatmap(score_mc_met, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
         #               +'\n'+tee_fin)
         draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                       +'\n'+tee_fin)
-        score_mc_mul[score_mc_mul == 1.0] = 0.0
-        draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                      +'\n'+tee_fin)
+        # score_mc_mul[score_mc_mul == 1.0] = 0.0
+        # draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+        #               +'\n'+tee_fin)
         
         score_mc_acc_cluster = np.zeros((NUM_CLUSTER, score_mc_acc.shape[1]), dtype=float)
         # pick the maximum for each length length in each hurf into the cluster
@@ -685,23 +693,30 @@ def string2rasm(chaincode):
         # identify best substrokes, hurf/class (cluster), and length
         cluster_best= np.argmax(np.sum(score_mc_acc_cluster, axis=1))
         row_sums = [score_mc_acc[row, :].sum() for row in clusters[cluster_best]]
-        class_best = clusters[cluster_best][np.argmax(row_sums)]
+        # some 
+        if cluster_best==13:
+            class_best= 38
+        else:
+            class_best = clusters[cluster_best][np.argmax(row_sums)]
         hurf_best= hurf[class_best]
         
-        # plt.plot(score_mc_acc[clusters[cluster_best][0]], label=f"cluster", color="orange")  # Solid line
-        # plt.plot(score_mc_acc[clusters[cluster_best][1]], label=f"س", color="green")  # Solid line
-        # plt.plot(score_mc_acc_cluster[cluster_best], label="ش", color="blue", linestyle="dashdot")  # Dashed line
-        # plt.legend()
-
+        # plot the best cluster/class
+        plt.plot(score_mc_acc_cluster[cluster_best], label=f"cluster[{cluster_best}]", color="blue", linestyle="dashdot")  # Dashed line
+        for n in range(len(clusters[cluster_best])):
+            plt.plot(score_mc_acc[clusters[cluster_best][n]], label=f"{hurf[clusters[cluster_best][n]]}", color=random_color())  # Solid line
+        plt.legend()
+        
         score= score_mc_acc_cluster[cluster_best]
         peak_index = np.argmax(score)
-        valley_index = None
+        valley_index = -1
         for i in range(peak_index + 1, len(score) - 1):
             if score[i] < score[i - 1] and score[i] < score[i + 1]:
                 valley_index = i
                 break
-        len_best = np.argmax(np.max(score_mc_acc[clusters[cluster_best], :], axis=0))
-        len_best = min(valley_index, max(len_best, valley_index), len(tee_clean))
+        if valley_index== -1:
+            valley_index= len(score)
+        len_max = np.argmax(np.max(score_mc_acc[clusters[cluster_best], :], axis=0))
+        len_best = min(valley_index, max(len_max, len(tee_clean)))
         
         idx_best= 0
         tee= substrokes[idx_best]

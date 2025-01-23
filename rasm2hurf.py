@@ -253,14 +253,17 @@ def fcs_tabulate(val, string):
     #print(f"class{val} {string}")
     appearance[val] += 1
     
+    if string=='66':
+        print("walaa!")
+    
     substrokes= parse_chaincode(string)
     #print(f" class{val} {substrokes}") 
     
     unique_substrings = set()  # Use a set to store unique substrings
     for substring in substrokes:
         #unique_substrings.add(substring)
-        if len(substring) > LENGTH_MIN and substring not in unique_substrings:
-            #print(f"adding {substring} to {val}")
+        if len(substring) >= LENGTH_MIN and substring not in unique_substrings:
+            # print(f"adding {substring} to {val}")
             unique_substrings.add(substring)
             
             # the read [original] substring
@@ -291,14 +294,12 @@ plt.plot(appearance)
 plt.xticks(ticks=range(len(hurf)), labels=hurf)
 plt.savefig("/shm/hurfappearance.png", dpi=300)
 
-FCS_APPEARANCE_MIN= 2
 top_fcs = {}
-for hurf_class, rasm_seq in tokens.items():
-    top_fcs[hurf_class] = sorted(\
-        [x for x in rasm_seq if (x['freq'] > 1 and x['score'] > FCS_APPEARANCE_MIN*pow(PHI,2) ) ],
-        # [x for x in rasm_seq if (x['freq'] > FCS_APPEARANCE_MIN or x['score'] > FCS_APPEARANCE_MIN*pow(PHI,2) ) ],
-        key=lambda x: x['score'],
-        reverse=True)
+for n in range(len(tokens)):
+    top_fcs[str(n)] = sorted(\
+                        (item for item in tokens[str(n)] \
+                         if item['freq'] > PHI and item['score'] > FCS_APPEARANCE_MIN*pow(PHI,2)),\
+                        key=lambda x: x['score'], reverse=True)
 
 # check for duplicates
 seq_indices = defaultdict(list)
@@ -308,7 +309,7 @@ for key, entries in top_fcs.items():
         seq_indices[entry['seq']].append(hurf[int(key)])
 duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
-# removing the duplicates
+# removing the duplicates to make LFCSs in each class are more 'unique'
 for hurf_class, entries in top_fcs.items():
     top_fcs[hurf_class] = [entry for entry in entries if entry['seq'] not in duplicates_fcs]
 
@@ -324,8 +325,9 @@ for j in range(0, NUM_CLASSES): # the hurf
         for i in range(0, len(top_fcs[str(j)]) ): # the subsequences
             if i >= FCS_MAX_NUM:
                 break
-            score_max= max(top_fcs[str(j)], key=lambda x: x['score'])['score']/appearance[j]
-            #if top_fcs[str(j)][i]['score']/appearance[j] > score_max/pow(PHI,FCS_THINNING):
+            # score_max= max(top_fcs[str(j)], key=lambda x: x['score'])['score']/appearance[j]
+            # if top_fcs[str(j)][i]['score']/appearance[j] > score_max/pow(PHI,FCS_THINNING):
+            # if top_fcs[str(j)][i]['score']/appearance[j] > 0:
             if top_fcs[str(j)][i]['score']/appearance[j] > 0:
                 ffcs[j][i] = top_fcs[str(j)][i]['freq'] # apperance frequency of each substring
                 sfcs[j][i] = top_fcs[str(j)][i]['score'] # length-dependent score of each substring
@@ -375,7 +377,7 @@ plt.grid(True)  # Enable grid
 #              fontsize=12, color='black')
 
 # minimum length of token to be identified
-LENGTH_MIN= np.min(lfcs[lfcs != 0])
+#LENGTH_MIN= np.min(lfcs[lfcs != 0])
 
 def myjaro(s1,s2):
     s1_len = len(s1)
@@ -735,15 +737,16 @@ def string2rasm(chaincode):
         len_max = np.argmax(np.max(score_mc_acc[clusters[cluster_best], :], axis=0))
         len_best = min(max(valley_index, len_max), len(tee_clean), len(score))
         
+        # recreate the tee
         idx_best= 0
         tee=''
         shortest_length = len(min(substrokes, key=len))
         # tee= substrokes[idx_best]
         # tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
-        while True:
+        while idx_best < len(substrokes):
             tee += substrokes[idx_best]
             tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
-            if idx_best>=len(substrokes) or len(tee_clean)>=len_best-shortest_length:
+            if len(tee_clean)>=len_best-shortest_length:
                 break
             else:
                 idx_best += 1

@@ -298,7 +298,8 @@ top_fcs = {}
 for n in range(len(tokens)):
     top_fcs[str(n)] = sorted(\
                         (item for item in tokens[str(n)] \
-                         if item['freq'] > PHI and item['score'] > FCS_APPEARANCE_MIN*pow(PHI,2)),\
+                         if item['freq'] > appearance[n]/pow(PHI,6) \
+                             and item['score'] > FCS_APPEARANCE_MIN*pow(PHI,2)),\
                         key=lambda x: x['score'], reverse=True)
 
 # check for duplicates
@@ -310,8 +311,8 @@ for key, entries in top_fcs.items():
 duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
 # removing the duplicates to make LFCSs in each class are more 'unique'
-for hurf_class, entries in top_fcs.items():
-    top_fcs[hurf_class] = [entry for entry in entries if entry['seq'] not in duplicates_fcs]
+# for hurf_class, entries in top_fcs.items():
+#     top_fcs[hurf_class] = [entry for entry in entries if entry['seq'] not in duplicates_fcs]
 
 FCS_THINNING= char_lengths.mode()[0] # the mode of strings length, still feels inappropriate
 

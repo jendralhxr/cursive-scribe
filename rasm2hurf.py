@@ -9,6 +9,7 @@ import seaborn as sns
 from collections import defaultdict
 from matplotlib.ticker import MultipleLocator, FuncFormatter
 import re
+from scipy.ndimage import gaussian_filter1d
 
 # TODO later
 # AND-OR graph network (based on tabulated fcs?)
@@ -74,7 +75,7 @@ clusters[9] = [23, 24, 25]         # ف, ڤ, ق
 clusters[10] = [26, 27, 40]        # ک, ݢ, ك
 clusters[11] = [28]                # ل
 clusters[12] = [29]                # م
-clusters[13] = [31, 32, 38, 39]    # و, ۏ, ؤ, أ
+clusters[13] = [31, 32, 38]        # و, ۏ, ؤ
 clusters[14] = [33, 4]             # ه, ة
 clusters[15] = [34]                # ء
 
@@ -601,12 +602,11 @@ def string2rasm(chaincode):
         idx_cur= 0
         tee_clean= ''
         tee= ''
-        while len(tee_clean) <LENGTH_MIN:
+        while len(tee_clean) <LENGTH_MIN: # minimum tee to begin the search
             tee += substrokes[idx_cur]
             idx_cur += 1
             tee_clean = re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
         
-        tee_fin=''
         # mininmum length of tokens to be searched
         score_mc_acc = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
         # score_mc_mul = np.ones((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
@@ -616,7 +616,6 @@ def string2rasm(chaincode):
         # MC search for valid sequence of substrokes, as long check_substroke() is still valid
         while True: 
             print(tee)
-            tee_fin=tee
             tee_clean=re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
             mc_length_min= int( max(LENGTH_MIN, len(tee_clean)/PHI))
             
@@ -679,7 +678,7 @@ def string2rasm(chaincode):
                 break
         
         draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                      +'\n'+tee_fin)
+                      +'\n'+tee)
         # draw MC search results
         # draw_heatmap(score_mc_met, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
         #               +'\n'+tee_fin)
@@ -687,22 +686,19 @@ def string2rasm(chaincode):
         # draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
         #               +'\n'+tee_fin)
         
-        score_mc_acc_cluster = np.zeros((NUM_CLUSTER, score_mc_acc.shape[1]), dtype=float)
         # pick the maximum for each length length in each hurf into the cluster
+        score_mc_acc_cluster = np.zeros((NUM_CLUSTER, score_mc_acc.shape[1]), dtype=float)
         for m in range(score_mc_acc.shape[1]):
             for n in range(NUM_CLUSTER):
                 score_mc_acc_cluster[n][m]= np.max(score_mc_acc[clusters[n], m])
         # plot the cluster
+        plt.figure(dpi=300)
         sns.heatmap(score_mc_acc_cluster, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
         
         # identify best substrokes, hurf/class (cluster), and length
         cluster_best= np.argmax(np.sum(score_mc_acc_cluster, axis=1))
         row_sums = [score_mc_acc[row, :].sum() for row in clusters[cluster_best]]
-        # some hamza-class are intermingled
-        if cluster_best==13:
-            class_best= 38
-        else:
-            class_best = clusters[cluster_best][np.argmax(row_sums)]
+        class_best = clusters[cluster_best][np.argmax(row_sums)]
         hurf_best= hurf[class_best]
         
         # plot the best cluster/class
@@ -711,33 +707,43 @@ def string2rasm(chaincode):
             plt.plot(score_mc_acc[clusters[cluster_best][n]], label=f"{hurf[clusters[cluster_best][n]]}", color=random_color(), linestyle="dashdot")
         plt.legend()
         
-        score= score_mc_acc_cluster[cluster_best]
-        valley_index = -1
+        # naive global peak
         # peak_index = np.argmax(score) # global peak can be misleading
-        peak_index = next(i for i in range(1, len(score) - 1) if score[i] > score[i - 1] and score[i] > score[i + 1])
-        for i in range(peak_index + 1, len(score) - 1):
-            if score[i] < score[i - 1] and score[i] < score[i + 1]:
+        # slightly less naive first peak
+        # peak_index = next(i for i in range(1, len(score) - 1) \
+        #                   if score[i] > score[i - 1] and score[i] > score[i + 1])
+        # smoothed peak
+        score= score_mc_acc_cluster[cluster_best]
+        score_smoothed= gaussian_filter1d(score, 1/PHI)
+        peak_index= find_peaks(score_smoothed)[0][0] # grab the first peak
+        
+        valley_index = -1
+        for i in range(peak_index, len(score) - 1):
+            # print(f"{i} {(score[i-1]-score[i]):.2f} {score[i]:.2f} {(score[i]-score[i + 1]):.2f}")
+            if score[i] < score[i - 1] \
+                and (score[i] < score[i + 1] or (score[i]-score[i + 1])<score[i]/pow(PHI,9)):
                 valley_index = i
                 break
         if valley_index== -1:
             valley_index= len(score)
+        # len_best = min(max(valley_index, len_max, len(tee_clean)), len(score))
         len_max = np.argmax(np.max(score_mc_acc[clusters[cluster_best], :], axis=0))
-        len_best = min(valley_index, len_max, len(tee_clean))
+        len_best = min(max(valley_index, len_max), len(tee_clean), len(score))
         
         idx_best= 0
         tee=''
+        shortest_length = len(min(substrokes, key=len))
         # tee= substrokes[idx_best]
         # tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
         while True:
             tee += substrokes[idx_best]
             tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
-            if idx_best>=len(substrokes) or len(tee_clean)>=len_best:
+            if idx_best>=len(substrokes) or len(tee_clean)>=len_best-shortest_length:
                 break
             else:
                 idx_best += 1
-        idx_best # number of included substrokes
         tee_best= tee # substring representing a hurf
-                            
+        
         # diacritics handling
         if hurf_best=='ا' or hurf_best=='أ':
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
@@ -819,11 +825,12 @@ def string2rasm(chaincode):
         rasm+= hurf_best
         
         # remove searched substrokes
-        if idx_best+1 <= len(substrokes):
-            substrokes= substrokes[idx_best+1:]
+        substrokes= substrokes[idx_best+1:]
         
         remainder_stroke= ''.join(substrokes)
         # terminus hurfs
+        # let's not terminate the rasm if any diacritics is still present
+        # most likely due to the ه thing
         if (hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ز' or hurf_best=='ر' or \
             hurf_best=='ۏ' or hurf_best=='و' or hurf_best=='ؤ' or \
             hurf_best=='ا' or hurf_best=='أ' or hurf_best=='ی' )\

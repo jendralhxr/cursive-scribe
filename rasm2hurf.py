@@ -81,7 +81,7 @@ clusters[15] = [34]                # ء
 
 
 def random_color():
-    colormap = cm.get_cmap('nipy_spectral')  
+    colormap = plt.get_cmap('nipy_spectral')  
     return colormap(random.random())
 
 def map_huruf_to_val(huruf):
@@ -130,6 +130,7 @@ source= source_merged[source_merged[fieldstring_merged].notna() & source_merged[
 #random_hurf=pd.concat([source['val']])
 #random_labels=pd.concat([source['val']])
 
+plt.figure(dpi=300)
 plt.rcParams.update({
     'figure.dpi': 300,
     'axes.labelsize': 12,
@@ -285,6 +286,7 @@ for i in range(0,source.shape[0]):
                  re.sub(f"[{re.escape('-+abcABCx')}]", '', source.iloc[i][fieldstring_merged]))
 
 # some hurfs are not in Dejavu (U+1890, U+1743)
+plt.figure(dpi=300)
 plt.plot(appearance)
 plt.xticks(ticks=range(len(hurf)), labels=hurf)
 plt.savefig("/shm/hurfappearance.png", dpi=300)
@@ -597,7 +599,7 @@ def string2rasm(chaincode):
     
     # the MC search
     while len(substrokes)>1 or (len(substrokes)==1 and len(substrokes[0])>=LENGTH_MIN):
-        # append substroke(s) to create tee 
+        # append substroke(s) to create minimum workable tee 
         hurf_best=''
         idx_cur= 0
         tee_clean= ''
@@ -696,12 +698,15 @@ def string2rasm(chaincode):
         sns.heatmap(score_mc_acc_cluster, cmap='nipy_spectral', annot=True, cbar=True, annot_kws={"size": 4})
         
         # identify best substrokes, hurf/class (cluster), and length
-        cluster_best= np.argmax(np.sum(score_mc_acc_cluster, axis=1))
+        #cluster_best= np.argmax(np.sum(score_mc_acc_cluster, axis=1))
+        #cluster_best= np.argmax(np.mean(score_mc_acc_cluster, axis=1))
+        cluster_best= np.argmax(np.max(score_mc_acc_cluster, axis=1))
         row_sums = [score_mc_acc[row, :].sum() for row in clusters[cluster_best]]
         class_best = clusters[cluster_best][np.argmax(row_sums)]
         hurf_best= hurf[class_best]
         
         # plot the best cluster/class
+        plt.figure(dpi=300)
         plt.plot(score_mc_acc_cluster[cluster_best], label=f"cluster[{cluster_best}]", color="blue")
         for n in range(len(clusters[cluster_best])):
             plt.plot(score_mc_acc[clusters[cluster_best][n]], label=f"{hurf[clusters[cluster_best][n]]}", color=random_color(), linestyle="dashdot")
@@ -820,6 +825,10 @@ def string2rasm(chaincode):
                 hurf_best= 'ؤ' # perang hohor usually use this style
             else:
                 hurf_best= 'و'
+        if hurf_best=='ه' or hurf_best=='ة':
+            if 'A' in tee_best or 'B' in tee_best  or 'C' in tee_best :
+                hurf_best= 'ة'
+                
 
         # append to rasm        
         rasm+= hurf_best

@@ -579,7 +579,8 @@ def check_substroke(s):
             if before_branch>=LENGTH_MIN:    
                 num_branch += 1
                 before_branch=0
-        before_branch +=1
+        else:
+            before_branch +=1 # valid freeman vane
     if num_hist+num_slant==3 or num_dia_top==2 or num_dia_bot==2 or num_branch==2:
         return False
     else:
@@ -607,10 +608,10 @@ def string2rasm(chaincode):
         
         tee_fin=''
         # mininmum length of tokens to be searched
-        score_mc_mul = np.ones((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
         score_mc_acc = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
-        score_mc_met = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
-        string_mc_met = np.full((NUM_CLASSES, int(LENGTH_MIN*PHI)), "", dtype='<U20')
+        # score_mc_mul = np.ones((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
+        # score_mc_met = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
+        # string_mc_met = np.full((NUM_CLASSES, int(LENGTH_MIN*PHI)), "", dtype='<U20')
         
         # MC search for valid sequence of substrokes, as long check_substroke() is still valid
         while True: 
@@ -620,18 +621,18 @@ def string2rasm(chaincode):
             mc_length_min= int( max(LENGTH_MIN, len(tee_clean)/PHI))
             
             # resize the result buffers
-            temp= score_mc_mul
-            score_mc_mul = np.ones((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
-            score_mc_mul[:, 0:temp.shape[1]] = temp
             temp= score_mc_acc
             score_mc_acc = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
             score_mc_acc[:, 0:temp.shape[1]] = temp
-            temp= score_mc_met
-            score_mc_met = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
-            score_mc_met[:, 0:temp.shape[1]] = temp
-            temp= string_mc_met
-            string_mc_met = np.full((NUM_CLASSES, int(len(tee_clean)*PHI+1)), "", dtype='<U20')
-            string_mc_met[:, 0:temp.shape[1]] = temp
+            # temp= score_mc_mul
+            # score_mc_mul = np.ones((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
+            # score_mc_mul[:, 0:temp.shape[1]] = temp
+            # temp= score_mc_met
+            # score_mc_met = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
+            # score_mc_met[:, 0:temp.shape[1]] = temp
+            # temp= string_mc_met
+            # string_mc_met = np.full((NUM_CLASSES, int(len(tee_clean)*PHI+1)), "", dtype='<U20')
+            # string_mc_met[:, 0:temp.shape[1]] = temp
             
             for mc_retry in range(int(MC_RETRY_MAX)):
                 mc_retry += 1
@@ -677,11 +678,11 @@ def string2rasm(chaincode):
             else:
                 break
         
+        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
+                      +'\n'+tee_fin)
         # draw MC search results
         # draw_heatmap(score_mc_met, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
         #               +'\n'+tee_fin)
-        draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-                      +'\n'+tee_fin)
         # score_mc_mul[score_mc_mul == 1.0] = 0.0
         # draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
         #               +'\n'+tee_fin)
@@ -697,7 +698,7 @@ def string2rasm(chaincode):
         # identify best substrokes, hurf/class (cluster), and length
         cluster_best= np.argmax(np.sum(score_mc_acc_cluster, axis=1))
         row_sums = [score_mc_acc[row, :].sum() for row in clusters[cluster_best]]
-        # some 
+        # some hamza-class are intermingled
         if cluster_best==13:
             class_best= 38
         else:
@@ -705,14 +706,15 @@ def string2rasm(chaincode):
         hurf_best= hurf[class_best]
         
         # plot the best cluster/class
-        plt.plot(score_mc_acc_cluster[cluster_best], label=f"cluster[{cluster_best}]", color="blue", linestyle="dashdot")  # Dashed line
+        plt.plot(score_mc_acc_cluster[cluster_best], label=f"cluster[{cluster_best}]", color="blue")
         for n in range(len(clusters[cluster_best])):
-            plt.plot(score_mc_acc[clusters[cluster_best][n]], label=f"{hurf[clusters[cluster_best][n]]}", color=random_color())  # Solid line
+            plt.plot(score_mc_acc[clusters[cluster_best][n]], label=f"{hurf[clusters[cluster_best][n]]}", color=random_color(), linestyle="dashdot")
         plt.legend()
         
         score= score_mc_acc_cluster[cluster_best]
-        peak_index = np.argmax(score)
         valley_index = -1
+        # peak_index = np.argmax(score) # global peak can be misleading
+        peak_index = next(i for i in range(1, len(score) - 1) if score[i] > score[i - 1] and score[i] > score[i + 1])
         for i in range(peak_index + 1, len(score) - 1):
             if score[i] < score[i - 1] and score[i] < score[i + 1]:
                 valley_index = i
@@ -720,18 +722,21 @@ def string2rasm(chaincode):
         if valley_index== -1:
             valley_index= len(score)
         len_max = np.argmax(np.max(score_mc_acc[clusters[cluster_best], :], axis=0))
-        len_best = min(valley_index, max(len_max, len(tee_clean)))
+        len_best = min(valley_index, len_max, len(tee_clean))
         
         idx_best= 0
-        tee= substrokes[idx_best]
-        tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
-        while idx_best<len(substrokes) and len(tee_clean)<=len_best:
-            idx_best += 1
+        tee=''
+        # tee= substrokes[idx_best]
+        # tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
+        while True:
             tee += substrokes[idx_best]
             tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
+            if idx_best>=len(substrokes) or len(tee_clean)>=len_best:
+                break
+            else:
+                idx_best += 1
         idx_best # number of included substrokes
-        tee_best= tee_clean[:len(tee_clean) \
-                            -len(re.sub(f"[{re.escape('-+abcABCx')}]", '', substrokes[idx_best-1]))] 
+        tee_best= tee # substring representing a hurf
                             
         # diacritics handling
         if hurf_best=='ا' or hurf_best=='أ':
@@ -803,9 +808,10 @@ def string2rasm(chaincode):
                 hurf_best= 'ك'
             if 'A' in tee_best or 'a' in tee_best or 'b' in tee_best: # some styles write the dot either on top or bottom
                 hurf_best= 'ݢ'
-        if hurf_best=='و' or hurf_best=='ۏ':
+        if hurf_best=='و' or hurf_best=='ۏ' or hurf_best=='ؤ':
             if 'A' in tee_best or 'B' in tee_best or 'C' in tee_best:
-                hurf_best= 'ۏ'
+                # hurf_best= 'ۏ'
+                hurf_best= 'ؤ' # perang hohor usually use this style
             else:
                 hurf_best= 'و'
 
@@ -813,15 +819,25 @@ def string2rasm(chaincode):
         rasm+= hurf_best
         
         # remove searched substrokes
-        substrokes= substrokes[idx_best:]
+        if idx_best+1 <= len(substrokes):
+            substrokes= substrokes[idx_best+1:]
         
-        # terminus hurfs but intersecting with the next rasm
+        remainder_stroke= ''.join(substrokes)
+        # terminus hurfs
         if (hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ز' or hurf_best=='ر' or \
-            hurf_best=='ۏ' or hurf_best=='و' or hurf_best=='ا' or hurf_best=='أ' or hurf_best=='ی' )\
-            and len(substrokes) > LENGTH_MIN:
-            rasm += ' ' # inter-rasm space
+            hurf_best=='ۏ' or hurf_best=='و' or hurf_best=='ؤ' or \
+            hurf_best=='ا' or hurf_best=='أ' or hurf_best=='ی' )\
+            and len(remainder_stroke) <= LENGTH_MIN \
+            and (not re.search(r'[abcABC]',remainder_stroke)):
+            rasm += ' ' # end of rasm
+            break
         
+        if len(substrokes)==0:
+            rasm += ' ' # end of rasm
+            break
+         
     return rasm
+
 
 
 # from syair perahu

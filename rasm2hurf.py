@@ -253,9 +253,6 @@ def fcs_tabulate(val, string):
     #print(f"class{val} {string}")
     appearance[val] += 1
     
-    if string=='66':
-        print("walaa!")
-    
     substrokes= parse_chaincode(string)
     #print(f" class{val} {substrokes}") 
     
@@ -283,6 +280,7 @@ def fcs_tabulate(val, string):
     #             unique_substrings.add(substring)  
                 
 
+# taking inventory of substrokes from annotated data
 for i in range(0,source.shape[0]):
     #print(f"{i} {source[fieldstring][i]} {source[fieldval][i]}")
     fcs_tabulate(int(source.iloc[i][fieldval]), \
@@ -294,12 +292,18 @@ plt.plot(appearance)
 plt.xticks(ticks=range(len(hurf)), labels=hurf)
 plt.savefig("/shm/hurfappearance.png", dpi=300)
 
+# min([x for x in appearance if x != 0.0], default=None)
+
+# TODO: plot this distribution for the paper
+def freqmin(x):
+    return  (1 - np.exp(-pow(PHI,-6)*x)) / pow(PHI,3)
+
 top_fcs = {}
 for n in range(len(tokens)):
     top_fcs[str(n)] = sorted(\
                         (item for item in tokens[str(n)] \
-                         if item['freq'] > appearance[n]/pow(PHI,6) \
-                             and item['score'] > FCS_APPEARANCE_MIN*pow(PHI,2)),\
+                         if item['freq']/appearance[n] > freqmin(appearance[n]) \
+                             and item['score'] > FCS_APPEARANCE_MIN*pow(PHI,2) ),\
                         key=lambda x: x['score'], reverse=True)
 
 # check for duplicates
@@ -310,6 +314,8 @@ for key, entries in top_fcs.items():
         seq_indices[entry['seq']].append(hurf[int(key)])
 duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
+
+# TODO remove duplicates selectively
 # removing the duplicates to make LFCSs in each class are more 'unique'
 # for hurf_class, entries in top_fcs.items():
 #     top_fcs[hurf_class] = [entry for entry in entries if entry['seq'] not in duplicates_fcs]
@@ -358,17 +364,19 @@ plt.savefig("/shm/heatmapLCS.png", dpi=300)
 #    tick.set_y(tick.get_position()[1] + 400)  # Move tick labels down
 #plt.show()
 
+# TODO: fill back in for the marbutahs
+
 # FCS probability within a hurf
-bin_edges = np.arange(sfcs.min(), sfcs.max() + 2)  # +2 to include the max value as a bin edge
-counts, bins = np.histogram(sfcs.flatten(), bins=bin_edges)
-#counts, bins = np.histogram(sfcs.flatten(), bins=FCS_MAX_NUM)
-adjusted_counts = counts / np.count_nonzero(sfcs)
-plt.figure(dpi=300)
-plt.bar(bins[:-1], adjusted_counts, width=np.diff(bins), edgecolor='black', align='edge')
-plt.xlabel("Probability of subsequence appearance for each hurf")
-plt.ylabel("Adjusted Probability of subsequence from the kitab")
-plt.title("Subsequence Appearance Probability")
-plt.grid(True)  # Enable grid
+# bin_edges = np.arange(sfcs.min(), sfcs.max() + 2)  # +2 to include the max value as a bin edge
+# counts, bins = np.histogram(sfcs.flatten(), bins=bin_edges)
+# #counts, bins = np.histogram(sfcs.flatten(), bins=FCS_MAX_NUM)
+# adjusted_counts = counts / np.count_nonzero(sfcs)
+# plt.figure(dpi=300)
+# plt.bar(bins[:-1], adjusted_counts, width=np.diff(bins), edgecolor='black', align='edge')
+# plt.xlabel("Probability of subsequence appearance for each hurf")
+# plt.ylabel("Adjusted Probability of subsequence from the kitab")
+# plt.title("Subsequence Appearance Probability")
+# plt.grid(True)  # Enable grid
 # the limit
 # distribution_threshold = 1 - (1/PHI)
 # plt.axvline(x=distribution_threshold, color='red', linestyle='--', linewidth=2)
@@ -614,8 +622,8 @@ def string2rasm(chaincode):
         
         # mininmum length of tokens to be searched
         score_mc_acc = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
-        # score_mc_mul = np.ones((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
-        # score_mc_met = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
+        score_mc_mul = np.ones((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
+        score_mc_met = np.zeros((NUM_CLASSES, int(LENGTH_MIN*PHI)), dtype=float)
         # string_mc_met = np.full((NUM_CLASSES, int(LENGTH_MIN*PHI)), "", dtype='<U20')
         
         # MC search for valid sequence of substrokes, as long check_substroke() is still valid
@@ -628,12 +636,12 @@ def string2rasm(chaincode):
             temp= score_mc_acc
             score_mc_acc = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
             score_mc_acc[:, 0:temp.shape[1]] = temp
-            # temp= score_mc_mul
-            # score_mc_mul = np.ones((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
-            # score_mc_mul[:, 0:temp.shape[1]] = temp
-            # temp= score_mc_met
-            # score_mc_met = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
-            # score_mc_met[:, 0:temp.shape[1]] = temp
+            temp= score_mc_mul
+            score_mc_mul = np.ones((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
+            score_mc_mul[:, 0:temp.shape[1]] = temp
+            temp= score_mc_met
+            score_mc_met = np.zeros((NUM_CLASSES, int(len(tee_clean)*PHI+1)), dtype=float)
+            score_mc_met[:, 0:temp.shape[1]] = temp
             # temp= string_mc_met
             # string_mc_met = np.full((NUM_CLASSES, int(len(tee_clean)*PHI+1)), "", dtype='<U20')
             # string_mc_met[:, 0:temp.shape[1]] = temp
@@ -663,13 +671,13 @@ def string2rasm(chaincode):
                         score_mc_acc[int(mc_class)][mc_length] += score_tee
                         
                         # # cumulative product
-                        # score_mc_mul[int(mc_class)][mc_length] *= score_tee
+                        score_mc_mul[int(mc_class)][mc_length] *= score_tee
                         
                         # # metropolis
-                        # if score_tee > score_mc_met[int(mc_class)][mc_length]:
-                        #     string_mc_met[int(mc_class)][mc_length]= fcs_lookup
-                        #     #score_mc[int(mc_class)][mc_length] = score_tee # absolute metropolis
-                        #     score_mc_met[int(mc_class)][mc_length]= (score_tee + score_mc_met[int(mc_class)][mc_length]) /2 # incremental metropolis
+                        if score_tee > score_mc_met[int(mc_class)][mc_length]:
+                            # string_mc_met[int(mc_class)][mc_length]= fcs_lookup
+                            #score_mc[int(mc_class)][mc_length] = score_tee # absolute metropolis
+                            score_mc_met[int(mc_class)][mc_length]= (score_tee + score_mc_met[int(mc_class)][mc_length]) /2 # incremental metropolis
         
             # include more substrokes to be evaluated
             if idx_cur>=len(substrokes):
@@ -682,14 +690,14 @@ def string2rasm(chaincode):
             else:
                 break
         
+        # draw MC search results
         draw_heatmap(score_mc_acc, 'hurf character length', 'hurf class', 'cumulative add MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
                       +'\n'+tee)
-        # draw MC search results
         # draw_heatmap(score_mc_met, 'hurf character length', 'hurf class', 'metropolis MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-        #               +'\n'+tee_fin)
+        #               +'\n'+tee)
         # score_mc_mul[score_mc_mul == 1.0] = 0.0
         # draw_heatmap(score_mc_mul, 'hurf character length', 'hurf class', 'cumulative product MC-myjaro '+str(int(MC_RETRY_MAX))+'/'+str(FACTOR_LENGTH)\
-        #               +'\n'+tee_fin)
+        #               +'\n'+tee)
         
         # pick the maximum for each length length in each hurf into the cluster
         score_mc_acc_cluster = np.zeros((NUM_CLUSTER, score_mc_acc.shape[1]), dtype=float)
@@ -704,6 +712,9 @@ def string2rasm(chaincode):
         #cluster_best= np.argmax(np.sum(score_mc_acc_cluster, axis=1))
         #cluster_best= np.argmax(np.mean(score_mc_acc_cluster, axis=1))
         cluster_best= np.argmax(np.max(score_mc_acc_cluster, axis=1))
+        # fix the ر and س conundrum
+        if cluster_best==4 and len(substrokes)>idx_cur+LENGTH_MIN:
+            cluster_best= 5
         row_sums = [score_mc_acc[row, :].sum() for row in clusters[cluster_best]]
         class_best = clusters[cluster_best][np.argmax(row_sums)]
         hurf_best= hurf[class_best]
@@ -727,16 +738,18 @@ def string2rasm(chaincode):
         
         valley_index = -1
         for i in range(peak_index, len(score) - 1):
-            # print(f"{i} {(score[i-1]-score[i]):.2f} {score[i]:.2f} {(score[i]-score[i + 1]):.2f}")
-            if score[i] < score[i - 1] \
-                and (score[i] < score[i + 1] or (score[i]-score[i + 1])<score[i]/pow(PHI,9)):
+            print(f"{i} {(score[i-1]-score[i]):.2f} {score[i]:.2f} {(score[i]-score[i + 1]):.2f}")
+            if score_smoothed[i] < score_smoothed[i - 1] \
+                and (score[i] < score[i + 1] or \
+                     (score[i]-score[i + 1]>0 and score[i]-score[i + 1]<score[peak_index]/pow(PHI,10)) ):
                 valley_index = i
                 break
         if valley_index== -1:
             valley_index= len(score)
         # len_best = min(max(valley_index, len_max, len(tee_clean)), len(score))
         len_max = np.argmax(np.max(score_mc_acc[clusters[cluster_best], :], axis=0))
-        len_best = min(max(valley_index, len_max), len(tee_clean), len(score))
+        tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
+        len_best = min(max(valley_index, len_max, peak_index), len(tee_clean), len(score))
         
         # recreate the tee
         idx_best= 0
@@ -744,13 +757,12 @@ def string2rasm(chaincode):
         shortest_length = len(min(substrokes, key=len))
         # tee= substrokes[idx_best]
         # tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
-        while idx_best < len(substrokes):
+        for idx_best in range(len(substrokes)):
             tee += substrokes[idx_best]
             tee_clean= re.sub(f"[{re.escape('-+abcABCx')}]", '', tee)
+            # print(f"{idx_best} {tee}")
             if len(tee_clean)>=len_best-shortest_length:
                 break
-            else:
-                idx_best += 1
         tee_best= tee # substring representing a hurf
         
         # diacritics handling
@@ -832,8 +844,7 @@ def string2rasm(chaincode):
         if hurf_best=='ه' or hurf_best=='ة':
             if 'A' in tee_best or 'B' in tee_best  or 'C' in tee_best :
                 hurf_best= 'ة'
-                
-
+        
         # append to rasm        
         rasm+= hurf_best
         
@@ -1058,8 +1069,8 @@ def string2rasm_old(chaincode):
         if (hurf_best=='د' or hurf_best=='ذ' or hurf_best=='ز' or hurf_best=='ۏ')\
             and len(remainder_stroke)-len_best < SUBSTROKE_MIN_LENGTH*PHI:
            # hurf_best=='ا' or hurf_best=='و ' 
-           # wawu (و) are often connected to ه or ة, alif is merged along with ل
            remainder_stroke=''
+        # wawu (و) are often connected to ه or ة, alif is sometimes merged along with ل
         elif (hurf_best=='ا' or hurf_best=='و' or hurf_best=='ر' ) and len(remainder_stroke)-len_best > SUBSTROKE_MIN_LENGTH:
             rasm += ' ' # inter-rasm space
         else:

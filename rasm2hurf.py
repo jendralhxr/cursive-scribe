@@ -294,9 +294,9 @@ plt.savefig("/shm/hurfappearance.png", dpi=300)
 
 # min([x for x in appearance if x != 0.0], default=None)
 
-# TODO: plot this distribution for the paper
+COEFF=7
 def freqmin(x):
-    return  (1 - np.exp(-pow(PHI,-6)*x)) / pow(PHI,3)
+    return  (1 - np.exp(-pow(PHI,-6)*x)) / pow(PHI,COEFF)
 
 top_fcs = {}
 for n in range(len(tokens)):
@@ -304,7 +304,7 @@ for n in range(len(tokens)):
                         (item for item in tokens[str(n)] \
                          if item['freq']/appearance[n] > freqmin(appearance[n]) \
                              and item['score'] > FCS_APPEARANCE_MIN*pow(PHI,2) ),\
-                        key=lambda x: x['score'], reverse=True)
+                        key=lambda x: x['freq'], reverse=True)
 
 # check for duplicates
 seq_indices = defaultdict(list)
@@ -315,7 +315,7 @@ for key, entries in top_fcs.items():
 duplicates_fcs = {seq: indices for seq, indices in seq_indices.items() if len(indices) > 1}
 
 
-# TODO remove duplicates selectively
+# (rather not) TODO remove duplicates selectively
 # removing the duplicates to make LFCSs in each class are more 'unique'
 # for hurf_class, entries in top_fcs.items():
 #     top_fcs[hurf_class] = [entry for entry in entries if entry['seq'] not in duplicates_fcs]
@@ -357,14 +357,12 @@ sns.heatmap(sfcs, cmap='nipy_spectral', annot=afcs, cbar=True, fmt='', annot_kws
 plt.yticks(ticks=range(NUM_CLASSES), labels=hurf, rotation=0, fontsize=6)
 plt.xticks(fontsize=6, rotation=0)
 #plt.title("FCS score: PHI^(len(subsequence)/2) / hurf-apperance")
-plt.savefig("/shm/heatmapLCS.png", dpi=300)
+plt.savefig("/shm/heatmapFCS"+str(COEFF)+".png", dpi=300)
 # plt.xticks(ticks=range(len(y_labels)), labels=y_labels)
 #ax = plt.gca()
 #for tick in ax.get_yticklabels():
 #    tick.set_y(tick.get_position()[1] + 400)  # Move tick labels down
 #plt.show()
-
-# TODO: fill back in for the marbutahs
 
 # FCS probability within a hurf
 # bin_edges = np.arange(sfcs.min(), sfcs.max() + 2)  # +2 to include the max value as a bin edge

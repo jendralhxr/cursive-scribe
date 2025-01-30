@@ -733,19 +733,21 @@ def string2rasm(chaincode):
         score= score_mc_acc_cluster[cluster_best]
         score_smoothed= gaussian_filter1d(score, 1/PHI)
         peak_index= find_peaks(score_smoothed)[0]
+        valley_index = -1
         if len(peak_index)!=0:
             peak_index= find_peaks(score_smoothed)[0][0] # grab the first peak
         else:
-            np.argmax(score_smoothed)
+            peak_index= np.argmax(score_smoothed)
+            valley_index= peak_index
             
-        valley_index = -1
-        for i in range(peak_index, len(score) - 1):
-            print(f"{i} {(score[i-1]-score[i]):.2f} {score[i]:.2f} {(score[i]-score[i + 1]):.2f}")
-            if score_smoothed[i] < score_smoothed[i - 1] \
-                and (score[i] < score[i + 1] or \
-                     (score[i]-score[i + 1]>0 and score[i]-score[i + 1]<score[peak_index]/pow(PHI,10)) ):
-                valley_index = i
-                break
+        if valley_index==-1:
+            for i in range(peak_index, len(score) - 1):
+                print(f"{i} {(score[i-1]-score[i]):.2f} {score[i]:.2f} {(score[i]-score[i + 1]):.2f}")
+                if score_smoothed[i] < score_smoothed[i - 1] \
+                    and (score[i] < score[i + 1] or \
+                         (score[i]-score[i + 1]>0 and score[i]-score[i + 1]<score[peak_index]/pow(PHI,10)) ):
+                    valley_index = i
+                    break
         if valley_index== -1:
             valley_index= len(score)
         # len_best = min(max(valley_index, len_max, len(tee_clean)), len(score))

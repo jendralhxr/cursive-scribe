@@ -732,8 +732,12 @@ def string2rasm(chaincode):
         # smoothed peak
         score= score_mc_acc_cluster[cluster_best]
         score_smoothed= gaussian_filter1d(score, 1/PHI)
-        peak_index= find_peaks(score_smoothed)[0][0] # grab the first peak
-        
+        peak_index= find_peaks(score_smoothed)[0]
+        if len(peak_index)!=0:
+            peak_index= find_peaks(score_smoothed)[0][0] # grab the first peak
+        else:
+            np.argmax(score_smoothed)
+            
         valley_index = -1
         for i in range(peak_index, len(score) - 1):
             print(f"{i} {(score[i-1]-score[i]):.2f} {score[i]:.2f} {(score[i]-score[i + 1]):.2f}")

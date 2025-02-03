@@ -6,51 +6,58 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-SLIC_SPACE= 3
-PHI= 1.6180339887498948482 # ppl says this is a beautiful number :)
+SLIC_SPACE = 3
+PHI = 1.6180339887498948482  # ppl says this is a beautiful number :)
 
-def draw1(img): # draw the intensity
+
+def draw1(img):  # draw the intensity
     plt.figure(dpi=300)
     plt.imshow(img)
- 
-def draw2(img): # draw the bitmap
+
+
+def draw2(img):  # draw the bitmap
     plt.figure(dpi=300)
-    if (len(img.shape)==3):
+    if len(img.shape) == 3:
         plt.imshow(cv.cvtColor(img, cv.COLOR_BGR2RGB))
-    elif (len(img.shape)==2):
+    elif len(img.shape) == 2:
         plt.imshow(cv.cvtColor(img, cv.COLOR_GRAY2RGB))
-                   
+
+
 def rotmoment2(img, angle):
-    center = (img.shape[1]/2, img.shape[0]/2) 
+    center = (img.shape[1] / 2, img.shape[0] / 2)
     M = cv.getRotationMatrix2D(center, angle, 1.0)
-    dst = cv.warpAffine(img, M, (width,height))
-    N1= cv.moments(dst[:, 0:int(dst.shape[1]/2)])
-    N2= cv.moments(dst[:, int(dst.shape[1]/2):dst.shape[1]])
-    cy1= (N1['m01'] / N2['m00'])
-    cy2= (N2['m01'] / N1['m00'])
+    dst = cv.warpAffine(img, M, (width, height))
+    N1 = cv.moments(dst[:, 0 : int(dst.shape[1] / 2)])
+    N2 = cv.moments(dst[:, int(dst.shape[1] / 2) : dst.shape[1]])
+    cy1 = N1["m01"] / N2["m00"]
+    cy2 = N2["m01"] / N1["m00"]
     return (cy1, cy2)
 
+
 def rotimg(img, angle):
-    height= img.shape[0]
-    width= img.shape[1]
-    center = (width/2, height/2) 
+    height = img.shape[0]
+    width = img.shape[1]
+    center = (width / 2, height / 2)
     M = cv.getRotationMatrix2D(center, angle, 1.0)
-    dst = cv.warpAffine(img, M, (width,height))
+    dst = cv.warpAffine(img, M, (width, height))
     draw2(dst)
-    return(dst)
+    return dst
+
 
 from scipy.ndimage import gaussian_filter1d
+
 
 def average_distance_between_peaks(peaks):
     if len(peaks) < 2:
         return 0  # Not enough peaks to calculate a distance
-    
+
     # Calculate distances between consecutive peaks
-    distances = [peaks[i+1] - peaks[i] for i in range(len(peaks) - 1)]
-    
+    distances = [peaks[i + 1] - peaks[i] for i in range(len(peaks) - 1)]
+
     # Calculate the average distance
     average_distance = sum(distances) / len(distances)
     return average_distance
+
 
 # Example usage
 # hst = [0, 3, 1, 4, 2, 5, 2, 1, 3, 1]  # Replace with your histogram data
@@ -59,48 +66,57 @@ def average_distance_between_peaks(peaks):
 # print("Valleys:", valleys)
 from scipy.signal import find_peaks
 
+
 def draw_histograms_on_image(thresholded_image, histogram_x, histogram_y):
     # Normalize histograms to fit within the image dimensions for visualisation
-    histogram_x_norm = (histogram_x / histogram_x.max()) * thresholded_image.shape[0]#  / PHI
-    histogram_y_norm = (histogram_y / histogram_y.max()) * thresholded_image.shape[1]# / PHI
-    
-    plt.imshow(thresholded_image, cmap='gray')
+    histogram_x_norm = (histogram_x / histogram_x.max()) * thresholded_image.shape[
+        0
+    ]  #  / PHI
+    histogram_y_norm = (histogram_y / histogram_y.max()) * thresholded_image.shape[
+        1
+    ]  # / PHI
+
+    plt.imshow(thresholded_image, cmap="gray")
     # Overlay histogram_y as green scatter points (along the left, vertically)
     y_points = np.arange(len(histogram_y_norm))
-    x_points = histogram_y_norm    # Align to start from the left of the image
-    plt.plot(x_points, y_points, color='green', linewidth=1)  # Connect points with a line
+    x_points = histogram_y_norm  # Align to start from the left of the image
+    plt.plot(
+        x_points, y_points, color="green", linewidth=1
+    )  # Connect points with a line
     # Overlay histogram_x as red scatter points (along the top, horizontally)
     # x_points = np.arange(len(histogram_x_norm))
     # y_points = thresholded_image.shape[0] - histogram_x_norm  # Adjust to align at top of image
     # plt.plot(x_points, y_points, color='red', linewidth=1)  # Connect points with a line
-    
+
     # Find peaks and valleys in histogram_y
     peaks = find_peaks(histogram_y)[0]
-    valleys = find_peaks(thresholded_image.shape[1]-histogram_y)[0]
+    valleys = find_peaks(thresholded_image.shape[1] - histogram_y)[0]
 
     # # Draw red horizontal lines at each peak of histogram_y
     # for peak in peaks:
     #     plt.axhline(y=peak, color='red', linestyle='--', linewidth=0.5, xmin=0.1, xmax=0.9)
     # Draw blue horizontal lines at each valley of histogram_y
     for valley in valleys:
-        plt.axhline(y=valley, color='blue', linestyle='--', linewidth=0.5, xmin=0.1, xmax=0.9)
-    plt.savefig("/shm/hist"+filename, dpi=300, bbox_inches='tight')
-    
+        plt.axhline(
+            y=valley, color="blue", linestyle="--", linewidth=0.5, xmin=0.1, xmax=0.9
+        )
+    plt.savefig("/shm/hist" + filename, dpi=300, bbox_inches="tight")
 
-filename= sys.argv[1]
-imagename, ext= os.path.splitext(filename)
+
+filename = sys.argv[1]
+imagename, ext = os.path.splitext(filename)
 image = cv.imread(filename, cv.IMREAD_COLOR)
 
-height= image.shape[0]
-width= image.shape[1]
-center = (width/2, height/2) 
+height = image.shape[0]
+width = image.shape[1]
+center = (width / 2, height / 2)
 
-CHANNEL= 2 # red is 'brighter as closer to background"
-#image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-gray= cv.bitwise_not ( image[:,:,CHANNEL] ) 
-_, thresholded = cv.threshold(gray, 0, 1, cv.THRESH_OTSU) # less smear
-_, gray = cv.threshold(gray, 0, 80, cv.THRESH_OTSU) # less smear
-#_, gray = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
+CHANNEL = 2  # red is 'brighter as closer to background"
+# image_gray= cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+gray = cv.bitwise_not(image[:, :, CHANNEL])
+_, thresholded = cv.threshold(gray, 0, 1, cv.THRESH_OTSU)  # less smear
+_, gray = cv.threshold(gray, 0, 80, cv.THRESH_OTSU)  # less smear
+# _, gray = cv.threshold(image_gray, 0, 1, cv.THRESH_TRIANGLE)
 
 # rect_out=[]
 # rect_fit=[]
@@ -135,22 +151,23 @@ _, gray = cv.threshold(gray, 0, 80, cv.THRESH_OTSU) # less smear
 
 # calculate histogram
 column_indices = np.arange(width)  # Generate array of column indices
-row_indices= np.arange(height)
+row_indices = np.arange(height)
+
 
 def find_optimal_Z(thresholded_image, Z_min=0, Z_max=10, Z_step=1):
     best_Z = Z_min
     max_avg_distance = 0
-    
+
     for Z in np.arange(Z_min, Z_max, Z_step):
         # Apply Gaussian filter with sigma = PHI^Z
         histogram_y = gaussian_filter1d(np.sum(thresholded_image, axis=1), pow(PHI, Z))
-        
+
         # Find peaks and valleys
         peaks = find_peaks(histogram_y)[0]
-        
+
         # Calculate average distance between peaks
         avg_distance = average_distance_between_peaks(peaks)
-        
+
         # Check if this is the best Z found so far
         if avg_distance > max_avg_distance:
             max_avg_distance = avg_distance
@@ -158,44 +175,51 @@ def find_optimal_Z(thresholded_image, Z_min=0, Z_max=10, Z_step=1):
 
     return best_Z, max_avg_distance
 
+
 # smooth the histogram
-Z, interval= find_optimal_Z(thresholded)
-Z=6 
-histogram_x =gaussian_filter1d( np.sum(thresholded, axis=0), pow(PHI,Z))  # Sum along columns
-histogram_y =gaussian_filter1d( np.sum(thresholded, axis=1), pow(PHI,Z))  # Sum along rows
+Z, interval = find_optimal_Z(thresholded)
+Z = 6
+histogram_x = gaussian_filter1d(
+    np.sum(thresholded, axis=0), pow(PHI, Z)
+)  # Sum along columns
+histogram_y = gaussian_filter1d(
+    np.sum(thresholded, axis=1), pow(PHI, Z)
+)  # Sum along rows
 draw_histograms_on_image(gray, histogram_x, histogram_y)
 
 # find the line segment
-peaks= find_peaks(histogram_y)[0]
-valleys = find_peaks(thresholded.shape[1]-histogram_y)[0]
-firstline= peaks[0]-abs(valleys[0]-peaks[0])
+peaks = find_peaks(histogram_y)[0]
+valleys = find_peaks(thresholded.shape[1] - histogram_y)[0]
+firstline = peaks[0] - abs(valleys[0] - peaks[0])
 if firstline < 0:
-    firstline= 0
-valleys = np.insert(valleys, 0, firstline) # append zero as the first valley
-lastline= valleys[-1]+(valleys[-1]-valleys[-2])
+    firstline = 0
+valleys = np.insert(valleys, 0, firstline)  # append zero as the first valley
+lastline = valleys[-1] + (valleys[-1] - valleys[-2])
 if lastline > gray.shape[0]:
     lastline = gray.shape[0]
 valleys = np.append(valleys, lastline)
 valleys = np.unique(valleys)
 
+
 def average_difference(lst):
-    differences = [lst[i+1] - lst[i] for i in range(len(lst)-1)]
+    differences = [lst[i + 1] - lst[i] for i in range(len(lst) - 1)]
     avg_diff = sum(differences) / len(differences)
     return avg_diff
 
-step= average_difference(valleys) # * PHI # so as each crop is rather uniform
+
+step = average_difference(valleys)  # * PHI # so as each crop is rather uniform
 
 # gonna crop-select each lines here
-m=0
-n=1
-while valleys[m]<=max(valleys) and (m+n)<len(valleys):
-    top=valleys[m]
-    bot=valleys[m+n]
-    if (bot-top)>=step/PHI and (bot-top)<=step*PHI:
-        #draw1(gray[top:bot,:])
-        #linecrop= gray[top:bot,:]
-        linecrop_img= image[top:bot,:]
-        
+m = 0
+n = 1
+while valleys[m] <= max(valleys) and (m + n) < len(valleys):
+    top = valleys[m]
+    bot = valleys[m + n]
+    if (bot - top) >= step / PHI and (bot - top) <= step * PHI:
+        # draw1(gray[top:bot,:])
+        # linecrop= gray[top:bot,:]
+        linecrop_img = image[top:bot, :]
+
         # # find the line orientation
         # c=[]
         # moment_min=1e9
@@ -206,20 +230,18 @@ while valleys[m]<=max(valleys) and (m+n)<len(valleys):
         #     moment_i= (res[0]-res[1])
         #     if np.abs(moment_i) < moment_min:
         #         moment_min= np.abs(moment_i)
-        #         angle_min= i     
+        #         angle_min= i
         # if angle_min>-3 and angle_min<3:
         #     linecrop= rotimg(linecrop, angle_min)
         #     linecrop_img= rotimg(linecrop_img, angle_min)
-        # print(f"{imagename}: line {m}, angle {angle_min} ")                
-        
-        #cv.imwrite(imagename+'-line'+str(m)+'.png', linecrop)
-        savefilname= imagename+'-line'+str(m)+'.png' 
+        # print(f"{imagename}: line {m}, angle {angle_min} ")
+
+        # cv.imwrite(imagename+'-line'+str(m)+'.png', linecrop)
+        savefilname = imagename + "-line" + str(m) + ".png"
         print(f"saving {savefilname}")
         cv.imwrite(savefilname, linecrop_img)
-        
-        m=m+n
-        n=1 
+
+        m = m + n
+        n = 1
     else:
-        n= n+1 # grab another valley if the section is too narrow
-        
-        
+        n = n + 1  # grab another valley if the section is too narrow

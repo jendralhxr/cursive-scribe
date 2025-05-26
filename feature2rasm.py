@@ -1318,6 +1318,19 @@ def find_histogram_min(img, ANGLE):
     return projection_hist_smoothed, valleys
 
 
+def draw_histogram_over_image(thresholded_image, histogram):
+    # Normalize histograms to fit within the image dimensions for visualisation
+    histogram_norm = (histogram / histogram.max()) * thresholded_image.shape[0]  #  / PHI
+    plt.imshow(thresholded_image, cmap="gray")
+    # Overlay histogram_y as green scatter points (along the left, vertically)
+    x_points = np.arange(len(histogram_norm))
+    #y_points = histogram_norm  # 
+    y_points = thresholded_image.shape[0]- histogram_norm  # inverted for illustrative purpose
+    plt.plot(
+        x_points, y_points, color="green", linewidth=1
+    )  # Connect points with a line
+    
+
 # slanted projection histogram for segmenting the strokes
 SLANT1 = 0
 SLANT2 = 3.1415 / pow(PHI, 3)

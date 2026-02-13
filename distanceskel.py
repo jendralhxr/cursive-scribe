@@ -44,6 +44,14 @@ distance_to_edges = ndi.distance_transform_edt(edge_mask)
 # 4. Mask the result so we only see distances INSIDE the object
 # (This sets the background pixels to 0)
 foreground_distance_map = distance_to_edges * binary
+plt.contour(skeleton, [0.5], colors='white', linewidths=0.1) # artistic rendering
+plt.imshow(foreground_distance_map, cmap='nipy_spectral')
+
+
+# harddo
+combined_view = foreground_distance_map.copy()
+combined_view[skeleton] = np.max(foreground_distance_map) * 1.5 
+plt.imshow(combined_view, cmap='nipy_spectral')
 
 # 5. Visualization
 plt.imshow(foreground_distance_map, cmap='nipy_spectral')
